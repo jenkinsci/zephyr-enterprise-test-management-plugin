@@ -1,4 +1,4 @@
-package com.getzephyr.jenkins.model;
+package com.thed.zephyr.jenkins.model;
 
 public class TestCaseModel {
 

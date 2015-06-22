@@ -1,4 +1,4 @@
-package com.getzephyr.jenkins.utils;
+package com.thed.zephyr.jenkins.utils;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -19,12 +19,12 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 
+import com.thed.zephyr.jenkins.model.TestCaseResultModel;
+import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import org.apache.commons.lang.StringUtils;
 
-import ZephyrTestResultReporter.ZephyrReporter;
+import com.thed.zephyr.jenkins.reporter.ZeeReporter;
 
-import com.getzephyr.jenkins.model.TestCaseResultModel;
-import com.getzephyr.jenkins.model.ZephyrConfigModel;
 import com.thed.service.soap.RemoteCriteria;
 import com.thed.service.soap.RemoteCycle;
 import com.thed.service.soap.RemoteData;
@@ -251,7 +251,7 @@ public class ZephyrSoapClient {
 					testCasesByCriteria11 = client.getTestcasesByCriteria(
 							searchCriterias1, false, token);
 				} catch (ZephyrServiceException e1) {
-					ZephyrReporter.logger.print("Error in getting phase name");
+					ZeeReporter.logger.print("Error in getting phase name");
 					e1.printStackTrace();
 				}
 
@@ -328,13 +328,13 @@ public class ZephyrSoapClient {
 
 	private void createNewCycle(ZephyrConfigModel zephyrData)
 			throws DatatypeConfigurationException {
-		if (zephyrData.getCycleId() == ZephyrReporter.NEW_CYCLE_KEY_IDENTIFIER) {
+		if (zephyrData.getCycleId() == ZeeReporter.NEW_CYCLE_KEY_IDENTIFIER) {
 			RemoteProject projectById = null;
 			try {
 				projectById = client.getProjectById(
 						zephyrData.getZephyrProjectId(), token);
 			} catch (ZephyrServiceException e) {
-				ZephyrReporter.logger.print("Problem Getting Project ID");
+				ZeeReporter.logger.print("Problem Getting Project ID");
 				return;
 			}
 			RemoteRelease releaseById = null;
@@ -342,7 +342,7 @@ public class ZephyrSoapClient {
 				releaseById = client.getReleaseById(zephyrData.getReleaseId(),
 						token);
 			} catch (ZephyrServiceException e) {
-				ZephyrReporter.logger.print("Problem Getting Release ID");
+				ZeeReporter.logger.print("Problem Getting Release ID");
 
 				return;
 			}
@@ -380,7 +380,7 @@ public class ZephyrSoapClient {
 				Long createNewCycleID = client.createNewCycle(rCycle, token);
 				zephyrData.setCycleId(createNewCycleID);
 			} catch (ZephyrServiceException e) {
-				ZephyrReporter.logger.print("Problem Creating new cycle");
+				ZeeReporter.logger.print("Problem Creating new cycle");
 				e.printStackTrace();
 				return;
 			}
@@ -450,7 +450,7 @@ public class ZephyrSoapClient {
 									.get(0);
 						}
 					} catch (ZephyrServiceException e1) {
-						ZephyrReporter.logger
+						ZeeReporter.logger
 								.print("Error in getting phase name");
 						e1.printStackTrace();
 					}
@@ -532,7 +532,7 @@ public class ZephyrSoapClient {
 				}
 			}
 		} catch (ZephyrServiceException e1) {
-			ZephyrReporter.logger.print("Error in getting phase name");
+			ZeeReporter.logger.print("Error in getting phase name");
 			e1.printStackTrace();
 		}
 

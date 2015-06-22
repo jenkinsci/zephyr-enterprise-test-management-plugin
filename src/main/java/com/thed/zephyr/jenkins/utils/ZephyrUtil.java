@@ -1,4 +1,4 @@
-package com.getzephyr.jenkins.utils;
+package com.thed.zephyr.jenkins.utils;
 
 public class ZephyrUtil {
 

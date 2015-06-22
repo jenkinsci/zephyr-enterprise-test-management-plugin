@@ -1,4 +1,4 @@
-package com.getzephyr.jenkins.model;
+package com.thed.zephyr.jenkins.model;
 
 import com.thed.service.soap.RemoteTestcase;
 

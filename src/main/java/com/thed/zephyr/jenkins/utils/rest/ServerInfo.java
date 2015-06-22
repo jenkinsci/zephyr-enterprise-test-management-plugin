@@ -1,4 +1,4 @@
-package com.getzephyr.jenkins.utils.rest;
+package com.thed.zephyr.jenkins.utils.rest;
 
 import java.io.IOException;
 import java.net.MalformedURLException;

@@ -1,60 +1,49 @@
-package ZephyrTestResultReporter;
+package com.thed.zephyr.jenkins.reporter;
 
 /**
  * @author mohan
  */
 
+import com.thed.service.soap.RemoteTestcase;
+import com.thed.zephyr.jenkins.model.TestCaseResultModel;
+import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
+import com.thed.zephyr.jenkins.model.ZephyrInstance;
+import com.thed.zephyr.jenkins.utils.URLValidator;
+import com.thed.zephyr.jenkins.utils.ZephyrSoapClient;
+import com.thed.zephyr.jenkins.utils.rest.Cycle;
+import com.thed.zephyr.jenkins.utils.rest.Project;
+import com.thed.zephyr.jenkins.utils.rest.Release;
+import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
+import hudson.tasks.junit.CaseResult;
 import hudson.tasks.junit.SuiteResult;
 import hudson.tasks.junit.TestResultAction;
-import hudson.tasks.junit.CaseResult;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-
-import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.xml.datatype.DatatypeConfigurationException;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import com.getzephyr.jenkins.model.TestCaseResultModel;
-import com.getzephyr.jenkins.model.ZephyrConfigModel;
-import com.getzephyr.jenkins.model.ZephyrInstance;
-import com.getzephyr.jenkins.utils.URLValidator;
-import com.getzephyr.jenkins.utils.ZephyrSoapClient;
-import com.getzephyr.jenkins.utils.rest.Cycle;
-import com.getzephyr.jenkins.utils.rest.Project;
-import com.getzephyr.jenkins.utils.rest.Release;
-import com.getzephyr.jenkins.utils.rest.ServerInfo;
-import com.thed.service.soap.RemoteTestcase;
+import javax.xml.datatype.DatatypeConfigurationException;
+import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+import java.util.Map.Entry;
 
-public class ZephyrReporter extends Notifier {
+public class ZeeReporter extends Notifier {
 
 	public String projectKey;
 	public String releaseKey;
@@ -92,15 +81,15 @@ public class ZephyrReporter extends Notifier {
     public static PrintStream logger;
 
     @DataBoundConstructor
-    public ZephyrReporter(
-    					String serverAddress,
-    					String projectKey,
-    					String releaseKey,
-    					String cycleKey,
-    					String cyclePrefix,
-    					String cycleDuration,
-    					boolean createPackage
-    					) {
+    public ZeeReporter(
+			String serverAddress,
+			String projectKey,
+			String releaseKey,
+			String cycleKey,
+			String cyclePrefix,
+			String cycleDuration,
+			boolean createPackage
+	) {
 
 
     	this.serverAddress = serverAddress;
@@ -356,7 +345,7 @@ public class ZephyrReporter extends Notifier {
 
     	
 		public DescriptorImpl() {
-			super(ZephyrReporter.class);
+			super(ZeeReporter.class);
 			load();
 		}
 		
@@ -423,7 +412,7 @@ public class ZephyrReporter extends Notifier {
 		
         @Override
         public String getDisplayName() {
-            return "Zephyr Test Result Reporter";
+            return "Zephyr Enterprise Test Management";
         }
         
         public FormValidation doCheckProjectKey(@QueryParameter String value) {

@@ -1,4 +1,4 @@
-package com.getzephyr.jenkins.utils.rest;
+package com.thed.zephyr.jenkins.utils.rest;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -28,7 +28,7 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import com.getzephyr.jenkins.model.TestCaseModel;
+import com.thed.zephyr.jenkins.model.TestCaseModel;
 
 public class TestCaseUtil {
 

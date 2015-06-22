@@ -1,4 +1,4 @@
-package com.getzephyr.jenkins.utils.rest;
+package com.thed.zephyr.jenkins.utils.rest;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -22,6 +22,7 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -31,20 +32,18 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class Cycle {
+public class Project {
 
-	private static String URL_GET_CYCLES = "{SERVER}/flex/services/rest/latest/cycle";
-
+	private static String URL_GET_PROJECTS = "{SERVER}/flex/services/rest/latest/project?status=2";
 	
-	public static Long getCycleIdByCycleNameAndReleaseId(String cycleName, Long releaseId, String hostAddressWithProtocol, String userName, String password) {
+	public static void getProjectNameById(long id, String hostNameWithProtocol, String userName, String password) {
 
-		Long cycleId = 0L;
 
-		HttpClientContext context = getClientContext(hostAddressWithProtocol, userName, password);
+		HttpClientContext context = getClientContext(hostNameWithProtocol, userName, password);
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		try {
-			response = client.execute(new HttpGet(hostAddressWithProtocol + "/flex/services/rest/latest/cycle?name=" + URLEncoder.encode(cycleName, "utf-8") + "&releaseId=" + releaseId), context);
+			response = client.execute(new HttpGet(hostNameWithProtocol + "/flex/services/rest/latest/project/" + id), context);
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -64,17 +63,55 @@ public class Cycle {
 				e.printStackTrace();
 			}
 
-			
+		} else {
 			try {
-				JSONArray cycleArray = new JSONArray(string);
-				List<Long> cycleIdList = new ArrayList<Long>();
-				for(int i = 0; i < cycleArray.length(); i++) {
-					Long id = cycleArray.getJSONObject(i).getLong("id");
-					cycleIdList.add(id);
+				throw new ClientProtocolException("Unexpected response status: "
+						+ statusCode);
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			}
+		}
+	
+	}
+	
+	public static Long getProjectIdByName(String projectName, String hostNameWithProtocol, String userName, String password) {
+
+		Long projectId = 0L;
+
+		HttpClientContext context = getClientContext(hostNameWithProtocol, userName, password);
+		HttpClient client = HttpClientBuilder.create().build();
+		HttpResponse response = null;
+		try {
+			response = client.execute(new HttpGet(hostNameWithProtocol + "/flex/services/rest/latest/project?name=" + URLEncoder.encode(projectName, "utf-8")), context);
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		int statusCode = response.getStatusLine().getStatusCode();
+
+		if (statusCode >= 200 && statusCode < 300) {
+			HttpEntity entity = response.getEntity();
+			String string = null;
+			try {
+				string = EntityUtils.toString(entity);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			try {
+				JSONArray projArray = new JSONArray(string);
+				List<Long> projectIdList = new ArrayList<Long>();
+				for(int i = 0; i < projArray.length(); i++) {
+					Long id = projArray.getJSONObject(i).getLong("id");
+					projectIdList.add(id);
 				}
 				
-				Collections.sort(cycleIdList);
-				cycleId = cycleIdList.get(0);
+				Collections.sort(projectIdList);
+				projectId = projectIdList.get(0);
 				
 			} catch (JSONException e) {
 				e.printStackTrace();
@@ -90,26 +127,28 @@ public class Cycle {
 			}
 		}
 	
-		return cycleId;
+		return projectId;
 	}
 	
-	public static Map<Long, String> getAllCyclesByReleaseID(Long releaseID, String hostAddressWithProtocol, String userName, String password) {
+	public static Map<Long, String> getAllProjects(String hostNameWithProtocol, String userName, String password) {
 
 
-		Map<Long, String> cycles = new TreeMap<Long, String>();
+		Map<Long, String> projects = new TreeMap<Long, String>();
 		
-		HttpClientContext context = getClientContext(hostAddressWithProtocol, userName, password);
+		HttpClientContext context = getClientContext(hostNameWithProtocol, userName, password);
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		
-		final String url = URL_GET_CYCLES.replace("{SERVER}", hostAddressWithProtocol) + "?releaseId=" + releaseID;
+		final String url = URL_GET_PROJECTS.replace("{SERVER}", hostNameWithProtocol);
 		try {
 			response = client.execute(new HttpGet(url), context);
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
+		} catch (HttpHostConnectException e) {
+			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		} 
 
 		int statusCode = response.getStatusLine().getStatusCode();
 
@@ -125,18 +164,35 @@ public class Cycle {
 			}
 
 			try {
-				JSONArray cyclesArray = new JSONArray(string);
-				for(int i = 0; i < cyclesArray.length(); i++) {
-					JSONObject cycleObject = cyclesArray.getJSONObject(i);
+				JSONArray projArray = new JSONArray(string);
+				for(int i = 0; i < projArray.length(); i++) {
 					
-					int visibility = cycleObject.getInt("status");
-					if (visibility == 1) {
+					
+					JSONObject jsonObject = projArray.getJSONObject(i);
+					JSONArray members = jsonObject.getJSONArray("members");
+					
+					if (members == null || members.length() == 0) {
 						continue;
 					}
-
-					Long id = cycleObject.getLong("id");
-					String projName = cycleObject.getString("name");
-					cycles.put(id, projName);
+					
+					boolean isProjectAssignedToTheMember = false;
+					for (int j = 0; j < members.length(); j++) {
+						JSONObject member = members.getJSONObject(j);
+						
+						String user = member.getString("username");
+						if(user.trim().equalsIgnoreCase(userName.trim())) {
+							isProjectAssignedToTheMember = true;
+							break;
+						}
+					}
+					
+					if(!isProjectAssignedToTheMember) {
+						continue;
+					}
+					
+					Long id = jsonObject.getLong("id");
+					String projName = jsonObject.getString("name");
+					projects.put(id, projName);
 				}
 				
 				
@@ -147,7 +203,7 @@ public class Cycle {
 			
 		} else {
 			
-			cycles.put(0L, "No Cycle");
+			projects.put(0L, "No Project");
 			try {
 				throw new ClientProtocolException("Unexpected response status: "
 						+ statusCode);
@@ -156,8 +212,9 @@ public class Cycle {
 			}
 		}
 	
-		return cycles;
+		return projects;
 	}
+	
 	
 	private static HttpClientContext getClientContext(String hostAddressWithProtocol, String userName, String password) {
 		URL url;
@@ -181,4 +238,5 @@ public class Cycle {
 		
 		return context;
 	}
+	
 }

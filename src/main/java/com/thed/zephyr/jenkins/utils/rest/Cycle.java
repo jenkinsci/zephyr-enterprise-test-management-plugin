@@ -1,4 +1,4 @@
-package com.getzephyr.jenkins.utils.rest;
+package com.thed.zephyr.jenkins.utils.rest;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -31,20 +31,20 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class Release {
+public class Cycle {
 
-	private static String URL_GET_RELEASES = "{SERVER}/flex/services/rest/latest/release";
+	private static String URL_GET_CYCLES = "{SERVER}/flex/services/rest/latest/cycle";
 
 	
-	public static Long getReleaseIdByNameProjectId(String releaseName, Long projectId, String hostAddressWithProtocol, String userName, String password) {
+	public static Long getCycleIdByCycleNameAndReleaseId(String cycleName, Long releaseId, String hostAddressWithProtocol, String userName, String password) {
 
-		Long releaseId = 0L;
+		Long cycleId = 0L;
 
 		HttpClientContext context = getClientContext(hostAddressWithProtocol, userName, password);
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		try {
-			response = client.execute(new HttpGet(hostAddressWithProtocol + "/flex/services/rest/latest/release?name=" + URLEncoder.encode(releaseName, "utf-8") + "&project.id=" + projectId), context);
+			response = client.execute(new HttpGet(hostAddressWithProtocol + "/flex/services/rest/latest/cycle?name=" + URLEncoder.encode(cycleName, "utf-8") + "&releaseId=" + releaseId), context);
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -64,16 +64,17 @@ public class Release {
 				e.printStackTrace();
 			}
 
+			
 			try {
-				JSONArray releaseArray = new JSONArray(string);
-				List<Long> releaseIdList = new ArrayList<Long>();
-				for(int i = 0; i < releaseArray.length(); i++) {
-					Long id = releaseArray.getJSONObject(i).getLong("id");
-					releaseIdList.add(id);
+				JSONArray cycleArray = new JSONArray(string);
+				List<Long> cycleIdList = new ArrayList<Long>();
+				for(int i = 0; i < cycleArray.length(); i++) {
+					Long id = cycleArray.getJSONObject(i).getLong("id");
+					cycleIdList.add(id);
 				}
 				
-				Collections.sort(releaseIdList);
-				releaseId = releaseIdList.get(0);
+				Collections.sort(cycleIdList);
+				cycleId = cycleIdList.get(0);
 				
 			} catch (JSONException e) {
 				e.printStackTrace();
@@ -89,19 +90,19 @@ public class Release {
 			}
 		}
 	
-		return releaseId;
+		return cycleId;
 	}
 	
-	public static Map<Long, String> getAllReleasesByProjectID(Long projectID, String hostAddressWithProtocol, String userName, String password) {
+	public static Map<Long, String> getAllCyclesByReleaseID(Long releaseID, String hostAddressWithProtocol, String userName, String password) {
 
 
-		Map<Long, String> releases = new TreeMap<Long, String>();
+		Map<Long, String> cycles = new TreeMap<Long, String>();
 		
 		HttpClientContext context = getClientContext(hostAddressWithProtocol, userName, password);
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		
-		final String url = URL_GET_RELEASES.replace("{SERVER}", hostAddressWithProtocol) + "?project.id=" + projectID;
+		final String url = URL_GET_CYCLES.replace("{SERVER}", hostAddressWithProtocol) + "?releaseId=" + releaseID;
 		try {
 			response = client.execute(new HttpGet(url), context);
 		} catch (ClientProtocolException e) {
@@ -123,19 +124,19 @@ public class Release {
 				e.printStackTrace();
 			}
 
-			
 			try {
-				JSONArray releasesArray = new JSONArray(string);
-				for(int i = 0; i < releasesArray.length(); i++) {
-					JSONObject releaseObject = releasesArray.getJSONObject(i);
+				JSONArray cyclesArray = new JSONArray(string);
+				for(int i = 0; i < cyclesArray.length(); i++) {
+					JSONObject cycleObject = cyclesArray.getJSONObject(i);
 					
-					int visibility = releaseObject.getInt("status");
+					int visibility = cycleObject.getInt("status");
 					if (visibility == 1) {
 						continue;
 					}
-					Long id = releaseObject.getLong("id");
-					String projName = releaseObject.getString("name");
-					releases.put(id, projName);
+
+					Long id = cycleObject.getLong("id");
+					String projName = cycleObject.getString("name");
+					cycles.put(id, projName);
 				}
 				
 				
@@ -146,7 +147,7 @@ public class Release {
 			
 		} else {
 			
-			releases.put(0L, "No Release");
+			cycles.put(0L, "No Cycle");
 			try {
 				throw new ClientProtocolException("Unexpected response status: "
 						+ statusCode);
@@ -155,9 +156,8 @@ public class Release {
 			}
 		}
 	
-		return releases;
+		return cycles;
 	}
-	
 	
 	private static HttpClientContext getClientContext(String hostAddressWithProtocol, String userName, String password) {
 		URL url;

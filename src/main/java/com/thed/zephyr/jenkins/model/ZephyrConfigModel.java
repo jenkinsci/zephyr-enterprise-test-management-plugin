@@ -19,6 +19,7 @@ public class ZephyrConfigModel {
 	private boolean createPackage;
 	private String zephyrURL;
 	private String cycleDuration;
+	private long userId;
 
 	public String getZephyrURL() {
 		return zephyrURL;
@@ -130,6 +131,14 @@ public class ZephyrConfigModel {
 
 	public void setCycleDuration(String cycleDuration) {
 		this.cycleDuration = cycleDuration;
+	}
+
+	public long getUserId() {
+		return userId;
+	}
+
+	public void setUserId(long userId) {
+		this.userId = userId;
 	}
 
 }

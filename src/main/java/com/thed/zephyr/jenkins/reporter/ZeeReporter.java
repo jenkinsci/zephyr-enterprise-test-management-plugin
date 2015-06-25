@@ -14,6 +14,7 @@ import com.thed.zephyr.jenkins.utils.rest.Cycle;
 import com.thed.zephyr.jenkins.utils.rest.Project;
 import com.thed.zephyr.jenkins.utils.rest.Release;
 import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
+
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -31,12 +32,14 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -56,7 +59,7 @@ public class ZeeReporter extends Notifier {
 	private Long projectId;
 	private Long releaseId;
 	private Long cycleId;
-	private String cycleDuration;
+	public String cycleDuration;
 	
     private ZephyrConfigModel zephyrData;
 
@@ -175,6 +178,7 @@ public class ZeeReporter extends Notifier {
         determineReleaseID(hostName);
         determineCycleID(hostName);
         determineCyclePrefix();
+        determineUserId(hostName, username, password);
         
         	Map<String, Boolean> zephyrTestCaseMap = new HashMap<String, Boolean>();
         	
@@ -238,6 +242,11 @@ public class ZeeReporter extends Notifier {
         logger.printf("%s Done.%n", pInfo);
         return true;
     }
+
+	private void determineUserId(String url, String usr, String pass) {
+		long userId = ServerInfo.getUserId(url, usr, pass);
+		zephyrData.setUserId(userId);
+	}
 
 	private void determineCyclePrefix() {
 		if (StringUtils.isNotBlank(cyclePrefix)) {
@@ -412,7 +421,7 @@ public class ZeeReporter extends Notifier {
 		
         @Override
         public String getDisplayName() {
-            return "Zephyr Enterprise Test Management";
+            return "Publish test result to Zephyr Enterprise";
         }
         
         public FormValidation doCheckProjectKey(@QueryParameter String value) {
@@ -565,11 +574,11 @@ public class ZeeReporter extends Notifier {
         	
             return m;
         }
-        public ListBoxModel doFillCycleDurationItems(@QueryParameter String releaseKey, @QueryParameter String serverAddress) {
+        public ListBoxModel doFillCycleDurationItems() {
         	ListBoxModel m = new ListBoxModel();
-        	m.add("30 days");
-        	m.add("7 days");
-        	m.add("1 day");
+        	m.add("30 days", "30days");
+        	m.add("7 days", "7days");
+        	m.add("1 day", "1day");
         	return m;
         }
     }

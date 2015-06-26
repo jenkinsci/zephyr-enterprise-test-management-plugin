@@ -576,9 +576,9 @@ public class ZeeReporter extends Notifier {
         }
         public ListBoxModel doFillCycleDurationItems() {
         	ListBoxModel m = new ListBoxModel();
-        	m.add("30 days", "30days");
-        	m.add("7 days", "7days");
-        	m.add("1 day", "1day");
+        	m.add("30 days");
+        	m.add("7 days");
+        	m.add("1 day");
         	return m;
         }
     }

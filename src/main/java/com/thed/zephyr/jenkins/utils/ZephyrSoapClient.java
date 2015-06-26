@@ -385,6 +385,10 @@ public class ZephyrSoapClient {
 				XMLGregorianCalendar endDate = DatatypeFactory.newInstance()
 						.newXMLGregorianCalendar(gCal);
 				
+				rCycle.setStartDate(startDate);
+				rCycle.setEndDate(endDate);
+
+				
 				XMLGregorianCalendar projectEndDate = projectById.getEndDate();
 				XMLGregorianCalendar releaseEndDate = releaseById.getEndDate();
 

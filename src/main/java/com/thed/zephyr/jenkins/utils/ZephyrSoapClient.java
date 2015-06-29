@@ -378,9 +378,9 @@ public class ZephyrSoapClient {
 						.newXMLGregorianCalendar(gCal);
 				
 				if (zephyrData.getCycleDuration().trim().equalsIgnoreCase("30 days")) {
-					gCal.add(Calendar.DAY_OF_MONTH, +30);
+					gCal.add(Calendar.DAY_OF_MONTH, +29);
 				} else if (zephyrData.getCycleDuration().trim().equalsIgnoreCase("7 days")) {
-					gCal.add(Calendar.DAY_OF_MONTH, +7);
+					gCal.add(Calendar.DAY_OF_MONTH, +6);
 				}
 				XMLGregorianCalendar endDate = DatatypeFactory.newInstance()
 						.newXMLGregorianCalendar(gCal);
@@ -406,7 +406,7 @@ public class ZephyrSoapClient {
 								
 								if (daysBtwnReleaseStartEndDate >= 30) {
 									GregorianCalendar gregorianCalendar = releaseEndDate.toGregorianCalendar();
-									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -30);
+									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -29);
 									rCycle.setStartDate(DatatypeFactory.newInstance()
 											.newXMLGregorianCalendar(gregorianCalendar));
 									rCycle.setEndDate(releaseEndDate);
@@ -422,7 +422,7 @@ public class ZephyrSoapClient {
 								
 								if (daysBtwnReleaseStartEndDate >= 7) {
 									GregorianCalendar gregorianCalendar = releaseEndDate.toGregorianCalendar();
-									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -7);
+									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -6);
 									rCycle.setStartDate(DatatypeFactory.newInstance()
 											.newXMLGregorianCalendar(gregorianCalendar));
 									rCycle.setEndDate(releaseEndDate);
@@ -459,7 +459,7 @@ public class ZephyrSoapClient {
 								
 								if (daysBtwnReleaseStartProjectEndDate >= 30) {
 									GregorianCalendar gregorianCalendar = projectEndDate.toGregorianCalendar();
-									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -30);
+									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -29);
 									rCycle.setStartDate(DatatypeFactory.newInstance()
 											.newXMLGregorianCalendar(gregorianCalendar));
 									rCycle.setEndDate(projectEndDate);
@@ -475,7 +475,7 @@ public class ZephyrSoapClient {
 								
 								if (daysBtwnReleaseStartProjectEndDate >= 7) {
 									GregorianCalendar gregorianCalendar = projectEndDate.toGregorianCalendar();
-									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -7);
+									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -6);
 									rCycle.setStartDate(DatatypeFactory.newInstance()
 											.newXMLGregorianCalendar(gregorianCalendar));
 									rCycle.setEndDate(projectEndDate);

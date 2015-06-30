@@ -169,7 +169,12 @@ public class Project {
 					
 					
 					JSONObject jsonObject = projArray.getJSONObject(i);
-					JSONArray members = jsonObject.getJSONArray("members");
+					JSONArray members = null;
+					
+					try {
+						members = jsonObject.getJSONArray("members");
+					} catch (Exception e) {
+					} 
 					
 					if (members == null || members.length() == 0) {
 						continue;

@@ -42,6 +42,7 @@ import com.thed.service.soap.ZephyrSoapService;
 import com.thed.service.soap.ZephyrSoapService_Service;
 import com.thed.zephyr.jenkins.model.TestCaseResultModel;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
+import com.thed.zephyr.jenkins.reporter.ZephyrConstants;
 import com.thed.zephyr.jenkins.reporter.ZeeReporter;
 
 public class ZephyrSoapClient {
@@ -55,25 +56,32 @@ public class ZephyrSoapClient {
 	private static String token;
 
 	private static void updateTestCaseExecution(Map<Long, Long> remoteTestcaseIdTestScheduleIdMap,
-			long testCaseId2, Boolean testStatus) {
-		long testCaseId = testCaseId2;
-
+			Map<Long, Boolean> testCaseIdResultMap) {
 		List<RemoteTestResult> testResults = new ArrayList<RemoteTestResult>();
-		RemoteTestResult remoteTestResult = new RemoteTestResult();
-		remoteTestResult.setReleaseTestScheduleId(Long
-				.toString(remoteTestcaseIdTestScheduleIdMap.get(testCaseId)));
-		remoteTestResult.setExecutionNotes("Update from Jenkins");
+		
+		Set<Long> testCaseIds = testCaseIdResultMap.keySet();
+		for (Iterator<Long> iterator = testCaseIds.iterator(); iterator
+				.hasNext();) {
+			Long testCaseId = iterator.next();
+			Boolean testStatus = testCaseIdResultMap.get(testCaseId);
 
-		if (testStatus) {
-			remoteTestResult.setExecutionStatus("1");
-		} else {
-			remoteTestResult.setExecutionStatus("2");
+			RemoteTestResult remoteTestResult = new RemoteTestResult();
+			remoteTestResult.setReleaseTestScheduleId(Long
+					.toString(remoteTestcaseIdTestScheduleIdMap.get(testCaseId)));
+			remoteTestResult.setExecutionNotes("Update from Jenkins");
+
+			if (testStatus) {
+				remoteTestResult.setExecutionStatus("1");
+			} else {
+				remoteTestResult.setExecutionStatus("2");
+			}
+
+			testResults.add(remoteTestResult);
+
 		}
 
-		testResults.add(remoteTestResult);
 		try {
-			List<RemoteFieldValue> updateTestStatus = client
-					.updateTestStatus(testResults, token);
+			client.updateTestStatus(testResults, token);
 		} catch (ZephyrServiceException e) {
 			e.printStackTrace();
 		}
@@ -130,7 +138,7 @@ public class ZephyrSoapClient {
 		String token = null;
 		URL wsdlURL = ZephyrSoapService_Service.WSDL_LOCATION;
 		String zephyrURL = zephyrData.getZephyrURL().trim();
-		if (zephyrData != null && zephyrData.getZephyrServerIPAddress() != null
+		if (zephyrData != null && zephyrURL != null
 				&& !zephyrURL.equals("")) {
 
 			File wsdlFile = new File(ZEPHYR_URL.replace("{SERVER}", zephyrURL));
@@ -333,16 +341,9 @@ public class ZephyrSoapClient {
 			remotePhase.setEndDate(endDate1);
 			Long cyclePhaseID = client.addPhaseToCycle(remotePhase, 1, token);
 
-			Set<Long> testCaseIds = testCaseIdResultMap.keySet();
 			Map<Long, Long> remoteTestcaseIdTestScheduleIdMap = fetchTestSchedules(zephyrData, cyclePhaseID);
+			updateTestCaseExecution(remoteTestcaseIdTestScheduleIdMap, testCaseIdResultMap);
 
-			for (Iterator<Long> iterator = testCaseIds.iterator(); iterator
-					.hasNext();) {
-				Long testCaseId = iterator.next();
-				Boolean testStatus = testCaseIdResultMap.get(testCaseId);
-
-				updateTestCaseExecution(remoteTestcaseIdTestScheduleIdMap, testCaseId, testStatus);
-			}
 
 		} catch (ZephyrServiceException e) {
 			e.printStackTrace();
@@ -351,7 +352,7 @@ public class ZephyrSoapClient {
 
 	private void createNewCycle(ZephyrConfigModel zephyrData)
 			throws DatatypeConfigurationException {
-		if (zephyrData.getCycleId() == ZeeReporter.NEW_CYCLE_KEY_IDENTIFIER) {
+		if (zephyrData.getCycleId() == ZephyrConstants.NEW_CYCLE_KEY_IDENTIFIER) {
 			RemoteProject projectById = null;
 			try {
 				projectById = client.getProjectById(
@@ -386,78 +387,26 @@ public class ZephyrSoapClient {
 						.newXMLGregorianCalendar(gCal);
 				
 				rCycle.setStartDate(startDate);
+				endDate.setHour(0);
+				endDate.setMinute(0);
+				endDate.setSecond(0);
+				endDate.setMillisecond(0);
 				rCycle.setEndDate(endDate);
 
 				
 				XMLGregorianCalendar projectEndDate = projectById.getEndDate();
-				XMLGregorianCalendar releaseEndDate = releaseById.getEndDate();
 
 				XMLGregorianCalendar projectStartDate = projectById.getStartDate();
-				XMLGregorianCalendar releaseStartDate = releaseById.getStartDate();
 
-				if (projectEndDate != null || releaseEndDate != null) {
-					
-					if(releaseEndDate != null) {
-						int days = Days.daysBetween(new LocalDate(gCal),new LocalDate(releaseEndDate.toGregorianCalendar())).getDays();
-						if (days < 0) {
-							int daysBtwnReleaseStartEndDate = Days.daysBetween(new LocalDate(releaseStartDate.toGregorianCalendar()),new LocalDate(releaseEndDate.toGregorianCalendar())).getDays();
-							
-							if (zephyrData.getCycleDuration().trim().equalsIgnoreCase("30 days")) {
-								
-								if (daysBtwnReleaseStartEndDate >= 30) {
-									GregorianCalendar gregorianCalendar = releaseEndDate.toGregorianCalendar();
-									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -29);
-									rCycle.setStartDate(DatatypeFactory.newInstance()
-											.newXMLGregorianCalendar(gregorianCalendar));
-									rCycle.setEndDate(releaseEndDate);
-
-								} else {
-									GregorianCalendar gregorianCalendar = releaseEndDate.toGregorianCalendar();
-									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -daysBtwnReleaseStartEndDate);
-									rCycle.setStartDate(DatatypeFactory.newInstance()
-											.newXMLGregorianCalendar(gregorianCalendar));
-									rCycle.setEndDate(releaseEndDate);
-								}
-							} else if (zephyrData.getCycleDuration().trim().equalsIgnoreCase("7 days")) {
-								
-								if (daysBtwnReleaseStartEndDate >= 7) {
-									GregorianCalendar gregorianCalendar = releaseEndDate.toGregorianCalendar();
-									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -6);
-									rCycle.setStartDate(DatatypeFactory.newInstance()
-											.newXMLGregorianCalendar(gregorianCalendar));
-									rCycle.setEndDate(releaseEndDate);
-
-								} else {
-									GregorianCalendar gregorianCalendar = releaseEndDate.toGregorianCalendar();
-									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -daysBtwnReleaseStartEndDate);
-									rCycle.setStartDate(DatatypeFactory.newInstance()
-											.newXMLGregorianCalendar(gregorianCalendar));
-									rCycle.setEndDate(releaseEndDate);
-								}
-							} else {
-								days = Days.daysBetween(new LocalDate(startDate.toGregorianCalendar()),new LocalDate(releaseEndDate.toGregorianCalendar())).getDays();
-								if (days >= 0) {
-									rCycle.setStartDate(startDate);
-									rCycle.setEndDate(endDate);
-
-								} else {
-									rCycle.setStartDate(releaseEndDate);
-									rCycle.setEndDate(releaseEndDate);
-								}
-							
-							}
-
-							
-						}
-					} else {
+					if(projectEndDate != null) {
 
 						int days = Days.daysBetween(new LocalDate(gCal),new LocalDate(projectEndDate.toGregorianCalendar())).getDays();
 						if (days < 0) {
-							int daysBtwnReleaseStartProjectEndDate = Days.daysBetween(new LocalDate(releaseStartDate.toGregorianCalendar()),new LocalDate(projectEndDate.toGregorianCalendar())).getDays();
+							int daysBtwnProjectStartEndDate = Days.daysBetween(new LocalDate(projectStartDate.toGregorianCalendar()),new LocalDate(projectEndDate.toGregorianCalendar())).getDays();
 							
 							if (zephyrData.getCycleDuration().trim().equalsIgnoreCase("30 days")) {
 								
-								if (daysBtwnReleaseStartProjectEndDate >= 30) {
+								if (daysBtwnProjectStartEndDate >= 30) {
 									GregorianCalendar gregorianCalendar = projectEndDate.toGregorianCalendar();
 									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -29);
 									rCycle.setStartDate(DatatypeFactory.newInstance()
@@ -466,14 +415,14 @@ public class ZephyrSoapClient {
 
 								} else {
 									GregorianCalendar gregorianCalendar = projectEndDate.toGregorianCalendar();
-									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -daysBtwnReleaseStartProjectEndDate);
+									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -daysBtwnProjectStartEndDate);
 									rCycle.setStartDate(DatatypeFactory.newInstance()
 											.newXMLGregorianCalendar(gregorianCalendar));
 									rCycle.setEndDate(projectEndDate);
 								}
 							} else if (zephyrData.getCycleDuration().trim().equalsIgnoreCase("7 days")) {
 								
-								if (daysBtwnReleaseStartProjectEndDate >= 7) {
+								if (daysBtwnProjectStartEndDate >= 7) {
 									GregorianCalendar gregorianCalendar = projectEndDate.toGregorianCalendar();
 									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -6);
 									rCycle.setStartDate(DatatypeFactory.newInstance()
@@ -482,7 +431,7 @@ public class ZephyrSoapClient {
 
 								} else {
 									GregorianCalendar gregorianCalendar = projectEndDate.toGregorianCalendar();
-									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -daysBtwnReleaseStartProjectEndDate);
+									gregorianCalendar.add(Calendar.DAY_OF_MONTH, -daysBtwnProjectStartEndDate);
 									rCycle.setStartDate(DatatypeFactory.newInstance()
 											.newXMLGregorianCalendar(gregorianCalendar));
 									rCycle.setEndDate(projectEndDate);
@@ -504,11 +453,6 @@ public class ZephyrSoapClient {
 						}
 					
 					}
-				} else {
-					rCycle.setStartDate(startDate);
-					rCycle.setEndDate(endDate);
-				}
-
 			} catch (DatatypeConfigurationException e) {
 				e.printStackTrace();
 			}
@@ -701,5 +645,32 @@ public class ZephyrSoapClient {
 			}
 		}
 		return tree;
+	}
+	
+	public static int fetchProjectDuration(ZephyrConfigModel zephyrData)
+			throws DatatypeConfigurationException {
+
+		String token = initializeClient(zephyrData);
+		int daysBtwnProjectStartEndDate = -1;
+		RemoteProject projectById = null;
+		try {
+			projectById = client.getProjectById(
+					zephyrData.getZephyrProjectId(), token);
+		} catch (ZephyrServiceException e) {
+			ZeeReporter.logger.print("Problem Getting Project ID");
+			return daysBtwnProjectStartEndDate;
+		}
+
+		XMLGregorianCalendar projectStartDate = projectById.getStartDate();
+		XMLGregorianCalendar projectEndDate = projectById.getEndDate();
+
+		if (projectEndDate != null) {
+			daysBtwnProjectStartEndDate = Days.daysBetween(
+					new LocalDate(projectStartDate.toGregorianCalendar()),
+					new LocalDate(projectEndDate.toGregorianCalendar()))
+					.getDays();
+		}
+
+		return daysBtwnProjectStartEndDate;
 	}
 }

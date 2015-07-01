@@ -6,20 +6,17 @@ import java.util.Set;
 public class ZephyrConfigModel {
 
 	private List<TestCaseResultModel> testcases;
-	private String zephyrURLString;
-	private Long zephyrProjectId = 1L;
-	private Long releaseId = 1L;
-	private Long cycleId = 1L;
-	private String userName = "test.manager";
-	private String password = "test.manager";
-	private String zephyrServerIPAddress = "127.0.0.1";
-	private int zephyrServerPort = 80;
 	private Set<String> packageNames;
+	private String userName;
+	private String password;
 	private String cyclePrefix;
-	private boolean createPackage;
 	private String zephyrURL;
 	private String cycleDuration;
+	private long zephyrProjectId;
+	private long releaseId;
+	private long cycleId;
 	private long userId;
+	private boolean createPackage;
 
 	public String getZephyrURL() {
 		return zephyrURL;
@@ -53,35 +50,27 @@ public class ZephyrConfigModel {
 		this.testcases = testcases;
 	}
 
-	public String getZephyrURLString() {
-		return zephyrURLString;
-	}
-
-	public void setZephyrURLString(String zephyrURLString) {
-		this.zephyrURLString = zephyrURLString;
-	}
-
-	public Long getZephyrProjectId() {
+	public long getZephyrProjectId() {
 		return zephyrProjectId;
 	}
 
-	public void setZephyrProjectId(Long zephyrProjectId) {
+	public void setZephyrProjectId(long zephyrProjectId) {
 		this.zephyrProjectId = zephyrProjectId;
 	}
 
-	public Long getReleaseId() {
+	public long getReleaseId() {
 		return releaseId;
 	}
 
-	public void setReleaseId(Long releaseId) {
+	public void setReleaseId(long releaseId) {
 		this.releaseId = releaseId;
 	}
 
-	public Long getCycleId() {
+	public long getCycleId() {
 		return cycleId;
 	}
 
-	public void setCycleId(Long cycleId) {
+	public void setCycleId(long cycleId) {
 		this.cycleId = cycleId;
 	}
 
@@ -99,22 +88,6 @@ public class ZephyrConfigModel {
 
 	public void setPassword(String password) {
 		this.password = password;
-	}
-
-	public String getZephyrServerIPAddress() {
-		return zephyrServerIPAddress;
-	}
-
-	public void setZephyrServerIPAddress(String zephyrServerIPAddress) {
-		this.zephyrServerIPAddress = zephyrServerIPAddress;
-	}
-
-	public int getZephyrServerPort() {
-		return zephyrServerPort;
-	}
-
-	public void setZephyrServerPort(int zephyrServerPort) {
-		this.zephyrServerPort = zephyrServerPort;
 	}
 
 	public Set<String> getPackageNames() {

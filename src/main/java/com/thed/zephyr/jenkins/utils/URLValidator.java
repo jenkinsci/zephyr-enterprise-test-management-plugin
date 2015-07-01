@@ -46,6 +46,10 @@ public class URLValidator {
 		}
 		return result;
 	}
+
+	public static String fetchURL(String serverAddress) {
+		return validateURL(serverAddress);
+	}
 	
 
 }

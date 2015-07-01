@@ -4,7 +4,15 @@ package com.thed.zephyr.jenkins.reporter;
  * @author mohan
  */
 
-import hudson.FilePath;
+import static com.thed.zephyr.jenkins.reporter.ZeeConstants.ADD_ZEPHYR_GLOBAL_CONFIG;
+import static com.thed.zephyr.jenkins.reporter.ZeeConstants.AUTOMATED;
+import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_PREFIX_DEFAULT;
+import static com.thed.zephyr.jenkins.reporter.ZeeConstants.EXTERNAL_ID;
+import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
+import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY_IDENTIFIER;
+import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_COMMENT;
+import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_PRIORITY;
+import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_TAG;
 import hudson.Launcher;
 import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
@@ -47,25 +55,14 @@ public class ZeeReporter extends Notifier {
 	private String cycleKey;;
 	private String cyclePrefix;
 	private String serverAddress;
-	private String username;
-	private String password;
 	private String cycleDuration;
-
-	private Long projectId;
-	private Long releaseId;
-	private Long cycleId;
-
-	private ZephyrConfigModel zephyrData;
-
-	private boolean debugFlag;
 	private boolean createPackage;
 
-	private FilePath workspace;
-
-	private static final String PluginName = new String("[ZephyrTestResultReporter]");
-	private final String pInfo = String.format("%s [INFO]", PluginName);
 
 	public static PrintStream logger;
+	private static final String PluginName = new String("[Zephyr Enterprise Tes tManagement]");
+	private final String pInfo = String.format("%s [INFO]", PluginName);
+
 
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
@@ -80,7 +77,7 @@ public class ZeeReporter extends Notifier {
 		this.cycleDuration = cycleDuration;
 	}
 
-	// @Override
+	@Override
 	public BuildStepMonitor getRequiredMonitorService() {
 		return BuildStepMonitor.NONE;
 	}
@@ -90,55 +87,73 @@ public class ZeeReporter extends Notifier {
 			final BuildListener listener) {
 		logger = listener.getLogger();
 		logger.printf("%s Examining test results...%n", pInfo);
-		debugLog(listener, String.format("Build result is %s%n", build
-				.getResult().toString()));
 
-		if (StringUtils.isBlank(serverAddress)
-				|| StringUtils.isBlank(projectKey)
-				|| StringUtils.isBlank(releaseKey)
-				|| StringUtils.isBlank(cycleKey)
-				|| ZephyrConstants.ADD_ZEPHYR_GLOBAL_CONFIG.equals(serverAddress.trim())
-				|| ZephyrConstants.ADD_ZEPHYR_GLOBAL_CONFIG.equals(projectKey.trim())
-				|| ZephyrConstants.ADD_ZEPHYR_GLOBAL_CONFIG.equals(releaseKey.trim())
-				|| ZephyrConstants.ADD_ZEPHYR_GLOBAL_CONFIG.equals(cycleKey.trim())) {
-
-			logger.println("Cannot Proceed");
+		if (!validateBuildConfig()) {
+			logger.println("Cannot Proceed. Please verify the job configuration");
 			return false;
 		}
 
-		List<ZephyrInstance> tempZephyrInstances = getDescriptor().getZephyrInstances();
+		ZephyrConfigModel zephyrConfig = initializeZephyrData();
+		ZephyrSoapClient client = new ZephyrSoapClient();
 
-		for (ZephyrInstance tZI : tempZephyrInstances) {
+		boolean prepareZephyrTests = prepareZephyrTests(build, zephyrConfig);
+		if (!prepareZephyrTests)
+			return prepareZephyrTests;
 
-			if (StringUtils.isNotBlank(tZI.getServerAddress()) && tZI.getServerAddress().trim().equals(serverAddress)) {
-				username = tZI.getUsername();
-				password = tZI.getPassword();
-				break;
-			}
-
+		try {
+			client.uploadTestResults(zephyrConfig);
+		} catch (DatatypeConfigurationException e) {
+			logger.printf("Error uploading test results to Zephyr");
 		}
 
-		initializeZephyrData();
+		logger.printf("%s Done.%n", pInfo);
+		return true;
+	}
 
+	/**
+	 * Fetches the credentials from the global configuration
+	 */
+	private void fetchCredentials(ZephyrConfigModel zephyrConfig) {
+		List<ZephyrInstance> zephyrServers = getDescriptor().getZephyrInstances();
 
+		for (ZephyrInstance zephyrServer : zephyrServers) {
+			if (StringUtils.isNotBlank(zephyrServer.getServerAddress()) && zephyrServer.getServerAddress().trim().equals(serverAddress)) {
+				String userName = zephyrServer.getUsername();
+				String password = zephyrServer.getPassword();
+				
+				zephyrConfig.setUserName(userName);
+				zephyrConfig.setPassword(password);
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Collects the surefire results and prepares Zephyr Tests
+	 * @param build
+	 * @param zephyrConfig
+	 * @return 
+	 */
+	private boolean prepareZephyrTests(final AbstractBuild build,
+			ZephyrConfigModel zephyrConfig) {
+		
+		boolean status = true;
 		TestResultAction testResultAction = build.getAction(TestResultAction.class);
 		Collection<SuiteResult> suites = testResultAction.getResult().getSuites();
 
 		if (suites == null) {
-			logger.println("Problem parsing JUnit test Results.");
-			logger.println("Problem parsing JUnit test Results.");
-			return false;
+			logger.println("JUnit test results are not found");
+			logger.println("Ensure JUnit Test Result Publisher action is added as a post build action");
+			status = false;
 		}
 
-		Map<String, Boolean> zephyrTestCaseMap = new HashMap<String, Boolean>();
 		Set<String> packageNames = new HashSet<String>();
 
-		prepareTestResults(suites, zephyrTestCaseMap, packageNames);
+		Map<String, Boolean> zephyrTestCaseMap = prepareTestResults(suites, packageNames);
 
 		logger.print("Total Test Cases : " + zephyrTestCaseMap.size());
-		ZephyrSoapClient client = new ZephyrSoapClient();
+		
 		List<TestCaseResultModel> testcases = new ArrayList<TestCaseResultModel>();
-
 		Set<String> keySet = zephyrTestCaseMap.keySet();
 
 		for (Iterator<String> iterator = keySet.iterator(); iterator.hasNext();) {
@@ -146,11 +161,11 @@ public class ZeeReporter extends Notifier {
 			Boolean isPassed = zephyrTestCaseMap.get(testCaseName);
 			RemoteTestcase testcase = new RemoteTestcase();
 			testcase.setName(testCaseName);
-			testcase.setComments("Created via Jenkins Zephyr Plugin!");
-			testcase.setAutomated(false);
-			testcase.setExternalId("99999");
-			testcase.setPriority("1");
-			testcase.setTag("API");
+			testcase.setComments(TEST_CASE_COMMENT);
+			testcase.setAutomated(AUTOMATED);
+			testcase.setExternalId(EXTERNAL_ID);
+			testcase.setPriority(TEST_CASE_PRIORITY);
+			testcase.setTag(TEST_CASE_TAG);
 
 			TestCaseResultModel caseWithStatus = new TestCaseResultModel();
 			caseWithStatus.setPassed(isPassed);
@@ -158,27 +173,41 @@ public class ZeeReporter extends Notifier {
 			testcases.add(caseWithStatus);
 		}
 
-		try {
-			zephyrData.setTestcases(testcases);
-			zephyrData.setPackageNames(packageNames);
-			zephyrData.setCreatePackage(createPackage);
-			client.manageTestResults1(zephyrData);
-		} catch (DatatypeConfigurationException e) {
-			e.printStackTrace();
-		}
-
-		// }
-		logger.printf("%s Done.%n", pInfo);
-		return true;
+		zephyrConfig.setTestcases(testcases);
+		zephyrConfig.setPackageNames(packageNames);
+		zephyrConfig.setCreatePackage(createPackage);
+		
+		return status;
 	}
 
 	/**
+	 * Validates the build configuration details
+	 */
+	private boolean validateBuildConfig() {
+		boolean valid = true;
+		if (StringUtils.isBlank(serverAddress)
+				|| StringUtils.isBlank(projectKey)
+				|| StringUtils.isBlank(releaseKey)
+				|| StringUtils.isBlank(cycleKey)
+				|| ADD_ZEPHYR_GLOBAL_CONFIG.equals(serverAddress.trim())
+				|| ADD_ZEPHYR_GLOBAL_CONFIG.equals(projectKey.trim())
+				|| ADD_ZEPHYR_GLOBAL_CONFIG.equals(releaseKey.trim())
+				|| ADD_ZEPHYR_GLOBAL_CONFIG.equals(cycleKey.trim())) {
+			valid = false;
+		}
+		return valid;
+	}
+
+	/**
+	 * 
+	 * Collects Surefire test results
 	 * @param suites
 	 * @param zephyrTestCaseMap
 	 * @param packageNames
+	 * @return 
 	 */
-	private void prepareTestResults(Collection<SuiteResult> suites,
-			Map<String, Boolean> zephyrTestCaseMap, Set<String> packageNames) {
+	private Map<String, Boolean> prepareTestResults(Collection<SuiteResult> suites,	Set<String> packageNames) {
+		Map<String,Boolean> zephyrTestCaseMap = new HashMap<String, Boolean>();
 		for (Iterator<SuiteResult> iterator = suites.iterator(); iterator
 				.hasNext();) {
 			SuiteResult suiteResult = iterator.next();
@@ -192,71 +221,75 @@ public class ZeeReporter extends Notifier {
 				}
 			}
 		}
+		return zephyrTestCaseMap;
 	}
 
-	private void determineUserId(String url, String usr, String pass) {
-		long userId = ServerInfo.getUserId(url, usr, pass);
-		zephyrData.setUserId(userId);
-	}
-
-	private void determineCyclePrefix() {
-		if (StringUtils.isNotBlank(cyclePrefix)) {
-			zephyrData.setCyclePrefix(cyclePrefix + "_");
-		} else {
-			zephyrData.setCyclePrefix("Automation_");
-		}
-	}
-
-	private void initializeZephyrData() {
-		zephyrData = new ZephyrConfigModel();
-		zephyrData.setUserName(username);
-		zephyrData.setPassword(password);
+	private ZephyrConfigModel initializeZephyrData() {
+		ZephyrConfigModel zephyrData = new ZephyrConfigModel();
+		
+		fetchCredentials(zephyrData);
 		
 		String hostName = URLValidator.fetchURL(serverAddress);
 		zephyrData.setZephyrURL(hostName);
+	
 		zephyrData.setCycleDuration(cycleDuration);
-		determineProjectID(hostName);
-		determineReleaseID(hostName);
-		determineCycleID(hostName);
-		determineCyclePrefix();
-		determineUserId(hostName, username, password);
-
+		determineProjectID(zephyrData);
+		determineReleaseID(zephyrData);
+		determineCycleID(zephyrData);
+		determineCyclePrefix(zephyrData);
+		determineUserId(zephyrData);
+	
+		return zephyrData;
 	}
 
-	private void determineCycleID(String hostName) {
+	/**
+	 * @param url
+	 * @param usr
+	 * @param pass
+	 */
+	private void determineUserId(ZephyrConfigModel zephyrData) {
+		long userId = ServerInfo.getUserId(zephyrData.getZephyrURL(), zephyrData.getUserName(), zephyrData.getPassword());
+		zephyrData.setUserId(userId);
+	}
 
-		if (cycleKey.equalsIgnoreCase(ZephyrConstants.NEW_CYCLE_KEY)) {
-			zephyrData.setCycleId(ZephyrConstants.NEW_CYCLE_KEY_IDENTIFIER);
-			return;
+	private void determineCyclePrefix(ZephyrConfigModel zephyrData) {
+		if (StringUtils.isNotBlank(cyclePrefix)) {
+			zephyrData.setCyclePrefix(cyclePrefix + "_");
+		} else {
+			zephyrData.setCyclePrefix(CYCLE_PREFIX_DEFAULT);
 		}
+	}
+
+	private void determineProjectID(ZephyrConfigModel zephyrData) {
+		long projectId = 0;
 		try {
-			cycleId = Long.parseLong(cycleKey);
+			projectId = Long.parseLong(projectKey);
 		} catch (NumberFormatException e1) {
-			logger.println("Cycle Key appears to be the name of the cycle");
+			logger.println("Project Key appears to be Name of the project");
 			try {
-				Long cycleIdByCycleNameAndReleaseId = Cycle
-						.getCycleIdByCycleNameAndReleaseId(cycleKey, releaseId,
-								hostName, username, password);
-				cycleId = cycleIdByCycleNameAndReleaseId;
+				Long projectIdByName = Project.getProjectIdByName(projectKey,
+						zephyrData.getZephyrURL(), zephyrData.getUserName(), zephyrData.getPassword());
+				projectId = projectIdByName;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			e1.printStackTrace();
 		}
-
-		zephyrData.setCycleId(cycleId);
+	
+		zephyrData.setZephyrProjectId(projectId);
 	}
 
-	private void determineReleaseID(String hostName) {
+	private void determineReleaseID(ZephyrConfigModel zephyrData) {
 
+		long releaseId = 0;
 		try {
 			releaseId = Long.parseLong(releaseKey);
 		} catch (NumberFormatException e1) {
 			logger.println("Release Key appears to be Name of the Release");
 			try {
-				Long releaseIdByReleaseNameProjectId = Release
-						.getReleaseIdByNameProjectId(releaseKey, projectId,
-								hostName, username, password);
+				long releaseIdByReleaseNameProjectId = Release
+						.getReleaseIdByNameProjectId(releaseKey, zephyrData.getZephyrProjectId(),
+								zephyrData.getZephyrURL(), zephyrData.getUserName(), zephyrData.getPassword());
 				releaseId = releaseIdByReleaseNameProjectId;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -266,34 +299,35 @@ public class ZeeReporter extends Notifier {
 		zephyrData.setReleaseId(releaseId);
 	}
 
-	private void determineProjectID(String hostName) {
+	private void determineCycleID(ZephyrConfigModel zephyrData) {
+	
+		if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
+			zephyrData.setCycleId(NEW_CYCLE_KEY_IDENTIFIER);
+			return;
+		}
+		long cycleId = 0;
 		try {
-			projectId = Long.parseLong(projectKey);
+			cycleId = Long.parseLong(cycleKey);
 		} catch (NumberFormatException e1) {
-			logger.println("Project Key appears to be Name of the project");
+			logger.println("Cycle Key appears to be the name of the cycle");
 			try {
-				Long projectIdByName = Project.getProjectIdByName(projectKey,
-						hostName, username, password);
-				projectId = projectIdByName;
+				Long cycleIdByCycleNameAndReleaseId = Cycle
+						.getCycleIdByCycleNameAndReleaseId(cycleKey, zephyrData.getReleaseId(),
+								zephyrData.getZephyrURL(), zephyrData.getUserName(), zephyrData.getPassword());
+				cycleId = cycleIdByCycleNameAndReleaseId;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			e1.printStackTrace();
 		}
-
-		zephyrData.setZephyrProjectId(projectId);
+	
+		zephyrData.setCycleId(cycleId);
 	}
 
-	void debugLog(final BuildListener listener, final String message) {
-		if (!this.debugFlag) {
-			return;
-		}
-		PrintStream logger = listener.getLogger();
-	}
 
 	@Override
-	public DescriptorImpl getDescriptor() {
-		return (DescriptorImpl) super.getDescriptor();
+	public ZeeDescriptor getDescriptor() {
+		return (ZeeDescriptor) super.getDescriptor();
 	}
 
 	public String getProjectKey() {
@@ -336,22 +370,6 @@ public class ZeeReporter extends Notifier {
 		this.serverAddress = serverAddress;
 	}
 
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
 	public String getCycleDuration() {
 		return cycleDuration;
 	}
@@ -359,4 +377,13 @@ public class ZeeReporter extends Notifier {
 	public void setCycleDuration(String cycleDuration) {
 		this.cycleDuration = cycleDuration;
 	}
+
+	public boolean isCreatePackage() {
+		return createPackage;
+	}
+
+	public void setCreatePackage(boolean createPackage) {
+		this.createPackage = createPackage;
+	}
+
 }

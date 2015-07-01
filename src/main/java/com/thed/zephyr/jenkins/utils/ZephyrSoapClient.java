@@ -42,15 +42,14 @@ import com.thed.service.soap.ZephyrSoapService;
 import com.thed.service.soap.ZephyrSoapService_Service;
 import com.thed.zephyr.jenkins.model.TestCaseResultModel;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
-import com.thed.zephyr.jenkins.reporter.ZephyrConstants;
+import com.thed.zephyr.jenkins.reporter.ZeeConstants;
 import com.thed.zephyr.jenkins.reporter.ZeeReporter;
 
 public class ZephyrSoapClient {
 
 	private static final String PACKAGE_FALSE_COMMENT = "Created via Jenkins";
 	private static final String PACKAGE_TRUE_COMMENT = "Created by Jenkins";
-	private static final QName SERVICE_NAME = new QName(
-			"http://soap.service.thed.com/", "ZephyrSoapService");
+	private static final QName SERVICE_NAME = new QName("http://soap.service.thed.com/", "ZephyrSoapService");
 	private static String ZEPHYR_URL = "{SERVER}/flex/services/soap/zephyrsoapservice-v1?wsdl";
 	private static ZephyrSoapService client;
 	private static String token;
@@ -63,7 +62,7 @@ public class ZephyrSoapClient {
 		for (Iterator<Long> iterator = testCaseIds.iterator(); iterator
 				.hasNext();) {
 			Long testCaseId = iterator.next();
-			Boolean testStatus = testCaseIdResultMap.get(testCaseId);
+			boolean testStatus = testCaseIdResultMap.get(testCaseId);
 
 			RemoteTestResult remoteTestResult = new RemoteTestResult();
 			remoteTestResult.setReleaseTestScheduleId(Long
@@ -232,7 +231,7 @@ public class ZephyrSoapClient {
 		return removeEnd;
 	}
 
-	public void manageTestResults1(ZephyrConfigModel zephyrData)
+	public void uploadTestResults(ZephyrConfigModel zephyrData)
 			throws DatatypeConfigurationException {
 
 		token = initializeClient(zephyrData);
@@ -352,7 +351,7 @@ public class ZephyrSoapClient {
 
 	private void createNewCycle(ZephyrConfigModel zephyrData)
 			throws DatatypeConfigurationException {
-		if (zephyrData.getCycleId() == ZephyrConstants.NEW_CYCLE_KEY_IDENTIFIER) {
+		if (zephyrData.getCycleId() == ZeeConstants.NEW_CYCLE_KEY_IDENTIFIER) {
 			RemoteProject projectById = null;
 			try {
 				projectById = client.getProjectById(
@@ -386,6 +385,10 @@ public class ZephyrSoapClient {
 				XMLGregorianCalendar endDate = DatatypeFactory.newInstance()
 						.newXMLGregorianCalendar(gCal);
 				
+				startDate.setHour(0);
+				startDate.setMinute(0);
+				startDate.setSecond(0);
+				startDate.setMillisecond(0);
 				rCycle.setStartDate(startDate);
 				endDate.setHour(0);
 				endDate.setMinute(0);

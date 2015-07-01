@@ -40,8 +40,7 @@ public class ServerInfo {
 	private static String INVALID_USER_ROLE = "User role should be manager or lead";
 	private static String VALID_USER_ROLE = "User authentication is successful";
 
-	public static boolean findServerAddressIsValidZephyrURL(
-			String hostNameWithProtocol) {
+	public static boolean findServerAddressIsValidZephyrURL(RestClient restClient) {
 		boolean status = false;
 		CloseableHttpClient httpclient = null;
 		try {
@@ -63,12 +62,10 @@ public class ServerInfo {
 		if (httpclient == null) {
 			return status;
 		}
-		HttpClientContext context = getClientContext(hostNameWithProtocol,
-				"test.manager", "test.maager");
 		HttpResponse response = null;
 		try {
 			String constructedURL = URL_GET_PROJECTS.replace("{SERVER}",
-					hostNameWithProtocol);
+					restClient.getUrl());
 
 			response = httpclient.execute(new HttpGet(constructedURL));
 		} catch (ClientProtocolException e) {
@@ -114,61 +111,17 @@ public class ServerInfo {
 
 	}
 
-	private static HttpClientContext getClientContext(
-			String hostAddressWithProtocol, String userName, String password) {
-		URL url;
-		HttpClientContext context = null;
-		try {
-			url = new URL(hostAddressWithProtocol);
-			HttpHost targetHost = new HttpHost(url.getHost(), url.getPort(),
-					url.getProtocol());
-			CredentialsProvider credsProvider = new BasicCredentialsProvider();
-			credsProvider.setCredentials(AuthScope.ANY,
-					new UsernamePasswordCredentials(userName, password));
-
-			AuthCache authCache = new BasicAuthCache();
-			authCache.put(targetHost, new BasicScheme());
-
-			context = HttpClientContext.create();
-			context.setCredentialsProvider(credsProvider);
-			context.setAuthCache(authCache);
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
-
-		return context;
-	}
-
-	public static Map<Boolean, String> validateCredentials(String zephyrURL,
-			String username, String password) {
+	public static Map<Boolean, String> validateCredentials(RestClient restClient) {
 
 		Map<Boolean, String> statusMap = new HashMap<Boolean, String>();
 		statusMap.put(false, INVALID_USER_CREDENTIALS);
 
-		CloseableHttpClient httpclient = null;
-		try {
-			SSLContextBuilder builder = new SSLContextBuilder();
-			builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-			SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
-					builder.build(),
-					SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-			httpclient = HttpClients.custom().setSSLSocketFactory(sslsf)
-					.build();
-		} catch (KeyManagementException e1) {
-			e1.printStackTrace();
-		} catch (NoSuchAlgorithmException e1) {
-			e1.printStackTrace();
-		} catch (KeyStoreException e1) {
-			e1.printStackTrace();
-		}
 
-		HttpClientContext context = getClientContext(zephyrURL, username,
-				password);
 		HttpResponse response = null;
 		try {
 			String constructedURL = URL_GET_USERS
-					.replace("{SERVER}", zephyrURL);
-			response = httpclient.execute(new HttpGet(constructedURL), context);
+					.replace("{SERVER}", restClient.getUrl());
+			response = restClient.getHttpclient().execute(new HttpGet(constructedURL), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -185,7 +138,7 @@ public class ServerInfo {
 
 				JSONObject userObj = new JSONObject(string);
 
-				if (userObj.getString("username").trim().equals(username)) {
+				if (userObj.getString("username").trim().equals(restClient.getUserName())) {
 					String userRole = userObj.getJSONArray("roles")
 							.getJSONObject(0).getString("name").trim();
 
@@ -227,35 +180,15 @@ public class ServerInfo {
 
 	}
 	
-	public static long getUserId(String zephyrURL,
-			String username, String password) {
+	public static long getUserId(RestClient restClient) {
 
 
 		long userId = 0;
-		CloseableHttpClient httpclient = null;
-		try {
-			SSLContextBuilder builder = new SSLContextBuilder();
-			builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-			SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
-					builder.build(),
-					SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-			httpclient = HttpClients.custom().setSSLSocketFactory(sslsf)
-					.build();
-		} catch (KeyManagementException e1) {
-			e1.printStackTrace();
-		} catch (NoSuchAlgorithmException e1) {
-			e1.printStackTrace();
-		} catch (KeyStoreException e1) {
-			e1.printStackTrace();
-		}
-
-		HttpClientContext context = getClientContext(zephyrURL, username,
-				password);
 		HttpResponse response = null;
 		try {
 			String constructedURL = URL_GET_USERS
-					.replace("{SERVER}", zephyrURL);
-			response = httpclient.execute(new HttpGet(constructedURL), context);
+					.replace("{SERVER}", restClient.getUrl());
+			response = restClient.getHttpclient().execute(new HttpGet(constructedURL), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -293,6 +226,6 @@ public class ServerInfo {
 	}
 	
 	public static void main(String[] args) {
-		System.out.println(getUserId("http://localhost", "test.lead", "test.lead"));
+		System.out.println(getUserId(new RestClient("http://localhost", "test.lead", "test.lead")));
 	}
 }

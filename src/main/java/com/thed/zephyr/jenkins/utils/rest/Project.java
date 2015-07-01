@@ -36,14 +36,12 @@ public class Project {
 
 	private static String URL_GET_PROJECTS = "{SERVER}/flex/services/rest/latest/project?status=2";
 	
-	public static void getProjectNameById(long id, String hostNameWithProtocol, String userName, String password) {
+	public static void getProjectNameById(long id, RestClient restClient) {
 
 
-		HttpClientContext context = getClientContext(hostNameWithProtocol, userName, password);
-		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		try {
-			response = client.execute(new HttpGet(hostNameWithProtocol + "/flex/services/rest/latest/project/" + id), context);
+			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/latest/project/" + id), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -74,15 +72,13 @@ public class Project {
 	
 	}
 	
-	public static Long getProjectIdByName(String projectName, String hostNameWithProtocol, String userName, String password) {
+	public static Long getProjectIdByName(String projectName, RestClient restClient) {
 
 		Long projectId = 0L;
 
-		HttpClientContext context = getClientContext(hostNameWithProtocol, userName, password);
-		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		try {
-			response = client.execute(new HttpGet(hostNameWithProtocol + "/flex/services/rest/latest/project?name=" + URLEncoder.encode(projectName, "utf-8")), context);
+			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/latest/project?name=" + URLEncoder.encode(projectName, "utf-8")), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -130,18 +126,16 @@ public class Project {
 		return projectId;
 	}
 	
-	public static Map<Long, String> getAllProjects(String hostNameWithProtocol, String userName, String password) {
+	public static Map<Long, String> getAllProjects(RestClient restClient) {
 
 
 		Map<Long, String> projects = new TreeMap<Long, String>();
 		
-		HttpClientContext context = getClientContext(hostNameWithProtocol, userName, password);
-		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		
-		final String url = URL_GET_PROJECTS.replace("{SERVER}", hostNameWithProtocol);
+		final String url = URL_GET_PROJECTS.replace("{SERVER}", restClient.getUrl());
 		try {
-			response = client.execute(new HttpGet(url), context);
+			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (HttpHostConnectException e) {
@@ -185,7 +179,7 @@ public class Project {
 						JSONObject member = members.getJSONObject(j);
 						
 						String user = member.getString("username");
-						if(user.trim().equalsIgnoreCase(userName.trim())) {
+						if(user.trim().equalsIgnoreCase(restClient.getUserName().trim())) {
 							isProjectAssignedToTheMember = true;
 							break;
 						}
@@ -219,29 +213,4 @@ public class Project {
 	
 		return projects;
 	}
-	
-	
-	private static HttpClientContext getClientContext(String hostAddressWithProtocol, String userName, String password) {
-		URL url;
-		HttpClientContext context = null;
-		try {
-			url = new URL(hostAddressWithProtocol);
-			HttpHost targetHost = new HttpHost(url.getHost(), url.getPort(), url.getProtocol());
-			CredentialsProvider credsProvider = new BasicCredentialsProvider();
-			credsProvider.setCredentials(AuthScope.ANY,
-					new UsernamePasswordCredentials(userName, password));
-			
-			AuthCache authCache = new BasicAuthCache();
-			authCache.put(targetHost, new BasicScheme());
-			
-			context = HttpClientContext.create();
-			context.setCredentialsProvider(credsProvider);
-			context.setAuthCache(authCache);
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
-		
-		return context;
-	}
-	
 }

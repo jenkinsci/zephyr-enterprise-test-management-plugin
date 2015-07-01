@@ -4,19 +4,23 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.thed.zephyr.jenkins.utils.rest.RestClient;
 import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 
 public class ConfigurationValidator {
 
-	public static boolean validateZephyrConfiguration(String serverAddress,
-			String username, String password) {
+	public static boolean validateZephyrConfiguration(RestClient restClient) {
 
 		boolean status = false;
-		if (StringUtils.isBlank(serverAddress)) {
+		String url = restClient.getUrl();
+		String userName = restClient.getUserName();
+		String password = restClient.getPassword();
+
+		if (StringUtils.isBlank(url)) {
 			return status;
 		}
 
-		if (StringUtils.isBlank(username)) {
+		if (StringUtils.isBlank(userName)) {
 			return status;
 		}
 
@@ -24,23 +28,23 @@ public class ConfigurationValidator {
 			return status;
 		}
 
-		if (!(serverAddress.trim().startsWith("https://") || serverAddress
+		if (!(url.trim().startsWith("https://") || url
 				.trim().startsWith("http://"))) {
 			return status;
 		}
 
-		String zephyrURL = URLValidator.validateURL(serverAddress);
+		String zephyrURL = URLValidator.validateURL(url);
 
 		if (!zephyrURL.startsWith("http")) {
 			return status;
 		}
 
-		if (!ServerInfo.findServerAddressIsValidZephyrURL(zephyrURL)) {
+		if (!ServerInfo.findServerAddressIsValidZephyrURL(restClient)) {
 			return status;
 		}
 
 		Map<Boolean, String> credentialValidationResultMap = ServerInfo
-				.validateCredentials(zephyrURL, username, password);
+				.validateCredentials(restClient);
 		if (credentialValidationResultMap.containsKey(false)) {
 			return status;
 		}

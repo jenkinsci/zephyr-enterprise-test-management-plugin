@@ -36,15 +36,13 @@ public class Cycle {
 	private static String URL_GET_CYCLES = "{SERVER}/flex/services/rest/latest/cycle";
 
 	
-	public static Long getCycleIdByCycleNameAndReleaseId(String cycleName, Long releaseId, String hostAddressWithProtocol, String userName, String password) {
+	public static Long getCycleIdByCycleNameAndReleaseId(String cycleName, Long releaseId, RestClient restClient) {
 
 		Long cycleId = 0L;
 
-		HttpClientContext context = getClientContext(hostAddressWithProtocol, userName, password);
-		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		try {
-			response = client.execute(new HttpGet(hostAddressWithProtocol + "/flex/services/rest/latest/cycle?name=" + URLEncoder.encode(cycleName, "utf-8") + "&releaseId=" + releaseId), context);
+			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/latest/cycle?name=" + URLEncoder.encode(cycleName, "utf-8") + "&releaseId=" + releaseId), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -93,18 +91,16 @@ public class Cycle {
 		return cycleId;
 	}
 	
-	public static Map<Long, String> getAllCyclesByReleaseID(Long releaseID, String hostAddressWithProtocol, String userName, String password) {
+	public static Map<Long, String> getAllCyclesByReleaseID(Long releaseID, RestClient restClient) {
 
 
 		Map<Long, String> cycles = new TreeMap<Long, String>();
 		
-		HttpClientContext context = getClientContext(hostAddressWithProtocol, userName, password);
-		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		
-		final String url = URL_GET_CYCLES.replace("{SERVER}", hostAddressWithProtocol) + "?releaseId=" + releaseID;
+		final String url = URL_GET_CYCLES.replace("{SERVER}", restClient.getUrl()) + "?releaseId=" + releaseID;
 		try {
-			response = client.execute(new HttpGet(url), context);
+			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -157,28 +153,5 @@ public class Cycle {
 		}
 	
 		return cycles;
-	}
-	
-	private static HttpClientContext getClientContext(String hostAddressWithProtocol, String userName, String password) {
-		URL url;
-		HttpClientContext context = null;
-		try {
-			url = new URL(hostAddressWithProtocol);
-			HttpHost targetHost = new HttpHost(url.getHost(), url.getPort(), url.getProtocol());
-			CredentialsProvider credsProvider = new BasicCredentialsProvider();
-			credsProvider.setCredentials(AuthScope.ANY,
-					new UsernamePasswordCredentials(userName, password));
-			
-			AuthCache authCache = new BasicAuthCache();
-			authCache.put(targetHost, new BasicScheme());
-			
-			context = HttpClientContext.create();
-			context.setCredentialsProvider(credsProvider);
-			context.setAuthCache(authCache);
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
-		
-		return context;
 	}
 }

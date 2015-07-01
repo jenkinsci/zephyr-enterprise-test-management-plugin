@@ -34,46 +34,20 @@ public class TestCaseUtil {
 
 	private static final String URL_GET_TEST_CASE_DETAILS = "{SERVER}/flex/services/rest/latest/testcase";
 	
-	private static HttpClientContext getClientContext(String hostAddressWithProtocol, String userName, String password) {
-		URL url;
-		HttpClientContext context = null;
-		try {
-			url = new URL(hostAddressWithProtocol);
-			HttpHost targetHost = new HttpHost(url.getHost(), url.getPort(), url.getProtocol());
-			CredentialsProvider credsProvider = new BasicCredentialsProvider();
-			credsProvider.setCredentials(AuthScope.ANY,
-					new UsernamePasswordCredentials(userName, password));
-			
-			AuthCache authCache = new BasicAuthCache();
-			authCache.put(targetHost, new BasicScheme());
-			
-			context = HttpClientContext.create();
-			context.setCredentialsProvider(credsProvider);
-			context.setAuthCache(authCache);
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
-		
-		return context;
-	}
-	
-	
-	public static List<TestCaseModel> getTestCaseDetails(String testCaseName, String hostAddressWithProtocol, String userName, String password) {
+	public static List<TestCaseModel> getTestCaseDetails(String testCaseName, RestClient restClient) {
 
 
 		List<TestCaseModel> testCaseDetails = null;
-		HttpClientContext context = getClientContext(hostAddressWithProtocol, userName, password);
-		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		
 		String url = null;
 		try {
-			url = URL_GET_TEST_CASE_DETAILS.replace("{SERVER}", hostAddressWithProtocol) + "?testcase.name=" + URLEncoder.encode(testCaseName, "utf-8");
+			url = URL_GET_TEST_CASE_DETAILS.replace("{SERVER}", restClient.getUrl()) + "?testcase.name=" + URLEncoder.encode(testCaseName, "utf-8");
 		} catch (UnsupportedEncodingException e1) {
 			e1.printStackTrace();
 		}
 		try {
-			response = client.execute(new HttpGet(url), context);
+			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

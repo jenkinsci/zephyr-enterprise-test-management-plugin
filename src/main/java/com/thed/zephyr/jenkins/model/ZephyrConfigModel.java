@@ -3,28 +3,21 @@ package com.thed.zephyr.jenkins.model;
 import java.util.List;
 import java.util.Set;
 
+import com.thed.zephyr.jenkins.utils.rest.RestClient;
+
 public class ZephyrConfigModel {
 
 	private List<TestCaseResultModel> testcases;
 	private Set<String> packageNames;
-	private String userName;
-	private String password;
 	private String cyclePrefix;
-	private String zephyrURL;
 	private String cycleDuration;
 	private long zephyrProjectId;
 	private long releaseId;
 	private long cycleId;
 	private long userId;
 	private boolean createPackage;
+	private RestClient restClient;
 
-	public String getZephyrURL() {
-		return zephyrURL;
-	}
-
-	public void setZephyrURL(String zephyrURL) {
-		this.zephyrURL = zephyrURL;
-	}
 
 	public boolean isCreatePackage() {
 		return createPackage;
@@ -74,22 +67,6 @@ public class ZephyrConfigModel {
 		this.cycleId = cycleId;
 	}
 
-	public String getUserName() {
-		return userName;
-	}
-
-	public void setUserName(String userName) {
-		this.userName = userName;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
 	public Set<String> getPackageNames() {
 		return packageNames;
 	}
@@ -112,6 +89,14 @@ public class ZephyrConfigModel {
 
 	public void setUserId(long userId) {
 		this.userId = userId;
+	}
+
+	public RestClient getRestClient() {
+		return restClient;
+	}
+
+	public void setRestClient(RestClient restClient) {
+		this.restClient = restClient;
 	}
 
 }

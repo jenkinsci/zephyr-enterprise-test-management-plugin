@@ -36,15 +36,13 @@ public class Release {
 	private static String URL_GET_RELEASES = "{SERVER}/flex/services/rest/latest/release";
 
 	
-	public static Long getReleaseIdByNameProjectId(String releaseName, Long projectId, String hostAddressWithProtocol, String userName, String password) {
+	public static Long getReleaseIdByNameProjectId(String releaseName, Long projectId, RestClient restClient) {
 
 		Long releaseId = 0L;
 
-		HttpClientContext context = getClientContext(hostAddressWithProtocol, userName, password);
-		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		try {
-			response = client.execute(new HttpGet(hostAddressWithProtocol + "/flex/services/rest/latest/release?name=" + URLEncoder.encode(releaseName, "utf-8") + "&project.id=" + projectId), context);
+			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/latest/release?name=" + URLEncoder.encode(releaseName, "utf-8") + "&project.id=" + projectId), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -92,18 +90,16 @@ public class Release {
 		return releaseId;
 	}
 	
-	public static Map<Long, String> getAllReleasesByProjectID(Long projectID, String hostAddressWithProtocol, String userName, String password) {
+	public static Map<Long, String> getAllReleasesByProjectID(Long projectID, RestClient restClient) {
 
 
 		Map<Long, String> releases = new TreeMap<Long, String>();
 		
-		HttpClientContext context = getClientContext(hostAddressWithProtocol, userName, password);
-		HttpClient client = HttpClientBuilder.create().build();
 		HttpResponse response = null;
 		
-		final String url = URL_GET_RELEASES.replace("{SERVER}", hostAddressWithProtocol) + "?project.id=" + projectID;
+		final String url = URL_GET_RELEASES.replace("{SERVER}", restClient.getUrl()) + "?project.id=" + projectID;
 		try {
-			response = client.execute(new HttpGet(url), context);
+			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -158,27 +154,4 @@ public class Release {
 		return releases;
 	}
 	
-	
-	private static HttpClientContext getClientContext(String hostAddressWithProtocol, String userName, String password) {
-		URL url;
-		HttpClientContext context = null;
-		try {
-			url = new URL(hostAddressWithProtocol);
-			HttpHost targetHost = new HttpHost(url.getHost(), url.getPort(), url.getProtocol());
-			CredentialsProvider credsProvider = new BasicCredentialsProvider();
-			credsProvider.setCredentials(AuthScope.ANY,
-					new UsernamePasswordCredentials(userName, password));
-			
-			AuthCache authCache = new BasicAuthCache();
-			authCache.put(targetHost, new BasicScheme());
-			
-			context = HttpClientContext.create();
-			context.setCredentialsProvider(credsProvider);
-			context.setAuthCache(authCache);
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
-		
-		return context;
-	}
 }

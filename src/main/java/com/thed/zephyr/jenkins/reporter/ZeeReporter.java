@@ -22,6 +22,7 @@ import hudson.tasks.junit.SuiteResult;
 import hudson.tasks.junit.TestResultAction;
 import hudson.tasks.junit.CaseResult;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +47,7 @@ import com.thed.zephyr.jenkins.utils.ZephyrSoapClient;
 import com.thed.zephyr.jenkins.utils.rest.Cycle;
 import com.thed.zephyr.jenkins.utils.rest.Project;
 import com.thed.zephyr.jenkins.utils.rest.Release;
+import com.thed.zephyr.jenkins.utils.rest.RestClient;
 import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 
 public class ZeeReporter extends Notifier {
@@ -97,8 +99,10 @@ public class ZeeReporter extends Notifier {
 		ZephyrSoapClient client = new ZephyrSoapClient();
 
 		boolean prepareZephyrTests = prepareZephyrTests(build, zephyrConfig);
-		if (!prepareZephyrTests)
+		if (!prepareZephyrTests) {
+			closeHTTPClient(zephyrConfig);
 			return prepareZephyrTests;
+		}
 
 		try {
 			client.uploadTestResults(zephyrConfig);
@@ -106,14 +110,27 @@ public class ZeeReporter extends Notifier {
 			logger.printf("Error uploading test results to Zephyr");
 		}
 
+		closeHTTPClient(zephyrConfig);
+
 		logger.printf("%s Done.%n", pInfo);
 		return true;
 	}
 
 	/**
+	 * @param zephyrConfig
+	 */
+	private void closeHTTPClient(ZephyrConfigModel zephyrConfig) {
+		try {
+			zephyrConfig.getRestClient().getHttpclient().close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
 	 * Fetches the credentials from the global configuration
 	 */
-	private void fetchCredentials(ZephyrConfigModel zephyrConfig) {
+	private void fetchCredentials(ZephyrConfigModel zephyrConfig, String url) {
 		List<ZephyrInstance> zephyrServers = getDescriptor().getZephyrInstances();
 
 		for (ZephyrInstance zephyrServer : zephyrServers) {
@@ -121,8 +138,9 @@ public class ZeeReporter extends Notifier {
 				String userName = zephyrServer.getUsername();
 				String password = zephyrServer.getPassword();
 				
-				zephyrConfig.setUserName(userName);
-				zephyrConfig.setPassword(password);
+				RestClient restClient = new RestClient(url, userName, password);
+				zephyrConfig.setRestClient(restClient);
+				
 				break;
 			}
 		}
@@ -227,10 +245,9 @@ public class ZeeReporter extends Notifier {
 	private ZephyrConfigModel initializeZephyrData() {
 		ZephyrConfigModel zephyrData = new ZephyrConfigModel();
 		
-		fetchCredentials(zephyrData);
 		
 		String hostName = URLValidator.fetchURL(serverAddress);
-		zephyrData.setZephyrURL(hostName);
+		fetchCredentials(zephyrData, hostName);
 	
 		zephyrData.setCycleDuration(cycleDuration);
 		determineProjectID(zephyrData);
@@ -248,7 +265,7 @@ public class ZeeReporter extends Notifier {
 	 * @param pass
 	 */
 	private void determineUserId(ZephyrConfigModel zephyrData) {
-		long userId = ServerInfo.getUserId(zephyrData.getZephyrURL(), zephyrData.getUserName(), zephyrData.getPassword());
+		long userId = ServerInfo.getUserId(zephyrData.getRestClient());
 		zephyrData.setUserId(userId);
 	}
 
@@ -267,8 +284,7 @@ public class ZeeReporter extends Notifier {
 		} catch (NumberFormatException e1) {
 			logger.println("Project Key appears to be Name of the project");
 			try {
-				Long projectIdByName = Project.getProjectIdByName(projectKey,
-						zephyrData.getZephyrURL(), zephyrData.getUserName(), zephyrData.getPassword());
+				Long projectIdByName = Project.getProjectIdByName(projectKey, zephyrData.getRestClient());
 				projectId = projectIdByName;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -288,8 +304,7 @@ public class ZeeReporter extends Notifier {
 			logger.println("Release Key appears to be Name of the Release");
 			try {
 				long releaseIdByReleaseNameProjectId = Release
-						.getReleaseIdByNameProjectId(releaseKey, zephyrData.getZephyrProjectId(),
-								zephyrData.getZephyrURL(), zephyrData.getUserName(), zephyrData.getPassword());
+						.getReleaseIdByNameProjectId(releaseKey, zephyrData.getZephyrProjectId(), zephyrData.getRestClient());
 				releaseId = releaseIdByReleaseNameProjectId;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -312,8 +327,7 @@ public class ZeeReporter extends Notifier {
 			logger.println("Cycle Key appears to be the name of the cycle");
 			try {
 				Long cycleIdByCycleNameAndReleaseId = Cycle
-						.getCycleIdByCycleNameAndReleaseId(cycleKey, zephyrData.getReleaseId(),
-								zephyrData.getZephyrURL(), zephyrData.getUserName(), zephyrData.getPassword());
+						.getCycleIdByCycleNameAndReleaseId(cycleKey, zephyrData.getReleaseId(), zephyrData.getRestClient());
 				cycleId = cycleIdByCycleNameAndReleaseId;
 			} catch (Exception e) {
 				e.printStackTrace();

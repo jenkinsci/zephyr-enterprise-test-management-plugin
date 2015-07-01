@@ -13,6 +13,7 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -37,6 +38,7 @@ import com.thed.zephyr.jenkins.utils.ZephyrSoapClient;
 import com.thed.zephyr.jenkins.utils.rest.Cycle;
 import com.thed.zephyr.jenkins.utils.rest.Project;
 import com.thed.zephyr.jenkins.utils.rest.Release;
+import com.thed.zephyr.jenkins.utils.rest.RestClient;
 import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 
 @Extension
@@ -46,8 +48,10 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	Map<Long, String> projects;
 	Map<Long, String> releases;
 	Map<Long, String> cycles;
+	private String tempServerAddress;
 	private String tempUserName;
 	private String tempPassword;
+	private RestClient restClient;
 
 	public List<ZephyrInstance> getZephyrInstances() {
 		return zephyrInstances;
@@ -92,9 +96,11 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 				zephyrInstance.setServerAddress(server);
 				zephyrInstance.setUsername(user);
 				zephyrInstance.setPassword(pass);
+				
+				RestClient restClient = new RestClient(URLValidator.validateURL(server), user, pass);
 
 				boolean zephyrServerValidation = ConfigurationValidator
-						.validateZephyrConfiguration(server, user, pass);
+						.validateZephyrConfiguration(restClient);
 				if (zephyrServerValidation) {
 					this.zephyrInstances.add(zephyrInstance);
 				}
@@ -112,15 +118,29 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			zephyrInstance.setUsername(user);
 			zephyrInstance.setPassword(pass);
 
+			RestClient restClient = new RestClient(URLValidator.validateURL(server), user, pass);
+
 			boolean zephyrServerValidation = ConfigurationValidator
-					.validateZephyrConfiguration(server, user, pass);
+					.validateZephyrConfiguration(restClient);
 			if (zephyrServerValidation) {
 				this.zephyrInstances.add(zephyrInstance);
 			}
 
 		}
 		save();
+		closeHTTPClient();
 		return super.configure(req, formData);
+	}
+
+	/**
+	 * 
+	 */
+	private void closeHTTPClient() {
+		try {
+			restClient.getHttpclient().close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -140,6 +160,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			@QueryParameter String serverAddress,
 			@QueryParameter String username, @QueryParameter String password) {
 
+
 		if (StringUtils.isBlank(serverAddress)) {
 			return FormValidation.error("Please enter the server name");
 		}
@@ -158,17 +179,18 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		}
 
 		String zephyrURL = URLValidator.validateURL(serverAddress);
+		RestClient restClient = new RestClient(zephyrURL, username, password);
 
 		if (!zephyrURL.startsWith("http")) {
 			return FormValidation.error(zephyrURL);
 		}
 
-		if (!ServerInfo.findServerAddressIsValidZephyrURL(zephyrURL)) {
+		if (!ServerInfo.findServerAddressIsValidZephyrURL(restClient)) {
 			return FormValidation.error("This is not a valid Zephyr Server");
 		}
 
 		Map<Boolean, String> credentialValidationResultMap = ServerInfo
-				.validateCredentials(zephyrURL, username, password);
+				.validateCredentials(restClient);
 		if (credentialValidationResultMap.containsKey(false)) {
 			return FormValidation.error(credentialValidationResultMap
 					.get(false));
@@ -200,8 +222,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			@QueryParameter String serverAddress) {
 		ListBoxModel m = new ListBoxModel();
 
-		String hostNameWithProtocol = URLValidator.validateURL(serverAddress);
-		;
+		tempServerAddress = URLValidator.validateURL(serverAddress);
 
 		if (StringUtils.isBlank(serverAddress)
 				|| serverAddress.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
@@ -210,15 +231,11 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			return m;
 		}
 
-		for (ZephyrInstance z : zephyrInstances) {
-			if (z.getServerAddress().trim().equals(serverAddress)) {
-				tempUserName = z.getUsername();
-				tempPassword = z.getPassword();
-			}
-		}
+		setCredentials(serverAddress);
+		
+		restClient = new RestClient(tempServerAddress, tempUserName, tempPassword);
 
-		projects = Project.getAllProjects(hostNameWithProtocol, tempUserName,
-				tempPassword);
+		projects = Project.getAllProjects(restClient);
 		Set<Entry<Long, String>> projectEntrySet = projects.entrySet();
 
 		for (Iterator<Entry<Long, String>> iterator = projectEntrySet
@@ -230,10 +247,22 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		return m;
 	}
 
+	/**
+	 * @param serverAddress
+	 */
+	private void setCredentials(String serverAddress) {
+		for (ZephyrInstance z : zephyrInstances) {
+			if (z.getServerAddress().trim().equals(serverAddress)) {
+				tempUserName = z.getUsername();
+				tempPassword = z.getPassword();
+			}
+		}
+	}
+
 	public ListBoxModel doFillReleaseKeyItems(
 			@QueryParameter String projectKey,
 			@QueryParameter String serverAddress) {
-		String hostNameWithProtocol = URLValidator.validateURL(serverAddress);
+		setCredentials(serverAddress);
 
 		ListBoxModel m = new ListBoxModel();
 
@@ -245,9 +274,10 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		}
 
 		long parseLong = Long.parseLong(projectKey);
-
-		releases = Release.getAllReleasesByProjectID(parseLong,
-				hostNameWithProtocol, tempUserName, tempPassword);
+		if(restClient == null ) {
+			restClient = new RestClient(serverAddress, tempPassword, tempPassword);
+		}
+		releases = Release.getAllReleasesByProjectID(parseLong,restClient);
 		Set<Entry<Long, String>> releaseEntrySet = releases.entrySet();
 
 		for (Iterator<Entry<Long, String>> iterator = releaseEntrySet
@@ -262,8 +292,8 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public ListBoxModel doFillCycleKeyItems(@QueryParameter String releaseKey,
 			@QueryParameter String serverAddress) {
-		String hostNameWithProtocol = URLValidator.validateURL(serverAddress);
-		;
+		setCredentials(serverAddress);
+
 		ListBoxModel m = new ListBoxModel();
 
 		if (StringUtils.isBlank(releaseKey)
@@ -272,11 +302,14 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			m.add(ADD_ZEPHYR_GLOBAL_CONFIG);
 			return m;
 		}
+		
+		if(restClient == null ) {
+			restClient = new RestClient(serverAddress, tempPassword, tempPassword);
+		}
 
 		long parseLong = Long.parseLong(releaseKey);
 
-		cycles = Cycle.getAllCyclesByReleaseID(parseLong, hostNameWithProtocol,
-				tempUserName, tempPassword);
+		cycles = Cycle.getAllCyclesByReleaseID(parseLong, restClient);
 		Set<Entry<Long, String>> releaseEntrySet = cycles.entrySet();
 
 		for (Iterator<Entry<Long, String>> iterator = releaseEntrySet
@@ -293,15 +326,18 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	public ListBoxModel doFillCycleDurationItems(
 			@QueryParameter String serverAddress,
 			@QueryParameter String projectKey) {
-		String hostNameWithProtocol = URLValidator.validateURL(serverAddress);
+		setCredentials(serverAddress);
+
 		long zephyrProjectId = Long.parseLong(projectKey);
 		ZephyrConfigModel zephyrData = new ZephyrConfigModel();
-		zephyrData.setZephyrURL(hostNameWithProtocol);
-		zephyrData.setUserName(tempUserName);
-		zephyrData.setPassword(tempPassword);
 		zephyrData.setZephyrProjectId(zephyrProjectId);
 		ListBoxModel m = new ListBoxModel();
 		int fetchProjectDuration = 1;
+		
+		if(restClient == null ) {
+			restClient = new RestClient(serverAddress, tempPassword, tempPassword);
+		}
+		zephyrData.setRestClient(restClient);
 		try {
 			fetchProjectDuration = ZephyrSoapClient
 					.fetchProjectDuration(zephyrData);

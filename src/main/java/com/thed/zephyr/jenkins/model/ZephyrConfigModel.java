@@ -16,7 +16,7 @@ public class ZephyrConfigModel {
 	private long cycleId;
 	private long userId;
 	private boolean createPackage;
-	private RestClient restClient;
+	private ZephyrInstance selectedZephyrServer;
 
 
 	public boolean isCreatePackage() {
@@ -91,12 +91,11 @@ public class ZephyrConfigModel {
 		this.userId = userId;
 	}
 
-	public RestClient getRestClient() {
-		return restClient;
+	public void setSelectedZephyrServer(ZephyrInstance selectedZephyrServer) {
+		this.selectedZephyrServer = selectedZephyrServer;
 	}
 
-	public void setRestClient(RestClient restClient) {
-		this.restClient = restClient;
+	public ZephyrInstance getSelectedZephyrServer() {
+		return selectedZephyrServer;
 	}
-
 }

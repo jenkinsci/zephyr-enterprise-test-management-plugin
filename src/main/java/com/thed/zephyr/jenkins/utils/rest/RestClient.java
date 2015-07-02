@@ -1,11 +1,7 @@
 package com.thed.zephyr.jenkins.utils.rest;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-
+import com.thed.zephyr.jenkins.model.ZephyrInstance;
+import com.thed.zephyr.jenkins.utils.URLValidator;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -21,7 +17,13 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
-import com.thed.zephyr.jenkins.utils.URLValidator;
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 
 public class RestClient {
 
@@ -33,12 +35,28 @@ public class RestClient {
 	
 	public RestClient(String url, String userName, String password) {
 		super();
-		
-		createClientContext(url, userName, password);
-		createHttpClient();
+
 		this.url = URLValidator.validateURL(url);
 		this.userName = userName;
 		this.password = password;
+
+		createClientContext(this.url, this.userName, this.password);
+		createHttpClient();
+	}
+
+	public RestClient(@Nonnull ZephyrInstance zephyrServer) {
+		this(zephyrServer.getServerAddress(), zephyrServer.getUsername(), zephyrServer.getPassword());
+	}
+
+	public void destroy(){
+		if(httpclient != null){
+			try {
+				httpclient.close();
+			} catch (IOException e) {
+				//TODO - Log it properly
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private HttpClientContext createClientContext(

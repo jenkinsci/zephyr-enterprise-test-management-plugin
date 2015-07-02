@@ -136,7 +136,11 @@ public class ZephyrSoapClient {
 
 		String token = null;
 		URL wsdlURL = ZephyrSoapService_Service.WSDL_LOCATION;
-		String zephyrURL = zephyrData.getRestClient().getUrl();
+
+		assert zephyrData.getSelectedZephyrServer() != null;
+		String zephyrURL = zephyrData.getSelectedZephyrServer().getServerAddress();
+		zephyrURL = URLValidator.validateURL(zephyrURL);
+
 		if (zephyrData != null && zephyrURL != null
 				&& !zephyrURL.equals("")) {
 
@@ -145,8 +149,7 @@ public class ZephyrSoapClient {
 				if (wsdlFile.exists()) {
 					wsdlURL = wsdlFile.toURI().toURL();
 				} else {
-					wsdlURL = new URL(
-							(ZEPHYR_URL.replace("{SERVER}", zephyrURL)));
+					wsdlURL = new URL((ZEPHYR_URL.replace("{SERVER}", zephyrURL)));
 				}
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
@@ -157,8 +160,8 @@ public class ZephyrSoapClient {
 				SERVICE_NAME);
 		client = ss.getZephyrSoapServiceImplPort();
 		try {
-			token = client.login(zephyrData.getRestClient().getUserName(),
-					zephyrData.getRestClient().getPassword());
+			token = client.login(zephyrData.getSelectedZephyrServer().getUsername(),
+					zephyrData.getSelectedZephyrServer().getPassword());
 		} catch (ZephyrServiceException e) {
 			e.printStackTrace();
 		}

@@ -7,12 +7,12 @@
   </parent>
 
   <groupId>org.jenkins-ci.plugins</groupId>
-  <artifactId>ZephyrEnterpriseTestManagement</artifactId>
+  <artifactId>zephyr-enterprise-test-management</artifactId>
   <version>1.0</version>
   <packaging>hpi</packaging>
   <name>Zephyr Enterprise Test Management plugin</name>
   <description>Creates Test Cases and update their statues for unit tests.</description>
-  
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/Zephyr+Enterprise+Test+Management+Plugin</url>
   <developers>
     <developer>
       <id>developer</id>

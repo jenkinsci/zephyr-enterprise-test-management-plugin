@@ -30,6 +30,6 @@ This plugin creates test cases and publishes test results in Zephyr Enterprise f
  1.	Configuring Zephyr Enterprise Test Management Plugin as a post-build action.
  1.	Triggering the job and publishing results in Zephyr
 
-## License
+### License
 
 Apache License 2.0

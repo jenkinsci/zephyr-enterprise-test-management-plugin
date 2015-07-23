@@ -99,9 +99,13 @@ public class ZeeReporter extends Notifier {
 		ZephyrSoapClient client = new ZephyrSoapClient();
 
 		boolean prepareZephyrTests = prepareZephyrTests(build, zephyrConfig);
-		if (!prepareZephyrTests) {
-			return prepareZephyrTests;
-		}
+		
+    	if(!prepareZephyrTests) {
+			logger.println("Error parsing surefire reports.");
+			logger.println("Please ensure \"Publish JUnit test result report is added\" as a post build action");
+			return false;
+    	}
+
 
 		try {
 			client.uploadTestResults(zephyrConfig);
@@ -109,7 +113,7 @@ public class ZeeReporter extends Notifier {
 			logger.printf("Error uploading test results to Zephyr");
 		}
 
-		logger.printf("%s Done.%n", pInfo);
+		logger.printf("%s Done uploading tests to Zephyr.%n", pInfo);
 		return true;
 	}
 
@@ -141,12 +145,17 @@ public class ZeeReporter extends Notifier {
 		
 		boolean status = true;
 		TestResultAction testResultAction = build.getAction(TestResultAction.class);
-		Collection<SuiteResult> suites = testResultAction.getResult().getSuites();
+		Collection<SuiteResult> suites = null;
+		
+		try {
+			suites = testResultAction.getResult().getSuites();
+		} catch (Exception e) {
+			logger.println(e.getMessage());
+			return false;
+		}
 
-		if (suites == null) {
-			logger.println("JUnit test results are not found");
-			logger.println("Ensure JUnit Test Result Publisher action is added as a post build action");
-			status = false;
+		if (suites == null || suites.size() == 0) {
+			return false;
 		}
 
 		Set<String> packageNames = new HashSet<String>();

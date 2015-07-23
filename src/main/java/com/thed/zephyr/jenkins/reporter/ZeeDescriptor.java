@@ -13,7 +13,6 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -45,12 +44,6 @@ import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 	private List<ZephyrInstance> zephyrInstances;
-	Map<Long, String> projects;
-	Map<Long, String> releases;
-	Map<Long, String> cycles;
-	private String tempServerAddress;
-	private String tempUserName;
-	private String tempPassword;
 
 	public List<ZephyrInstance> getZephyrInstances() {
 		return zephyrInstances;
@@ -88,7 +81,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 				JSONObject jObj = (JSONObject) iterator.next();
 				ZephyrInstance zephyrInstance = new ZephyrInstance();
 
-				String server = jObj.getString("serverAddress").trim();
+				String server = URLValidator.validateURL(jObj.getString("serverAddress").trim());
 				String user = jObj.getString("username").trim();
 				String pass = jObj.getString("password").trim();
 
@@ -98,7 +91,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 				RestClient restClient = null;
 				boolean zephyrServerValidation;
 				try {
-					restClient = new RestClient(URLValidator.validateURL(server), user, pass);
+					restClient = new RestClient(server, user, pass);
 					zephyrServerValidation = ConfigurationValidator.validateZephyrConfiguration(restClient);
 				} finally {
 					closeHTTPClient(restClient);
@@ -112,7 +105,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			JSONObject jObj = formData.getJSONObject("zephyrInstances");
 			ZephyrInstance zephyrInstance = new ZephyrInstance();
 
-			String server = jObj.getString("serverAddress").trim();
+			String server = URLValidator.validateURL(jObj.getString("serverAddress").trim());
 			String user = jObj.getString("username").trim();
 			String pass = jObj.getString("password").trim();
 
@@ -123,7 +116,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			RestClient restClient = null;
 			boolean zephyrServerValidation;
 			try {
-				restClient = new RestClient(URLValidator.validateURL(server), user, pass);
+				restClient = new RestClient(server, user, pass);
 				zephyrServerValidation = ConfigurationValidator
                         .validateZephyrConfiguration(restClient);
 			} finally {
@@ -183,10 +176,10 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		}
 
 		String zephyrURL = URLValidator.validateURL(serverAddress);
-		RestClient restClient = null;
 		Map<Boolean, String> credentialValidationResultMap;
+		RestClient restClient = null;
 		try {
-			restClient = new RestClient(zephyrURL, username, password);
+	    	restClient = getRestclient(serverAddress);
 
 			if (!zephyrURL.startsWith("http")) {
                 return FormValidation.error(zephyrURL);
@@ -232,8 +225,6 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			@QueryParameter String serverAddress) {
 		ListBoxModel m = new ListBoxModel();
 
-		tempServerAddress = URLValidator.validateURL(serverAddress);
-
 		if (StringUtils.isBlank(serverAddress)
 				|| serverAddress.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
 				|| (this.zephyrInstances.size() == 0)) {
@@ -241,11 +232,11 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			return m;
 		}
 
-		setCredentials(serverAddress);
 
 		RestClient restClient = null;
+		Map<Long, String> projects;
 		try {
-			restClient = new RestClient(tempServerAddress, tempUserName, tempPassword);
+	    	restClient = getRestclient(serverAddress);
 			projects = Project.getAllProjects(restClient);
 		} finally {
 			closeHTTPClient(restClient);
@@ -264,19 +255,29 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	/**
 	 * @param serverAddress
 	 */
-	private void setCredentials(String serverAddress) {
+	private ZephyrInstance fetchZephyrInstance(String serverAddress) {
+		
+		ZephyrInstance zephyrInstance = new ZephyrInstance();
+		zephyrInstance.setServerAddress(serverAddress);
+		String tempUserName = null;
+		String tempPassword = null;
+
 		for (ZephyrInstance z : zephyrInstances) {
 			if (z.getServerAddress().trim().equals(serverAddress)) {
 				tempUserName = z.getUsername();
 				tempPassword = z.getPassword();
 			}
 		}
+		zephyrInstance.setUsername(tempUserName);
+		zephyrInstance.setPassword(tempPassword);
+		return zephyrInstance;
+		
+		
 	}
 
 	public ListBoxModel doFillReleaseKeyItems(
 			@QueryParameter String projectKey,
 			@QueryParameter String serverAddress) {
-		setCredentials(serverAddress);
 
 		ListBoxModel listBoxModel = new ListBoxModel();
 
@@ -287,10 +288,16 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			return listBoxModel;
 		}
 
-		long parseLong = Long.parseLong(projectKey);
-		RestClient restClient = null;
+		long parseLong = 0;
 		try {
-			restClient = new RestClient(serverAddress, tempPassword, tempPassword);
+			parseLong = Long.parseLong(projectKey);
+		} catch (NumberFormatException e) {
+			return listBoxModel;
+		}
+		RestClient restClient = null;
+		Map<Long, String> releases;
+		try {
+	    	restClient = getRestclient(serverAddress);
 			releases = Release.getAllReleasesByProjectID(parseLong,restClient);
 		} finally {
 			closeHTTPClient(restClient);
@@ -309,7 +316,6 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public ListBoxModel doFillCycleKeyItems(@QueryParameter String releaseKey,
 											@QueryParameter String serverAddress) {
-		setCredentials(serverAddress);
 
 		ListBoxModel listBoxModel = new ListBoxModel();
 
@@ -320,11 +326,17 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			return listBoxModel;
 		}
 
-		long parseLong = Long.parseLong(releaseKey);
+		long parseLong;
+		try {
+			parseLong = Long.parseLong(releaseKey);
+		} catch (NumberFormatException e) {
+			return listBoxModel;
+		}
 
 		RestClient restClient = null;
+		Map<Long, String> cycles;
 		try {
-			restClient = new RestClient(serverAddress, tempPassword, tempPassword);
+	    	restClient = getRestclient(serverAddress);
 			cycles = Cycle.getAllCyclesByReleaseID(parseLong, restClient);
 		} finally {
 			closeHTTPClient(restClient);
@@ -346,19 +358,20 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	public ListBoxModel doFillCycleDurationItems(
 			@QueryParameter String serverAddress,
 			@QueryParameter String projectKey) {
-		setCredentials(serverAddress);
 
-		long zephyrProjectId = Long.parseLong(projectKey);
+		ListBoxModel listBoxModel = new ListBoxModel();
+		long zephyrProjectId;
+		try {
+			zephyrProjectId = Long.parseLong(projectKey);
+		} catch (NumberFormatException e1) {
+			listBoxModel.add(CYCLE_DURATION_1_DAY);
+			return listBoxModel;
+		}
 		ZephyrConfigModel zephyrData = new ZephyrConfigModel();
 		zephyrData.setZephyrProjectId(zephyrProjectId);
-		ListBoxModel listBoxModel = new ListBoxModel();
 		int fetchProjectDuration = 1;
 
-		ZephyrInstance zephyrInstance = new ZephyrInstance();
-		zephyrInstance.setServerAddress(serverAddress);
-		zephyrInstance.setUsername(tempUserName);
-		zephyrInstance.setPassword(tempPassword);
-		zephyrData.setSelectedZephyrServer(zephyrInstance);
+		zephyrData.setSelectedZephyrServer(fetchZephyrInstance(serverAddress));
 		try {
 			fetchProjectDuration = ZephyrSoapClient
 					.fetchProjectDuration(zephyrData);
@@ -383,5 +396,20 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		}
 		listBoxModel.add(CYCLE_DURATION_1_DAY);
 		return listBoxModel;
+	}
+	
+	private RestClient getRestclient(String serverAddress) {
+		String tempUserName = null;
+		String tempPassword = null;
+		for (ZephyrInstance z: zephyrInstances) {
+    		if(z.getServerAddress().trim().equals(serverAddress)) {
+    			tempUserName = z.getUsername();
+    			tempPassword = z.getPassword();
+    			break;
+    		}
+    	}
+			RestClient restClient = new RestClient(serverAddress, tempUserName, tempPassword);
+			
+			return restClient;
 	}
 }

@@ -18,10 +18,13 @@
     <f:select />
   </f:entry>
   
-  <f:entry title="Cycle Name Prefix" field="cyclePrefix">
-    <f:textbox field="cyclePrefix"/>
+  <f:entry title="${%Cycle Name Prefix}" field="cyclePrefix">
+    <f:textbox />
   </f:entry>
-  
+
+  <f:entry title="${%Cycle Build}" field="cycleBuild">
+      <f:textbox />
+    </f:entry>
   
   <f:entry title="Create Package Structure" field="createPackage">
     <f:checkbox field="createPackage" checked="${createPackage}"/>

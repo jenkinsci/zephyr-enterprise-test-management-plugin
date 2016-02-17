@@ -14,6 +14,7 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_COMMENT;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_PRIORITY;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_TAG;
 import hudson.Launcher;
+import hudson.Util;
 import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
 import hudson.tasks.BuildStepMonitor;
@@ -59,29 +60,56 @@ public class ZeeReporter extends Notifier {
 	private String serverAddress;
 	private String cycleDuration;
 	private boolean createPackage;
+	private String cycleBuild;
 
 
 	public static PrintStream logger;
-	private static final String PluginName = new String("[Zephyr Enterprise Tes tManagement]");
+	private static final String PluginName = new String("[Zephyr Enterprise Test Management]");
 	private final String pInfo = String.format("%s [INFO]", PluginName);
 
 
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
 			String releaseKey, String cycleKey, String cyclePrefix,
-			String cycleDuration, boolean createPackage) {
+			String cycleDuration, boolean createPackage, String cycleBuild) {
 		this.serverAddress = serverAddress;
 		this.projectKey = projectKey;
 		this.releaseKey = releaseKey;
 		this.cycleKey = cycleKey;
-		this.cyclePrefix = cyclePrefix;
+		this.cyclePrefix = Util.fixEmptyAndTrim(cyclePrefix);
 		this.createPackage = createPackage;
 		this.cycleDuration = cycleDuration;
+		this.cycleBuild = Util.fixEmptyAndTrim(cycleBuild);
 	}
 
 	@Override
 	public BuildStepMonitor getRequiredMonitorService() {
 		return BuildStepMonitor.NONE;
+	}
+
+	private void parseValues(final AbstractBuild build, final BuildListener listener){
+		try {
+			if(cycleBuild != null && !cycleBuild.isEmpty()){
+				cycleBuild = (build.getEnvironment(listener).expand(cycleBuild));
+			}else{
+				cycleBuild = String.valueOf(build.getNumber());
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		try{
+			if(cyclePrefix != null && !cyclePrefix.isEmpty()){
+				cyclePrefix = build.getEnvironment(listener).expand(cyclePrefix);
+			}
+		}catch(IOException e){
+			e.printStackTrace();
+		}catch (InterruptedException e){
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -95,7 +123,14 @@ public class ZeeReporter extends Notifier {
 			return false;
 		}
 
+		parseValues(build,listener);
+
 		ZephyrConfigModel zephyrConfig = initializeZephyrData();
+
+		zephyrConfig.setBuild(cycleBuild);
+
+
+
 		ZephyrSoapClient client = new ZephyrSoapClient();
 
 		boolean prepareZephyrTests = prepareZephyrTests(build, zephyrConfig);
@@ -105,6 +140,7 @@ public class ZeeReporter extends Notifier {
 			logger.println("Please ensure \"Publish JUnit test result report is added\" as a post build action");
 			return false;
     	}
+
 
 
 		try {
@@ -243,6 +279,7 @@ public class ZeeReporter extends Notifier {
 		RestClient restClient = buildRestClient(zephyrData);
 		try {
 			zephyrData.setCycleDuration(cycleDuration);
+			zephyrData.setBuild(cycleBuild);
 			determineProjectID(zephyrData, restClient);
 			determineReleaseID(zephyrData, restClient);
 			determineCycleID(zephyrData, restClient);

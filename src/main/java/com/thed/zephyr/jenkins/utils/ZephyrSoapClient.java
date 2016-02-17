@@ -240,6 +240,7 @@ public class ZephyrSoapClient {
 		token = initializeClient(zephyrData);
 		Map<String, RemoteRepositoryTree> packageRepositoryStructureMap = null;
 
+
 		createNewCycle(zephyrData);
 		packageRepositoryStructureMap = createPackageRepositoryStructure(zephyrData);
 
@@ -398,6 +399,7 @@ public class ZephyrSoapClient {
 				endDate.setSecond(0);
 				endDate.setMillisecond(0);
 				rCycle.setEndDate(endDate);
+				rCycle.setBuild(zephyrData.getBuild());
 
 				
 				XMLGregorianCalendar projectEndDate = projectById.getEndDate();

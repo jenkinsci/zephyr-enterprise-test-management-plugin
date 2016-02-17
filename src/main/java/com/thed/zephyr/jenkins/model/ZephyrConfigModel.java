@@ -16,6 +16,7 @@ public class ZephyrConfigModel {
 	private long cycleId;
 	private long userId;
 	private boolean createPackage;
+	private String build;
 	private ZephyrInstance selectedZephyrServer;
 
 
@@ -97,5 +98,13 @@ public class ZephyrConfigModel {
 
 	public ZephyrInstance getSelectedZephyrServer() {
 		return selectedZephyrServer;
+	}
+
+	public String getBuild() {
+		return build;
+	}
+
+	public void setBuild(String build) {
+		this.build = build;
 	}
 }

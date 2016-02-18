@@ -61,6 +61,8 @@ public class ZeeReporter extends Notifier {
 	private String cycleDuration;
 	private boolean createPackage;
 	private String cycleBuild;
+	private String _cycleBuild;
+	private String _cyclePrefix;
 
 
 	public static PrintStream logger;
@@ -80,6 +82,8 @@ public class ZeeReporter extends Notifier {
 		this.createPackage = createPackage;
 		this.cycleDuration = cycleDuration;
 		this.cycleBuild = Util.fixEmptyAndTrim(cycleBuild);
+		this._cycleBuild = this.cycleBuild;
+		this._cyclePrefix = this.cyclePrefix;
 	}
 
 	@Override
@@ -90,9 +94,9 @@ public class ZeeReporter extends Notifier {
 	private void parseValues(final AbstractBuild build, final BuildListener listener){
 		try {
 			if(cycleBuild != null && !cycleBuild.isEmpty()){
-				cycleBuild = (build.getEnvironment(listener).expand(cycleBuild));
+				_cycleBuild = build.getEnvironment(listener).expand(cycleBuild);
 			}else{
-				cycleBuild = String.valueOf(build.getNumber());
+				_cycleBuild = String.valueOf(build.getNumber());
 			}
 
 		} catch (IOException e) {
@@ -103,7 +107,7 @@ public class ZeeReporter extends Notifier {
 
 		try{
 			if(cyclePrefix != null && !cyclePrefix.isEmpty()){
-				cyclePrefix = build.getEnvironment(listener).expand(cyclePrefix);
+				_cyclePrefix = build.getEnvironment(listener).expand(cyclePrefix);
 			}
 		}catch(IOException e){
 			e.printStackTrace();
@@ -126,10 +130,6 @@ public class ZeeReporter extends Notifier {
 		parseValues(build,listener);
 
 		ZephyrConfigModel zephyrConfig = initializeZephyrData();
-
-		zephyrConfig.setBuild(cycleBuild);
-
-
 
 		ZephyrSoapClient client = new ZephyrSoapClient();
 
@@ -279,7 +279,7 @@ public class ZeeReporter extends Notifier {
 		RestClient restClient = buildRestClient(zephyrData);
 		try {
 			zephyrData.setCycleDuration(cycleDuration);
-			zephyrData.setBuild(cycleBuild);
+			zephyrData.setBuild(_cycleBuild);
 			determineProjectID(zephyrData, restClient);
 			determineReleaseID(zephyrData, restClient);
 			determineCycleID(zephyrData, restClient);
@@ -303,8 +303,8 @@ public class ZeeReporter extends Notifier {
 	}
 
 	private void determineCyclePrefix(ZephyrConfigModel zephyrData) {
-		if (StringUtils.isNotBlank(cyclePrefix)) {
-			zephyrData.setCyclePrefix(cyclePrefix + "_");
+		if (StringUtils.isNotBlank(_cyclePrefix)) {
+			zephyrData.setCyclePrefix(_cyclePrefix + "_");
 		} else {
 			zephyrData.setCyclePrefix(CYCLE_PREFIX_DEFAULT);
 		}
@@ -433,4 +433,11 @@ public class ZeeReporter extends Notifier {
 		this.createPackage = createPackage;
 	}
 
+	public String getCycleBuild() {
+		return cycleBuild;
+	}
+
+	public void setCycleBuild(String cycleBuild) {
+		this.cycleBuild = cycleBuild;
+	}
 }

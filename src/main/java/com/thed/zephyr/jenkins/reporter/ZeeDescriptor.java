@@ -179,12 +179,12 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		Map<Boolean, String> credentialValidationResultMap;
 		RestClient restClient = null;
 		try {
-	    	restClient = getRestclient(serverAddress);
 
 			if (!zephyrURL.startsWith("http")) {
                 return FormValidation.error(zephyrURL);
             }
 
+			restClient = new RestClient(serverAddress, username, password);
 			if (!ServerInfo.findServerAddressIsValidZephyrURL(restClient)) {
                 return FormValidation.error("This is not a valid Zephyr Server");
             }

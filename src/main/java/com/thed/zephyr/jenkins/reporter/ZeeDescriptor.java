@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 
@@ -44,6 +46,7 @@ import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 	private List<ZephyrInstance> zephyrInstances;
+	private Logger logger = Logger.getLogger(ZeeDescriptor.class.getName());
 
 	public List<ZephyrInstance> getZephyrInstances() {
 		return zephyrInstances;
@@ -158,6 +161,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			@QueryParameter String username, @QueryParameter String password) {
 
 
+		logger.log(Level.ALL, "logging...");
 		if (StringUtils.isBlank(serverAddress)) {
 			return FormValidation.error("Please enter the server name");
 		}
@@ -179,7 +183,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		Map<Boolean, String> credentialValidationResultMap;
 		RestClient restClient = null;
 		try {
-	    	restClient = getRestclient(serverAddress);
+	    	restClient = new RestClient(serverAddress, username, password);
 
 			if (!zephyrURL.startsWith("http")) {
                 return FormValidation.error(zephyrURL);

@@ -33,7 +33,7 @@ import org.json.JSONObject;
 
 public class Cycle {
 
-	private static String URL_GET_CYCLES = "{SERVER}/flex/services/rest/latest/cycle";
+	private static String URL_GET_CYCLES = "{SERVER}/flex/services/rest/v1/cycle";
 
 	
 	public static Long getCycleIdByCycleNameAndReleaseId(String cycleName, Long releaseId, RestClient restClient) {
@@ -42,7 +42,7 @@ public class Cycle {
 
 		HttpResponse response = null;
 		try {
-			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/latest/cycle?name=" + URLEncoder.encode(cycleName, "utf-8") + "&releaseId=" + releaseId), restClient.getContext());
+			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/v1/cycle?name=" + URLEncoder.encode(cycleName, "utf-8") + "&releaseId=" + releaseId), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

@@ -33,7 +33,7 @@ import org.json.JSONObject;
 
 public class Release {
 
-	private static String URL_GET_RELEASES = "{SERVER}/flex/services/rest/latest/release";
+	private static String URL_GET_RELEASES = "{SERVER}/flex/services/rest/v1/release";
 
 	
 	public static Long getReleaseIdByNameProjectId(String releaseName, Long projectId, RestClient restClient) {
@@ -42,7 +42,7 @@ public class Release {
 
 		HttpResponse response = null;
 		try {
-			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/latest/release?name=" + URLEncoder.encode(releaseName, "utf-8") + "&project.id=" + projectId), restClient.getContext());
+			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/v1/release?name=" + URLEncoder.encode(releaseName, "utf-8") + "&project.id=" + projectId), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -144,7 +144,7 @@ public class Release {
 			
 			releases.put(0L, "No Release");
 			try {
-				throw new ClientProtocolException("Unexpected response status: "
+					throw new ClientProtocolException("Unexpected response status: "
 						+ statusCode);
 			} catch (ClientProtocolException e) {
 				e.printStackTrace();

@@ -32,7 +32,7 @@ import com.thed.zephyr.jenkins.model.TestCaseModel;
 
 public class TestCaseUtil {
 
-	private static final String URL_GET_TEST_CASE_DETAILS = "{SERVER}/flex/services/rest/latest/testcase";
+	private static final String URL_GET_TEST_CASE_DETAILS = "{SERVER}/flex/services/rest/v1/testcase";
 	
 	public static List<TestCaseModel> getTestCaseDetails(String testCaseName, RestClient restClient) {
 

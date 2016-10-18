@@ -11,7 +11,7 @@ import hudson.model.AbstractProject;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
+import hudson.util.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;

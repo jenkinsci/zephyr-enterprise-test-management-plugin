@@ -33,9 +33,9 @@ import org.json.JSONObject;
 
 public class ServerInfo {
 
-	private static String URL_GET_PROJECTS = "{SERVER}/flex/services/rest/latest/info";
-	private static String URL_GET_USERS = "{SERVER}/flex/services/rest/latest/user/current";
-	private static String USER_NOT_FOUND_MSG = "errorCode";
+	private static String URL_GET_PROJECTS = "{SERVER}/flex/services/rest/v1/info";
+	private static String URL_GET_USERS = "{SERVER}/flex/services/rest/v1/user/current";
+	private static String ERROR_CODE_FORBIDDEN = "Forbidden";
 	private static String INVALID_USER_CREDENTIALS = "Invalid user credentials";
 	private static String INVALID_USER_ROLE = "User role should be manager or lead";
 	private static String VALID_USER_ROLE = "User authentication is successful";
@@ -64,7 +64,7 @@ public class ServerInfo {
 		}
 		HttpResponse response = null;
 		try {
-			String constructedURL = URL_GET_PROJECTS.replace("{SERVER}",
+			String constructedURL = URL_GET_USERS.replace("{SERVER}",
 					restClient.getUrl());
 
 			response = httpclient.execute(new HttpGet(constructedURL));
@@ -92,7 +92,7 @@ public class ServerInfo {
 			String string = null;
 			try {
 				string = EntityUtils.toString(entity, "utf-8");
-				if (string.contains(USER_NOT_FOUND_MSG))
+				if (string.contains(ERROR_CODE_FORBIDDEN))
 					status = true;
 			} catch (ParseException e) {
 				e.printStackTrace();

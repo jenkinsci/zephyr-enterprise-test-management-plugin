@@ -34,14 +34,14 @@ import org.json.JSONObject;
 
 public class Project {
 
-	private static String URL_GET_PROJECTS = "{SERVER}/flex/services/rest/latest/project?status=2";
+	private static String URL_GET_PROJECTS = "{SERVER}/flex/services/rest/v1/project?status=2";
 	
 	public static void getProjectNameById(long id, RestClient restClient) {
 
 
 		HttpResponse response = null;
 		try {
-			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/latest/project/" + id), restClient.getContext());
+			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/v1/project/" + id), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -78,7 +78,7 @@ public class Project {
 
 		HttpResponse response = null;
 		try {
-			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/latest/project?name=" + URLEncoder.encode(projectName, "utf-8")), restClient.getContext());
+			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/v1/project?name=" + URLEncoder.encode(projectName, "utf-8")), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

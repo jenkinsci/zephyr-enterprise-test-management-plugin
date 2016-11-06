@@ -92,7 +92,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 				boolean zephyrServerValidation;
 				try {
 					restClient = new RestClient(server, user, pass);
-					zephyrServerValidation = ConfigurationValidator.validateZephyrConfiguration(restClient);
+					zephyrServerValidation = ConfigurationValidator.validateZephyrConfiguration(restClient, getZephyrRestVersion(restClient));
 				} finally {
 					closeHTTPClient(restClient);
 				}
@@ -118,7 +118,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			try {
 				restClient = new RestClient(server, user, pass);
 				zephyrServerValidation = ConfigurationValidator
-                        .validateZephyrConfiguration(restClient);
+                        .validateZephyrConfiguration(restClient, getZephyrRestVersion(restClient));
 			} finally {
 				closeHTTPClient(restClient);
 			}
@@ -190,7 +190,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
             }
 
 			credentialValidationResultMap = ServerInfo
-                    .validateCredentials(restClient);
+                    .validateCredentials(restClient, getZephyrRestVersion(restClient));
 		} finally {
 			closeHTTPClient(restClient);
 		}
@@ -200,6 +200,18 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		}
 
 		return FormValidation.ok("Connection to Zephyr has been validated");
+	}
+
+	private String getZephyrRestVersion(RestClient restClient) {
+			String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
+			String zephyrRestVersion;
+			if (zephyrVersion.equals("4.8")) {
+				zephyrRestVersion = "v1";
+			} else {
+				zephyrRestVersion = "latest";
+			}
+		
+		return zephyrRestVersion;
 	}
 
 	public ListBoxModel doFillServerAddressItems(
@@ -237,7 +249,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		Map<Long, String> projects;
 		try {
 	    	restClient = getRestclient(serverAddress);
-			projects = Project.getAllProjects(restClient);
+			projects = Project.getAllProjects(restClient, getZephyrRestVersion(restClient));
 		} finally {
 			closeHTTPClient(restClient);
 		}
@@ -298,7 +310,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		Map<Long, String> releases;
 		try {
 	    	restClient = getRestclient(serverAddress);
-			releases = Release.getAllReleasesByProjectID(parseLong,restClient);
+			releases = Release.getAllReleasesByProjectID(parseLong,restClient, getZephyrRestVersion(restClient));
 		} finally {
 			closeHTTPClient(restClient);
 		}
@@ -337,7 +349,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		Map<Long, String> cycles;
 		try {
 	    	restClient = getRestclient(serverAddress);
-			cycles = Cycle.getAllCyclesByReleaseID(parseLong, restClient);
+			cycles = Cycle.getAllCyclesByReleaseID(parseLong, restClient, getZephyrRestVersion(restClient));
 		} finally {
 			closeHTTPClient(restClient);
 		}

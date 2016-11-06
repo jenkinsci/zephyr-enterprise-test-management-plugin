@@ -9,7 +9,7 @@ import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 
 public class ConfigurationValidator {
 
-	public static boolean validateZephyrConfiguration(RestClient restClient) {
+	public static boolean validateZephyrConfiguration(RestClient restClient, String restVersion) {
 
 		boolean status = false;
 		String url = restClient.getUrl();
@@ -44,7 +44,7 @@ public class ConfigurationValidator {
 		}
 
 		Map<Boolean, String> credentialValidationResultMap = ServerInfo
-				.validateCredentials(restClient);
+				.validateCredentials(restClient, restVersion);
 		if (credentialValidationResultMap.containsKey(false)) {
 			return status;
 		}

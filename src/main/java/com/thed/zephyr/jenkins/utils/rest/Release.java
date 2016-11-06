@@ -1,6 +1,7 @@
 package com.thed.zephyr.jenkins.utils.rest;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -33,16 +34,24 @@ import org.json.JSONObject;
 
 public class Release {
 
-	private static String URL_GET_RELEASES = "{SERVER}/flex/services/rest/v1/release";
+	private static String URL_GET_RELEASES = "{SERVER}/flex/services/rest/{REST_VERSION}/release";
 
 	
-	public static Long getReleaseIdByNameProjectId(String releaseName, Long projectId, RestClient restClient) {
+	public static Long getReleaseIdByNameProjectId(String releaseName, Long projectId, RestClient restClient, String restVersion) {
 
 		Long releaseId = 0L;
 
+		String url = null;
+		try {
+			url = URL_GET_RELEASES.replace("{SERVER}", restClient.getUrl()).replace("{REST_VERSION}", restVersion) + "?name=" + URLEncoder.encode(releaseName, "utf-8") + "&project.id=" + projectId;
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
 		HttpResponse response = null;
 		try {
-			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/v1/release?name=" + URLEncoder.encode(releaseName, "utf-8") + "&project.id=" + projectId), restClient.getContext());
+			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -90,14 +99,14 @@ public class Release {
 		return releaseId;
 	}
 	
-	public static Map<Long, String> getAllReleasesByProjectID(Long projectID, RestClient restClient) {
+	public static Map<Long, String> getAllReleasesByProjectID(Long projectID, RestClient restClient, String restVersion) {
 
 
 		Map<Long, String> releases = new TreeMap<Long, String>();
 		
 		HttpResponse response = null;
 		
-		final String url = URL_GET_RELEASES.replace("{SERVER}", restClient.getUrl()) + "?project.id=" + projectID;
+		final String url = URL_GET_RELEASES.replace("{SERVER}", restClient.getUrl()).replace("{REST_VERSION}", restVersion) + "?project.id=" + projectID;
 		try {
 			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {

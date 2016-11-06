@@ -1,6 +1,7 @@
 package com.thed.zephyr.jenkins.utils.rest;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -34,14 +35,16 @@ import org.json.JSONObject;
 
 public class Project {
 
-	private static String URL_GET_PROJECTS = "{SERVER}/flex/services/rest/v1/project?status=2";
+	private static String URL_GET_PROJECTS = "{SERVER}/flex/services/rest/{REST_VERSION}/project";
 	
-	public static void getProjectNameById(long id, RestClient restClient) {
+	public static void getProjectNameById(long id, RestClient restClient, String restVersion) {
 
+
+		final String url = URL_GET_PROJECTS.replace("{SERVER}", restClient.getUrl()).replace("{REST_VERSION}", restVersion) + "/" + id;
 
 		HttpResponse response = null;
 		try {
-			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/v1/project/" + id), restClient.getContext());
+			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -72,13 +75,20 @@ public class Project {
 	
 	}
 	
-	public static Long getProjectIdByName(String projectName, RestClient restClient) {
+	public static Long getProjectIdByName(String projectName, RestClient restClient, String restVersion) {
 
 		Long projectId = 0L;
 
+		String url = null;
+		try {
+			url = URL_GET_PROJECTS.replace("{SERVER}", restClient.getUrl()).replace("{REST_VERSION}", restVersion) + "?name=" + URLEncoder.encode(projectName, "utf-8");
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		HttpResponse response = null;
 		try {
-			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/v1/project?name=" + URLEncoder.encode(projectName, "utf-8")), restClient.getContext());
+			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -126,14 +136,14 @@ public class Project {
 		return projectId;
 	}
 	
-	public static Map<Long, String> getAllProjects(RestClient restClient) {
+	public static Map<Long, String> getAllProjects(RestClient restClient, String restVersion) {
 
 
 		Map<Long, String> projects = new TreeMap<Long, String>();
 		
 		HttpResponse response = null;
 		
-		final String url = URL_GET_PROJECTS.replace("{SERVER}", restClient.getUrl());
+		final String url = URL_GET_PROJECTS.replace("{SERVER}", restClient.getUrl()).replace("{REST_VERSION}", restVersion) + "?status=2";
 		try {
 			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {

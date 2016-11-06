@@ -32,9 +32,9 @@ import com.thed.zephyr.jenkins.model.TestCaseModel;
 
 public class TestCaseUtil {
 
-	private static final String URL_GET_TEST_CASE_DETAILS = "{SERVER}/flex/services/rest/v1/testcase";
+	private static final String URL_GET_TEST_CASE_DETAILS = "{SERVER}/flex/services/rest/{REST_VERSION}/testcase";
 	
-	public static List<TestCaseModel> getTestCaseDetails(String testCaseName, RestClient restClient) {
+	public static List<TestCaseModel> getTestCaseDetails(String testCaseName, RestClient restClient, String restVersion) {
 
 
 		List<TestCaseModel> testCaseDetails = null;
@@ -42,7 +42,7 @@ public class TestCaseUtil {
 		
 		String url = null;
 		try {
-			url = URL_GET_TEST_CASE_DETAILS.replace("{SERVER}", restClient.getUrl()) + "?testcase.name=" + URLEncoder.encode(testCaseName, "utf-8");
+			url = URL_GET_TEST_CASE_DETAILS.replace("{SERVER}", restClient.getUrl()).replace("{REST_VERSION}", restVersion) + "?testcase.name=" + URLEncoder.encode(testCaseName, "utf-8");
 		} catch (UnsupportedEncodingException e1) {
 			e1.printStackTrace();
 		}

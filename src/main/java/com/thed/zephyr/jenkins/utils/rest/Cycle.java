@@ -1,6 +1,7 @@
 package com.thed.zephyr.jenkins.utils.rest;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -33,16 +34,24 @@ import org.json.JSONObject;
 
 public class Cycle {
 
-	private static String URL_GET_CYCLES = "{SERVER}/flex/services/rest/v1/cycle";
+	private static String URL_GET_CYCLES = "{SERVER}/flex/services/rest/{REST_VERSION}/cycle";
 
 	
-	public static Long getCycleIdByCycleNameAndReleaseId(String cycleName, Long releaseId, RestClient restClient) {
+	public static Long getCycleIdByCycleNameAndReleaseId(String cycleName, Long releaseId, RestClient restClient, String restVersion) {
 
 		Long cycleId = 0L;
 
+		String url = null;
+		try {
+			url = URL_GET_CYCLES.replace("{SERVER}", restClient.getUrl()).replace("{REST_VERSION}", restVersion) + "?name=" + URLEncoder.encode(cycleName, "utf-8") + "&releaseId=" + releaseId;
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
 		HttpResponse response = null;
 		try {
-			response = restClient.getHttpclient().execute(new HttpGet(restClient.getUrl() + "/flex/services/rest/v1/cycle?name=" + URLEncoder.encode(cycleName, "utf-8") + "&releaseId=" + releaseId), restClient.getContext());
+			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -91,14 +100,14 @@ public class Cycle {
 		return cycleId;
 	}
 	
-	public static Map<Long, String> getAllCyclesByReleaseID(Long releaseID, RestClient restClient) {
+	public static Map<Long, String> getAllCyclesByReleaseID(Long releaseID, RestClient restClient, String restVersion) {
 
 
 		Map<Long, String> cycles = new TreeMap<Long, String>();
 		
 		HttpResponse response = null;
 		
-		final String url = URL_GET_CYCLES.replace("{SERVER}", restClient.getUrl()) + "?releaseId=" + releaseID;
+		final String url = URL_GET_CYCLES.replace("{SERVER}", restClient.getUrl()).replace("{REST_VERSION}", restVersion) + "?releaseId=" + releaseID;
 		try {
 			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {

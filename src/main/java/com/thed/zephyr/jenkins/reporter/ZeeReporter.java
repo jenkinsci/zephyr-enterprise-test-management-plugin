@@ -261,8 +261,20 @@ public class ZeeReporter extends Notifier {
 	 * @param restClient
 	 */
 	private void determineUserId(ZephyrConfigModel zephyrData, RestClient restClient) {
-		long userId = ServerInfo.getUserId(restClient);
+		long userId = ServerInfo.getUserId(restClient, getZephyrRestVersion(restClient));
 		zephyrData.setUserId(userId);
+	}
+
+	private String getZephyrRestVersion(RestClient restClient) {
+			String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
+			String zephyrRestVersion;
+			if (zephyrVersion.equals("4.8")) {
+				zephyrRestVersion = "v1";
+			} else {
+				zephyrRestVersion = "latest";
+			}
+		
+		return zephyrRestVersion;
 	}
 
 	private void determineCyclePrefix(ZephyrConfigModel zephyrData) {
@@ -280,7 +292,7 @@ public class ZeeReporter extends Notifier {
 		} catch (NumberFormatException e1) {
 			logger.println("Project Key appears to be Name of the project");
 			try {
-				Long projectIdByName = Project.getProjectIdByName(projectKey, restClient);
+				Long projectIdByName = Project.getProjectIdByName(projectKey, restClient, getZephyrRestVersion(restClient));
 				projectId = projectIdByName;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -300,7 +312,7 @@ public class ZeeReporter extends Notifier {
 			logger.println("Release Key appears to be Name of the Release");
 			try {
 				long releaseIdByReleaseNameProjectId = Release
-						.getReleaseIdByNameProjectId(releaseKey, zephyrData.getZephyrProjectId(), restClient);
+						.getReleaseIdByNameProjectId(releaseKey, zephyrData.getZephyrProjectId(), restClient, getZephyrRestVersion(restClient));
 				releaseId = releaseIdByReleaseNameProjectId;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -323,7 +335,7 @@ public class ZeeReporter extends Notifier {
 			logger.println("Cycle Key appears to be the name of the cycle");
 			try {
 				Long cycleIdByCycleNameAndReleaseId = Cycle
-						.getCycleIdByCycleNameAndReleaseId(cycleKey, zephyrData.getReleaseId(), restClient);
+						.getCycleIdByCycleNameAndReleaseId(cycleKey, zephyrData.getReleaseId(), restClient, getZephyrRestVersion(restClient));
 				cycleId = cycleIdByCycleNameAndReleaseId;
 			} catch (Exception e) {
 				e.printStackTrace();

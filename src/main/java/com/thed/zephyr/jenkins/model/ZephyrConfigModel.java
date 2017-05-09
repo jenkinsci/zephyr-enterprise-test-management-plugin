@@ -17,6 +17,7 @@ public class ZephyrConfigModel {
 	private long userId;
 	private boolean createPackage;
 	private ZephyrInstance selectedZephyrServer;
+	private int builNumber;
 
 
 	public boolean isCreatePackage() {
@@ -97,5 +98,13 @@ public class ZephyrConfigModel {
 
 	public ZephyrInstance getSelectedZephyrServer() {
 		return selectedZephyrServer;
+	}
+
+	public int getBuilNumber() {
+		return builNumber;
+	}
+
+	public void setBuilNumber(int builNumber) {
+		this.builNumber = builNumber;
 	}
 }

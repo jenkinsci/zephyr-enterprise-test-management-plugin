@@ -44,7 +44,7 @@ public class ServerInfo {
 			return false;
 		}
 		
-		if (zephyrVersion.equals("4.8") || zephyrVersion.equals("5.0")) {
+		if (zephyrVersion.equals("4.8")) {
 			URL_GET_USERS = URL_GET_USERS.replace("{REST_VERSION}", "v1");
 		} else {
 			URL_GET_USERS = URL_GET_USERS.replace("{REST_VERSION}", "latest");
@@ -244,6 +244,5 @@ public class ServerInfo {
 	
 	public static void main(String[] args) {
 		System.out.println(findZephyrVersion(new RestClient("http://zephyrdemo.yourzephyr.com", "test.lead", "test.lead")));
-		System.out.println(findZephyrVersion(new RestClient("https://demo.yourzephyr.com", "test.manager", "test.manager")));
 	}
 }

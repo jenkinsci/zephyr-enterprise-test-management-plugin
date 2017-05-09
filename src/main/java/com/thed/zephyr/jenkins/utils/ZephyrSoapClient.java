@@ -470,7 +470,6 @@ public class ZephyrSoapClient {
 			rCycle.setName(zephyrData.getCyclePrefix()
 					+ dateFormatForCycleCreation);
 			rCycle.setReleaseId(zephyrData.getReleaseId());
-			rCycle.setBuild(zephyrData.getBuilNumber() + "");
 			try {
 				Long createNewCycleID = client.createNewCycle(rCycle, token);
 				zephyrData.setCycleId(createNewCycleID);

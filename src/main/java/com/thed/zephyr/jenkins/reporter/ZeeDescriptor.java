@@ -205,7 +205,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	private String getZephyrRestVersion(RestClient restClient) {
 			String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
 			String zephyrRestVersion;
-			if (zephyrVersion.equals("4.8") || zephyrVersion.equals("5.0")) {
+			if (zephyrVersion.equals("4.8")) {
 				zephyrRestVersion = "v1";
 			} else {
 				zephyrRestVersion = "latest";

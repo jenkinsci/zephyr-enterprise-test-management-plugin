@@ -1,2 +1,9 @@
 target
 *.iml
+/work/
+/.settings/
+/.classpath
+/.gitignore
+/.project
+/pom.xml.bak
+/release.properties

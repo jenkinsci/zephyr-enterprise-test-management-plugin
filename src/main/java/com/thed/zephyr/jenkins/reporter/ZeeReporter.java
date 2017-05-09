@@ -95,9 +95,10 @@ public class ZeeReporter extends Notifier {
 			return false;
 		}
 
+		int number = build.getRootBuild().getNumber();
 		ZephyrConfigModel zephyrConfig = initializeZephyrData();
 		ZephyrSoapClient client = new ZephyrSoapClient();
-
+		zephyrConfig.setBuilNumber(number);
 		boolean prepareZephyrTests = prepareZephyrTests(build, zephyrConfig);
 		
     	if(!prepareZephyrTests) {
@@ -268,7 +269,7 @@ public class ZeeReporter extends Notifier {
 	private String getZephyrRestVersion(RestClient restClient) {
 			String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
 			String zephyrRestVersion;
-			if (zephyrVersion.equals("4.8")) {
+			if (zephyrVersion.equals("4.8") || zephyrVersion.equals("5.0")) {
 				zephyrRestVersion = "v1";
 			} else {
 				zephyrRestVersion = "latest";

@@ -43,12 +43,14 @@ public class ServerInfo {
 		if (zephyrVersion == null) {
 			return false;
 		}
-		
-		if (zephyrVersion.equals("4.8") || zephyrVersion.equals("5.0")) {
-			URL_GET_USERS = URL_GET_USERS.replace("{REST_VERSION}", "v1");
-		} else {
-			URL_GET_USERS = URL_GET_USERS.replace("{REST_VERSION}", "latest");
-		}
+
+        URL_GET_USERS = URL_GET_USERS.replace("{REST_VERSION}", "v1");
+
+//		if (zephyrVersion.equals("4.8") || zephyrVersion.equals("5.0")) {
+//			URL_GET_USERS = URL_GET_USERS.replace("{REST_VERSION}", "v1");
+//		} else {
+//			URL_GET_USERS = URL_GET_USERS.replace("{REST_VERSION}", "latest");
+//		}
 		return true;
 	}
 

@@ -202,17 +202,17 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		return FormValidation.ok("Connection to Zephyr has been validated");
 	}
 
-	private String getZephyrRestVersion(RestClient restClient) {
-			String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
-			String zephyrRestVersion;
-			if (zephyrVersion.equals("4.8") || zephyrVersion.equals("5.0")) {
-				zephyrRestVersion = "v1";
-			} else {
-				zephyrRestVersion = "latest";
-			}
-		
-		return zephyrRestVersion;
-	}
+    private String getZephyrRestVersion(RestClient restClient) {
+        String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
+        String zephyrRestVersion = "v1";
+//			if (zephyrVersion.equals("4.8") || zephyrVersion.equals("5.0")) {
+//				zephyrRestVersion = "v1";
+//			} else {
+//				zephyrRestVersion = "latest";
+//			}
+//
+        return zephyrRestVersion;
+    }
 
 	public ListBoxModel doFillServerAddressItems(
 			@QueryParameter String serverAddress) {

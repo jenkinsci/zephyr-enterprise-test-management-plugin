@@ -320,7 +320,7 @@ public class ZeeReporter extends Notifier {
 	}
 
     private String getZephyrRestVersion(RestClient restClient) {
-        String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
+//        String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
         String zephyrRestVersion = "v1";
 //			if (zephyrVersion.equals("4.8") || zephyrVersion.equals("5.0")) {
 //				zephyrRestVersion = "v1";

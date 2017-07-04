@@ -38,11 +38,11 @@ public class ServerInfo {
 
 	public static boolean findServerAddressIsValidZephyrURL(RestClient restClient) {
 		
-		String zephyrVersion = findZephyrVersion(restClient);
+//		String zephyrVersion = findZephyrVersion(restClient);
 		
-		if (zephyrVersion == null) {
-			return false;
-		}
+//		if (zephyrVersion == null) {
+//			return false;
+//		}
 
         URL_GET_USERS = URL_GET_USERS.replace("{REST_VERSION}", "v1");
 
@@ -168,7 +168,7 @@ public class ServerInfo {
 
 	}
 	
-	public static String findZephyrVersion(RestClient restClient) {
+	/*public static String findZephyrVersion(RestClient restClient) {
 		String zephyrVersion = null;
 		CloseableHttpClient httpclient = null;
 		try {
@@ -242,10 +242,10 @@ public class ServerInfo {
 			}
 		}
 		return zephyrVersion;
-	}
+	}*/
 	
 	public static void main(String[] args) {
-		System.out.println(findZephyrVersion(new RestClient("http://zephyrdemo.yourzephyr.com", "test.lead", "test.lead")));
-		System.out.println(findZephyrVersion(new RestClient("https://demo.yourzephyr.com", "test.manager", "test.manager")));
+//		System.out.println(findZephyrVersion(new RestClient("http://zephyrdemo.yourzephyr.com", "test.lead", "test.lead")));
+//		System.out.println(findZephyrVersion(new RestClient("https://demo.yourzephyr.com", "test.manager", "test.manager")));
 	}
 }

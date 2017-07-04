@@ -145,13 +145,13 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		return NAME_POST_BUILD_ACTION;
 	}
 
-	public FormValidation doCheckProjectKey(@QueryParameter String value) {
-		if (value.isEmpty()) {
-			return FormValidation.error("You must provide a project key.");
-		} else {
-			return FormValidation.ok();
-		}
-	}
+//	public FormValidation doCheckProjectKey(@QueryParameter String value) {
+//		if (value.isEmpty()) {
+//			return FormValidation.error("You must provide a project key.");
+//		} else {
+//			return FormValidation.ok();
+//		}
+//	}
 
 	public FormValidation doTestConnection(
 			@QueryParameter String serverAddress,
@@ -203,7 +203,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	}
 
     private String getZephyrRestVersion(RestClient restClient) {
-        String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
+//        String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
         String zephyrRestVersion = "v1";
 //			if (zephyrVersion.equals("4.8") || zephyrVersion.equals("5.0")) {
 //				zephyrRestVersion = "v1";
@@ -217,6 +217,10 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	public ListBoxModel doFillServerAddressItems(
 			@QueryParameter String serverAddress) {
 
+		return fetchServerList(serverAddress);
+	}
+
+	private ListBoxModel fetchServerList(String serverAddress) {
 		ListBoxModel m = new ListBoxModel();
 
 		if (this.zephyrInstances.size() > 0) {
@@ -235,10 +239,17 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public ListBoxModel doFillProjectKeyItems(
 			@QueryParameter String serverAddress) {
+		return fetchProjectList(serverAddress);
+	}
+
+	private ListBoxModel fetchProjectList(String serverAddress) {
 		ListBoxModel m = new ListBoxModel();
 
-		if (StringUtils.isBlank(serverAddress)
-				|| serverAddress.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
+		if (StringUtils.isBlank(serverAddress)) {
+	        ListBoxModel mi = fetchServerList(serverAddress);
+			serverAddress = mi.get(0).value;
+		}
+		if (serverAddress.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
 				|| (this.zephyrInstances.size() == 0)) {
 			m.add(ADD_ZEPHYR_GLOBAL_CONFIG);
 			return m;
@@ -291,10 +302,23 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			@QueryParameter String projectKey,
 			@QueryParameter String serverAddress) {
 
+		return fetchReleaseList(projectKey, serverAddress);
+
+	}
+
+	private ListBoxModel fetchReleaseList(String projectKey, String serverAddress) {
 		ListBoxModel listBoxModel = new ListBoxModel();
 
-		if (StringUtils.isBlank(projectKey)
-				|| projectKey.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
+		if (StringUtils.isBlank(serverAddress)) {
+	        ListBoxModel mi = fetchServerList(serverAddress);
+			serverAddress = mi.get(0).value;
+		}
+		if (StringUtils.isBlank(projectKey)) {
+	        ListBoxModel mi = fetchProjectList(serverAddress);
+	        projectKey = mi.get(0).value;
+		}
+
+		if (projectKey.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
 				|| (this.zephyrInstances.size() == 0)) {
 			listBoxModel.add(ADD_ZEPHYR_GLOBAL_CONFIG);
 			return listBoxModel;
@@ -323,16 +347,25 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		}
 
 		return listBoxModel;
-
 	}
 
-	public ListBoxModel doFillCycleKeyItems(@QueryParameter String releaseKey,
+	public ListBoxModel doFillCycleKeyItems(@QueryParameter String releaseKey, @QueryParameter String projectKey,
 											@QueryParameter String serverAddress) {
 
 		ListBoxModel listBoxModel = new ListBoxModel();
+		
+		if (StringUtils.isBlank(serverAddress)) {
+	        ListBoxModel mi = fetchServerList(serverAddress);
+			serverAddress = mi.get(0).value;
+		}
 
-		if (StringUtils.isBlank(releaseKey)
-				|| releaseKey.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
+		if (StringUtils.isBlank(releaseKey)) {
+	        ListBoxModel mi = fetchReleaseList(projectKey, serverAddress);
+	        releaseKey = mi.get(0).value;
+		}
+
+
+		if (releaseKey.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
 				|| (this.zephyrInstances.size() == 0)) {
 			listBoxModel.add(ADD_ZEPHYR_GLOBAL_CONFIG);
 			return listBoxModel;

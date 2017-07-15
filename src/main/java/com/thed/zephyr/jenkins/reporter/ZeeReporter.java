@@ -20,6 +20,8 @@ import hudson.model.AbstractBuild;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.junit.*;
+import hudson.tasks.test.AggregatedTestResultAction;
+import hudson.tasks.test.AggregatedTestResultAction.ChildReport;
 
 import java.io.File;
 import java.io.IOException;
@@ -146,27 +148,47 @@ public class ZeeReporter extends Notifier {
         Collection<SuiteResult> suites = new ArrayList<>();
 
         boolean isMavenProject = build.getProject().getClass().getName().toLowerCase().contains("maven");
+        TestResultAction testResultAction = null;
         if (isMavenProject) {
-            String basedDir = build.getWorkspace().toURI().getPath();
-            List<String> resultFolders = scanJunitTestResultFolder(basedDir);
-
-            if (resultFolders == null || resultFolders.size() == 0) {
+        	AggregatedTestResultAction testResultAction1 = build.getAction(AggregatedTestResultAction.class);
+            try {
+                List<ChildReport> result = testResultAction1.getChildReports();
+                
+                for (ChildReport childReport : result) {
+                	if (childReport.result instanceof TestResult) {
+                		Collection<SuiteResult> str = ((TestResult) childReport.result).getSuites();
+                		suites.addAll(str);
+                	}
+				}
+            } catch (Exception e) {
+                logger.println(e.getMessage());
                 return false;
             }
-            for (String res : resultFolders) {
-                if (res.contains(SUREFIRE_REPORT)) {
-                    try {
-                        List<TestResult> results = parse(listener, launcher, build, res + JUNIT_SFX);
-                        for (TestResult testResult : results) {
-                            suites.addAll(testResult.getSuites());
-                        }
-                    } catch (Exception e) {
-                        logger.print("Could not parse results from surefire reports" + e.getMessage());
-                    }
-                }
+
+            if (suites == null || suites.size() == 0) {
+                return false;
             }
+
+//            String basedDir = build.getWorkspace().toURI().getPath();
+//            List<String> resultFolders = scanJunitTestResultFolder(basedDir);
+//
+//            if (resultFolders == null || resultFolders.size() == 0) {
+//                return false;
+//            }
+//            for (String res : resultFolders) {
+//                if (res.contains(SUREFIRE_REPORT)) {
+//                    try {
+//                        List<TestResult> results = parse(listener, launcher, build, res + JUNIT_SFX);
+//                        for (TestResult testResult : results) {
+//                            suites.addAll(testResult.getSuites());
+//                        }
+//                    } catch (Exception e) {
+//                        logger.print("Could not parse results from surefire reports" + e.getMessage());
+//                    }
+//                }
+//            }
         } else {
-            TestResultAction testResultAction = build.getAction(TestResultAction.class);
+            testResultAction = build.getAction(TestResultAction.class);
             try {
                 suites = testResultAction.getResult().getSuites();
             } catch (Exception e) {

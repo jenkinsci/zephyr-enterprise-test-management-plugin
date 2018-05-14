@@ -28,6 +28,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="status" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="remoteProjectData" type="{http://soap.service.thed.com/}remoteNameValue" minOccurs="0"/>
  *         &lt;element name="externalSystem" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="orderId" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -47,7 +48,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "modifiedDate",
     "status",
     "remoteProjectData",
-    "externalSystem"
+    "externalSystem",
+    "orderId"
 })
 public class RemoteRelease {
 
@@ -65,6 +67,7 @@ public class RemoteRelease {
     protected String status;
     protected RemoteNameValue remoteProjectData;
     protected String externalSystem;
+    protected Integer orderId;
 
     /**
      * Gets the value of the id property.
@@ -296,6 +299,30 @@ public class RemoteRelease {
      */
     public void setExternalSystem(String value) {
         this.externalSystem = value;
+    }
+
+    /**
+     * Gets the value of the orderId property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Integer }
+     *     
+     */
+    public Integer getOrderId() {
+        return orderId;
+    }
+
+    /**
+     * Sets the value of the orderId property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Integer }
+     *     
+     */
+    public void setOrderId(Integer value) {
+        this.orderId = value;
     }
 
 }

@@ -135,7 +135,7 @@ public class ZephyrSoapClient {
 	private static String initializeClient(ZephyrConfigModel zephyrData) {
 
 		String token = null;
-		URL wsdlURL = ZephyrSoapService_Service.WSDL_LOCATION;
+		URL wsdlURL = ZephyrSoapService_Service.ZEPHYRSOAPSERVICE_WSDL_LOCATION;
 
 		assert zephyrData.getSelectedZephyrServer() != null;
 		String zephyrURL = zephyrData.getSelectedZephyrServer().getServerAddress();
@@ -270,7 +270,7 @@ public class ZephyrSoapClient {
 				rm11.setSearchValue(remoteTestcase.getName());
 
 				RemoteCriteria rm22 = new RemoteCriteria();
-				rm22.setSearchName("testcase.externalId");
+				rm22.setSearchName("tcrCatalogTreeId");
 				rm22.setSearchOperation(SearchOperation.EQUALS);
 				rm22.setSearchValue(tree.getId() + "");
 
@@ -300,7 +300,7 @@ public class ZephyrSoapClient {
 							Long id = remoteRepositoryTreeTestcase
 									.getTestcase().getId();
 
-							if (releaseId == zephyrData.getReleaseId()) {
+							if (releaseId == zephyrData.getReleaseId() && remoteRepositoryTreeTestcase.isOriginal()) {
 								testCaseId = id;
 							}
 						}

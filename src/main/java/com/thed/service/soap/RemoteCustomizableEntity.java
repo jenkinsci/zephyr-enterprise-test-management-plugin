@@ -55,8 +55,8 @@ import javax.xml.bind.annotation.XmlType;
     "customProperties"
 })
 @XmlSeeAlso({
-    RemoteTestcase.class,
-    RemoteRequirement.class
+    RemoteRequirement.class,
+    RemoteTestcase.class
 })
 public class RemoteCustomizableEntity {
 

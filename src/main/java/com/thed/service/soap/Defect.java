@@ -22,10 +22,12 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="bugId" type="{http://www.w3.org/2001/XMLSchema}long"/>
+ *         &lt;element name="category" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="createdDate" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="description" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="externalId" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="id" type="{http://www.w3.org/2001/XMLSchema}long" minOccurs="0"/>
+ *         &lt;element name="parentKey" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="priority" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="severity" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="state" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
@@ -42,10 +44,12 @@ import javax.xml.datatype.XMLGregorianCalendar;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "defect", propOrder = {
     "bugId",
+    "category",
     "createdDate",
     "description",
     "externalId",
     "id",
+    "parentKey",
     "priority",
     "severity",
     "state",
@@ -55,11 +59,13 @@ import javax.xml.datatype.XMLGregorianCalendar;
 public class Defect {
 
     protected long bugId;
+    protected String category;
     @XmlSchemaType(name = "dateTime")
     protected XMLGregorianCalendar createdDate;
     protected String description;
     protected String externalId;
     protected Long id;
+    protected String parentKey;
     protected String priority;
     protected String severity;
     protected String state;
@@ -81,6 +87,30 @@ public class Defect {
      */
     public void setBugId(long value) {
         this.bugId = value;
+    }
+
+    /**
+     * Gets the value of the category property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getCategory() {
+        return category;
+    }
+
+    /**
+     * Sets the value of the category property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setCategory(String value) {
+        this.category = value;
     }
 
     /**
@@ -177,6 +207,30 @@ public class Defect {
      */
     public void setId(Long value) {
         this.id = value;
+    }
+
+    /**
+     * Gets the value of the parentKey property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getParentKey() {
+        return parentKey;
+    }
+
+    /**
+     * Sets the value of the parentKey property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setParentKey(String value) {
+        this.parentKey = value;
     }
 
     /**

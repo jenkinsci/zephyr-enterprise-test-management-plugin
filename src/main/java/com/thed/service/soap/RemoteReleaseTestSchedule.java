@@ -27,6 +27,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="comment" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="testerId" type="{http://www.w3.org/2001/XMLSchema}long" minOccurs="0"/>
  *         &lt;element name="remoteRepositoryTestcaseId" type="{http://www.w3.org/2001/XMLSchema}long" minOccurs="0"/>
+ *         &lt;element name="versionId" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="remoteTestcaseId" type="{http://www.w3.org/2001/XMLSchema}long" minOccurs="0"/>
  *         &lt;element name="cyclePhaseId" type="{http://www.w3.org/2001/XMLSchema}long" minOccurs="0"/>
  *         &lt;element name="lastTestResult" type="{http://soap.service.thed.com/}testResult" minOccurs="0"/>
@@ -53,6 +54,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "comment",
     "testerId",
     "remoteRepositoryTestcaseId",
+    "versionId",
     "remoteTestcaseId",
     "cyclePhaseId",
     "lastTestResult",
@@ -73,6 +75,7 @@ public class RemoteReleaseTestSchedule {
     protected String comment;
     protected Long testerId;
     protected Long remoteRepositoryTestcaseId;
+    protected String versionId;
     protected Long remoteTestcaseId;
     protected Long cyclePhaseId;
     protected TestResult lastTestResult;
@@ -220,6 +223,30 @@ public class RemoteReleaseTestSchedule {
      */
     public void setRemoteRepositoryTestcaseId(Long value) {
         this.remoteRepositoryTestcaseId = value;
+    }
+
+    /**
+     * Gets the value of the versionId property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getVersionId() {
+        return versionId;
+    }
+
+    /**
+     * Sets the value of the versionId property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setVersionId(String value) {
+        this.versionId = value;
     }
 
     /**

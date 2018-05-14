@@ -1,8 +1,11 @@
 
 package com.thed.service.soap;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
 
@@ -21,6 +24,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="testcase" type="{http://soap.service.thed.com/}remoteTestcase" minOccurs="0"/>
  *         &lt;element name="original" type="{http://www.w3.org/2001/XMLSchema}boolean"/>
  *         &lt;element name="testSteps" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="testStepDetails" type="{http://soap.service.thed.com/}remoteTestStepDetail" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -35,7 +39,8 @@ import javax.xml.bind.annotation.XmlType;
     "remoteRepositoryId",
     "testcase",
     "original",
-    "testSteps"
+    "testSteps",
+    "testStepDetails"
 })
 public class RemoteRepositoryTreeTestcase {
 
@@ -44,6 +49,8 @@ public class RemoteRepositoryTreeTestcase {
     protected RemoteTestcase testcase;
     protected boolean original;
     protected String testSteps;
+    @XmlElement(nillable = true)
+    protected List<RemoteTestStepDetail> testStepDetails;
 
     /**
      * Gets the value of the id property.
@@ -155,6 +162,35 @@ public class RemoteRepositoryTreeTestcase {
      */
     public void setTestSteps(String value) {
         this.testSteps = value;
+    }
+
+    /**
+     * Gets the value of the testStepDetails property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the testStepDetails property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getTestStepDetails().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link RemoteTestStepDetail }
+     * 
+     * 
+     */
+    public List<RemoteTestStepDetail> getTestStepDetails() {
+        if (testStepDetails == null) {
+            testStepDetails = new ArrayList<RemoteTestStepDetail>();
+        }
+        return this.testStepDetails;
     }
 
 }

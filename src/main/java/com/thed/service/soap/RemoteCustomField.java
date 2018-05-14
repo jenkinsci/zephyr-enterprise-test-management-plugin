@@ -22,6 +22,8 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="fieldType" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="fieldLength" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="fieldLovs" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="unique" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="mandatory" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -37,7 +39,9 @@ import javax.xml.bind.annotation.XmlType;
     "displayLabel",
     "fieldType",
     "fieldLength",
-    "fieldLovs"
+    "fieldLovs",
+    "unique",
+    "mandatory"
 })
 public class RemoteCustomField {
 
@@ -47,6 +51,8 @@ public class RemoteCustomField {
     protected String fieldType;
     protected String fieldLength;
     protected String fieldLovs;
+    protected String unique;
+    protected String mandatory;
 
     /**
      * Gets the value of the fieldName property.
@@ -190,6 +196,54 @@ public class RemoteCustomField {
      */
     public void setFieldLovs(String value) {
         this.fieldLovs = value;
+    }
+
+    /**
+     * Gets the value of the unique property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getUnique() {
+        return unique;
+    }
+
+    /**
+     * Sets the value of the unique property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setUnique(String value) {
+        this.unique = value;
+    }
+
+    /**
+     * Gets the value of the mandatory property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getMandatory() {
+        return mandatory;
+    }
+
+    /**
+     * Sets the value of the mandatory property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setMandatory(String value) {
+        this.mandatory = value;
     }
 
 }

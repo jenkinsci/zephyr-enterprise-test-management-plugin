@@ -20,6 +20,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *       &lt;sequence>
  *         &lt;element name="attachmentLocation" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="defect" type="{http://soap.service.thed.com/}defect" minOccurs="0"/>
+ *         &lt;element name="execDate" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="executionDate" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="executionNotes" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="executionStatus" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
@@ -39,6 +40,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 @XmlType(name = "testResult", propOrder = {
     "attachmentLocation",
     "defect",
+    "execDate",
     "executionDate",
     "executionNotes",
     "executionStatus",
@@ -51,6 +53,7 @@ public class TestResult {
 
     protected String attachmentLocation;
     protected Defect defect;
+    protected String execDate;
     @XmlSchemaType(name = "dateTime")
     protected XMLGregorianCalendar executionDate;
     protected String executionNotes;
@@ -106,6 +109,30 @@ public class TestResult {
      */
     public void setDefect(Defect value) {
         this.defect = value;
+    }
+
+    /**
+     * Gets the value of the execDate property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getExecDate() {
+        return execDate;
+    }
+
+    /**
+     * Sets the value of the execDate property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setExecDate(String value) {
+        this.execDate = value;
     }
 
     /**

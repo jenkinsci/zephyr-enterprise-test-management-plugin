@@ -36,6 +36,8 @@ import org.json.JSONObject;
 public class Project {
 
 	private static String URL_GET_PROJECTS = "{SERVER}/flex/services/rest/{REST_VERSION}/project";
+	private static String URL_GET_PROJECTS_NEW = "{SERVER}/flex/services/rest/latest/project/lite";
+	private static String URL_GET_ASSIGNED_PROJECTS_BY_USER_ID = "{SERVER}/flex/services/rest/latest/project/project/{USER_ID}";
 	
 	public static void getProjectNameById(long id, RestClient restClient, String restVersion) {
 
@@ -124,26 +126,159 @@ public class Project {
 			}
 			
 			
-		} else {
-			try {
-				throw new ClientProtocolException("Unexpected response status: "
-						+ statusCode);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			}
 		}
 	
 		return projectId;
 	}
 	
+	
+	public static JSONArray getAssignedProjectsByUserId(RestClient restClient, String restVersion) {
+
+		long userId = ServerInfo.getUserId(restClient, restVersion);
+
+
+		JSONArray projArray = null;
+		
+		HttpResponse response = null;
+		
+		final String url = URL_GET_ASSIGNED_PROJECTS_BY_USER_ID.replace("{SERVER}", restClient.getUrl()).replace("{USER_ID}", userId+"");
+		try {
+			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (HttpHostConnectException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} 
+
+		int statusCode = response.getStatusLine().getStatusCode();
+
+		if (statusCode >= 200 && statusCode < 300) {
+			HttpEntity entity = response.getEntity();
+			String string = null;
+			try {
+				string = EntityUtils.toString(entity);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			try {
+				projArray = new JSONArray(string);
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			
+			
+		} 
+	
+		return projArray;
+	}
+//	public static Map<Long, String> getAllProjects(RestClient restClient, String restVersion) {
+//
+//
+//		Map<Long, String> projects = new TreeMap<Long, String>();
+//		
+//		HttpResponse response = null;
+//		
+//		final String url = URL_GET_PROJECTS.replace("{SERVER}", restClient.getUrl()).replace("{REST_VERSION}", restVersion) + "?status=2";
+//		try {
+//			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
+//		} catch (ClientProtocolException e) {
+//			e.printStackTrace();
+//		} catch (HttpHostConnectException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		} 
+//
+//		int statusCode = response.getStatusLine().getStatusCode();
+//
+//		if (statusCode >= 200 && statusCode < 300) {
+//			HttpEntity entity = response.getEntity();
+//			String string = null;
+//			try {
+//				string = EntityUtils.toString(entity);
+//			} catch (ParseException e) {
+//				e.printStackTrace();
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//
+//			try {
+//				JSONArray projArray = new JSONArray(string);
+//				for(int i = 0; i < projArray.length(); i++) {
+//					
+//					
+//					JSONObject jsonObject = projArray.getJSONObject(i);
+//					JSONArray members = null;
+//					
+//					try {
+//						members = jsonObject.getJSONArray("members");
+//					} catch (Exception e) {
+//					} 
+//					
+//					if (members == null || members.length() == 0) {
+//						continue;
+//					}
+//					
+//					boolean isProjectAssignedToTheMember = false;
+//					for (int j = 0; j < members.length(); j++) {
+//						JSONObject member = members.getJSONObject(j);
+//						
+//						String user = member.getString("username");
+//						if(user.trim().equalsIgnoreCase(restClient.getUserName().trim())) {
+//							isProjectAssignedToTheMember = true;
+//							break;
+//						}
+//					}
+//					
+//					if(!isProjectAssignedToTheMember) {
+//						continue;
+//					}
+//					
+//					Long id = jsonObject.getLong("id");
+//					String projName = jsonObject.getString("name");
+//					projects.put(id, projName);
+//				}
+//				
+//				
+//			} catch (JSONException e) {
+//				e.printStackTrace();
+//			}
+//			
+//			
+//		} else {
+//			
+//			projects.put(0L, "No Project");
+//			try {
+//				throw new ClientProtocolException("Unexpected response status: "
+//						+ statusCode);
+//			} catch (ClientProtocolException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//	
+//		return projects;
+//	}
+	
+	
 	public static Map<Long, String> getAllProjects(RestClient restClient, String restVersion) {
 
+		JSONArray assignedProjectsByUserId = null;
+		try {
+			assignedProjectsByUserId = getAssignedProjectsByUserId(restClient, restVersion);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		Map<Long, String> projects = new TreeMap<Long, String>();
 		
 		HttpResponse response = null;
 		
-		final String url = URL_GET_PROJECTS.replace("{SERVER}", restClient.getUrl()).replace("{REST_VERSION}", restVersion) + "?status=2";
+		final String url = URL_GET_PROJECTS_NEW.replace("{SERVER}", restClient.getUrl());
 		try {
 			response = restClient.getHttpclient().execute(new HttpGet(url), restClient.getContext());
 		} catch (ClientProtocolException e) {
@@ -173,35 +308,21 @@ public class Project {
 					
 					
 					JSONObject jsonObject = projArray.getJSONObject(i);
-					JSONArray members = null;
 					
-					try {
-						members = jsonObject.getJSONArray("members");
-					} catch (Exception e) {
-					} 
-					
-					if (members == null || members.length() == 0) {
-						continue;
-					}
-					
-					boolean isProjectAssignedToTheMember = false;
-					for (int j = 0; j < members.length(); j++) {
-						JSONObject member = members.getJSONObject(j);
-						
-						String user = member.getString("username");
-						if(user.trim().equalsIgnoreCase(restClient.getUserName().trim())) {
-							isProjectAssignedToTheMember = true;
-							break;
-						}
-					}
-					
-					if(!isProjectAssignedToTheMember) {
+					if (assignedProjectsByUserId == null || assignedProjectsByUserId.length() == 0) {
 						continue;
 					}
 					
 					Long id = jsonObject.getLong("id");
 					String projName = jsonObject.getString("name");
-					projects.put(id, projName);
+					
+					for (int j = 0; j < assignedProjectsByUserId.length(); j++) {
+						long long1 = assignedProjectsByUserId.getLong(j);
+						if(long1 == id) {
+							projects.put(id, projName);
+							break;
+						}
+					}
 				}
 				
 				
@@ -213,12 +334,7 @@ public class Project {
 		} else {
 			
 			projects.put(0L, "No Project");
-			try {
-				throw new ClientProtocolException("Unexpected response status: "
-						+ statusCode);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			}
+
 		}
 	
 		return projects;

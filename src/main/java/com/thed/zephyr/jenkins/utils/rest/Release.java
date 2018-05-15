@@ -87,13 +87,6 @@ public class Release {
 			}
 			
 			
-		} else {
-			try {
-				throw new ClientProtocolException("Unexpected response status: "
-						+ statusCode);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			}
 		}
 	
 		return releaseId;
@@ -152,12 +145,6 @@ public class Release {
 		} else {
 			
 			releases.put(0L, "No Release");
-			try {
-					throw new ClientProtocolException("Unexpected response status: "
-						+ statusCode);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			}
 		}
 	
 		return releases;

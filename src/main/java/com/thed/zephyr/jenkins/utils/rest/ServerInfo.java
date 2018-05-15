@@ -111,13 +111,6 @@ public class ServerInfo {
 			statusMap.put(false, INVALID_USER_ROLE);
 			return statusMap;
 
-		} else {
-			try {
-				throw new ClientProtocolException(
-						"Unexpected response status: " + statusCode);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			}
 		}
 		return statusMap;
 
@@ -156,13 +149,6 @@ public class ServerInfo {
 				e.printStackTrace();
 			}
 
-		} else {
-			try {
-				throw new ClientProtocolException(
-						"Unexpected response status: " + statusCode);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			}
 		}
 		return userId;
 

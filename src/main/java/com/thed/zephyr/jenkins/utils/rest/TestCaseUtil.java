@@ -90,16 +90,6 @@ public class TestCaseUtil {
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
-			
-			
-		} else {
-			
-			try {
-				throw new ClientProtocolException("Unexpected response status: "
-						+ statusCode);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			}
 		}
 	
 		return testCaseDetails;

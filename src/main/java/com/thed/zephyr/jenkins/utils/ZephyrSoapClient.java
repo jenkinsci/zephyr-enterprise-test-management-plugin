@@ -282,7 +282,7 @@ public class ZephyrSoapClient {
 					testCasesByCriteria11 = client.getTestcasesByCriteria(
 							searchCriterias1, false, token);
 				} catch (ZephyrServiceException e1) {
-					ZeeReporter.logger.print("Error in getting phase name");
+					System.out.println("Error in getting phase name");
 					e1.printStackTrace();
 				}
 
@@ -360,7 +360,7 @@ public class ZephyrSoapClient {
 				projectById = client.getProjectById(
 						zephyrData.getZephyrProjectId(), token);
 			} catch (ZephyrServiceException e) {
-				ZeeReporter.logger.print("Problem Getting Project ID");
+				System.out.println("Problem Getting Project ID");
 				return;
 			}
 			RemoteRelease releaseById = null;
@@ -368,7 +368,7 @@ public class ZephyrSoapClient {
 				releaseById = client.getReleaseById(zephyrData.getReleaseId(),
 						token);
 			} catch (ZephyrServiceException e) {
-				ZeeReporter.logger.print("Problem Getting Release ID");
+				System.out.println("Problem Getting Release ID");
 
 				return;
 			}
@@ -475,7 +475,7 @@ public class ZephyrSoapClient {
 				Long createNewCycleID = client.createNewCycle(rCycle, token);
 				zephyrData.setCycleId(createNewCycleID);
 			} catch (ZephyrServiceException e) {
-				ZeeReporter.logger.print("Problem Creating new cycle");
+				System.out.println("Problem Creating new cycle");
 				e.printStackTrace();
 				return;
 			}
@@ -545,8 +545,7 @@ public class ZephyrSoapClient {
 									.get(0);
 						}
 					} catch (ZephyrServiceException e1) {
-						ZeeReporter.logger
-								.print("Error in getting phase name");
+						System.out.println("Error in getting phase name");
 						e1.printStackTrace();
 					}
 
@@ -627,7 +626,7 @@ public class ZephyrSoapClient {
 				}
 			}
 		} catch (ZephyrServiceException e1) {
-			ZeeReporter.logger.print("Error in getting phase name");
+			System.out.println("Error in getting phase name");
 			e1.printStackTrace();
 		}
 
@@ -664,7 +663,7 @@ public class ZephyrSoapClient {
 			projectById = client.getProjectById(
 					zephyrData.getZephyrProjectId(), token);
 		} catch (ZephyrServiceException e) {
-			ZeeReporter.logger.print("Problem Getting Project ID");
+			System.out.println("Problem Getting Project ID");
 			return daysBtwnProjectStartEndDate;
 		}
 

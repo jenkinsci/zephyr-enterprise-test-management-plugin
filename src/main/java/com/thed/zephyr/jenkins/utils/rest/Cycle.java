@@ -88,13 +88,6 @@ public class Cycle {
 			}
 			
 			
-		} else {
-			try {
-				throw new ClientProtocolException("Unexpected response status: "
-						+ statusCode);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			}
 		}
 	
 		return cycleId;
@@ -153,12 +146,6 @@ public class Cycle {
 		} else {
 			
 			cycles.put(0L, "No Cycle");
-			try {
-				throw new ClientProtocolException("Unexpected response status: "
-						+ statusCode);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			}
 		}
 	
 		return cycles;

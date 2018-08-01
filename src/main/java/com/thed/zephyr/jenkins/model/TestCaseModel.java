@@ -2,41 +2,23 @@ package com.thed.zephyr.jenkins.model;
 
 public class TestCaseModel {
 
-	private String name;
-	private long testCaseId;
-	private long phaseTestCaseId;
-	private long remoteRepositoryId;
+	private long tcrCatalogTreeId;
+	private Testcase testcase;
 
-	public String getName() {
-		return name;
+	public long getTcrCatalogTreeId() {
+		return tcrCatalogTreeId;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setTcrCatalogTreeId(long tcrCatalogTreeId2) {
+		this.tcrCatalogTreeId = tcrCatalogTreeId2;
 	}
 
-	public long getTestCaseId() {
-		return testCaseId;
+	public Testcase getTestcase() {
+		return testcase;
 	}
 
-	public void setTestCaseId(long testCaseId) {
-		this.testCaseId = testCaseId;
-	}
-
-	public long getPhaseTestCaseId() {
-		return phaseTestCaseId;
-	}
-
-	public void setPhaseTestCaseId(long phaseTestCaseId) {
-		this.phaseTestCaseId = phaseTestCaseId;
-	}
-
-	public long getRemoteRepositoryId() {
-		return remoteRepositoryId;
-	}
-
-	public void setRemoteRepositoryId(long remoteRepositoryId) {
-		this.remoteRepositoryId = remoteRepositoryId;
+	public void setTestcase(Testcase testcase) {
+		this.testcase = testcase;
 	}
 
 }

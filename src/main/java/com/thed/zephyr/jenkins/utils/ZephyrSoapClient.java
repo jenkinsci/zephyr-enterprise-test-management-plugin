@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -30,8 +31,6 @@ import com.thed.service.soap.RemoteFieldValue;
 import com.thed.service.soap.RemoteNameValue;
 import com.thed.service.soap.RemotePhase;
 import com.thed.service.soap.RemoteProject;
-import com.thed.service.soap.RemoteRelease;
-import com.thed.service.soap.RemoteReleaseTestSchedule;
 import com.thed.service.soap.RemoteRepositoryTree;
 import com.thed.service.soap.RemoteRepositoryTreeTestcase;
 import com.thed.service.soap.RemoteTestResult;
@@ -43,7 +42,9 @@ import com.thed.service.soap.ZephyrSoapService_Service;
 import com.thed.zephyr.jenkins.model.TestCaseResultModel;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import com.thed.zephyr.jenkins.reporter.ZeeConstants;
-import com.thed.zephyr.jenkins.reporter.ZeeReporter;
+import com.thed.zephyr.jenkins.utils.rest.RestClient;
+import com.thed.zephyr.jenkins.utils.rest.TestCaseUtil;
+import com.thed.zephyr.jenkins.utils.rest.TestSchedulesUtil;
 
 public class ZephyrSoapClient {
 
@@ -51,6 +52,8 @@ public class ZephyrSoapClient {
 	private static final String PACKAGE_TRUE_COMMENT = "Created by Jenkins";
 	private static final QName SERVICE_NAME = new QName("http://soap.service.thed.com/", "ZephyrSoapService");
 	private static String ZEPHYR_URL = "{SERVER}/flex/services/soap/zephyrsoapservice-v1?wsdl";
+	private static String REST_VERSION = "V3";
+
 	private static ZephyrSoapService client;
 	private static String token;
 
@@ -58,11 +61,9 @@ public class ZephyrSoapClient {
 			Map<Long, Boolean> testCaseIdResultMap) {
 		List<RemoteTestResult> testResults = new ArrayList<RemoteTestResult>();
 		
-		Set<Long> testCaseIds = testCaseIdResultMap.keySet();
-		for (Iterator<Long> iterator = testCaseIds.iterator(); iterator
-				.hasNext();) {
-			Long testCaseId = iterator.next();
-			boolean testStatus = testCaseIdResultMap.get(testCaseId);
+		for (Entry<Long, Boolean> entries: testCaseIdResultMap.entrySet()) {
+			Long testCaseId = entries.getKey();
+			boolean testStatus = entries.getValue();
 
 			RemoteTestResult remoteTestResult = new RemoteTestResult();
 			remoteTestResult.setReleaseTestScheduleId(Long
@@ -87,48 +88,7 @@ public class ZephyrSoapClient {
 
 	}
 
-	/**
-	 * @param zephyrData 
-	 * @param cyclePhaseId
-	 * @return
-	 */
-	private static Map<Long, Long> fetchTestSchedules(ZephyrConfigModel zephyrData, Long cyclePhaseId) {
-		Map<Long, Long> remoteTestcaseIdTestScheduleIdMap = new HashMap<Long, Long>();
-		List<RemoteCriteria> searchCriterias = new ArrayList<RemoteCriteria>();
-		RemoteCriteria rc = new RemoteCriteria();
-		rc.setSearchName("cyclePhaseId");
-		rc.setSearchValue(Long.toString(cyclePhaseId));
-		rc.setSearchOperation(SearchOperation.EQUALS);
-
-		searchCriterias.add(rc);
-		long userId = zephyrData.getUserId();
-		try {
-			List<RemoteReleaseTestSchedule> testSchedulesByCriteria = client
-					.getTestSchedulesByCriteria(searchCriterias, false, token);
-
-			List<RemoteReleaseTestSchedule> testSchedulesByCriteria1 = new ArrayList<RemoteReleaseTestSchedule>();
-			for (Iterator<RemoteReleaseTestSchedule> iterator = testSchedulesByCriteria
-					.iterator(); iterator.hasNext();) {
-				RemoteReleaseTestSchedule remoteReleaseTestSchedule = iterator
-						.next();
-
-				remoteReleaseTestSchedule.setTesterId(userId);
-				testSchedulesByCriteria1.add(remoteReleaseTestSchedule);
-				
-				long remoteTestcaseId = remoteReleaseTestSchedule.getRemoteTestcaseId();
-				long testScheduleId = remoteReleaseTestSchedule.getTestScheduleId();
-				
-				remoteTestcaseIdTestScheduleIdMap.put(remoteTestcaseId, testScheduleId);
-			}
-			
-			client.assignTestSchedules(testSchedulesByCriteria1, token);
-			
-		} catch (ZephyrServiceException e) {
-			e.printStackTrace();
-		}
-		return remoteTestcaseIdTestScheduleIdMap;
-	}
-
+	
 	/**
 	 * Initializes the Zephyr Service Client and returns the access token
 	 */
@@ -239,20 +199,23 @@ public class ZephyrSoapClient {
 
 		token = initializeClient(zephyrData);
 		Map<String, RemoteRepositoryTree> packageRepositoryStructureMap = null;
+		RestClient rc = new RestClient(zephyrData.getSelectedZephyrServer().getServerAddress(), zephyrData.getSelectedZephyrServer().getUsername(), zephyrData.getSelectedZephyrServer().getPassword());
+
 
 		createNewCycle(zephyrData);
 		packageRepositoryStructureMap = createPackageRepositoryStructure(zephyrData);
 
 		try {
-			long testcaseTreeId = 0L;
 			RemoteRepositoryTree tree = null;
 
 			Map<Long, Boolean> testCaseIdResultMap = new HashMap<Long, Boolean>();
 			List<TestCaseResultModel> testcases = zephyrData.getTestcases();
 
-			for (Iterator<TestCaseResultModel> iterator = testcases.iterator(); iterator
-					.hasNext();) {
-				TestCaseResultModel testCaseWithStatus = iterator.next();
+			Map<Long, Map<String, Long>> map = new HashMap<Long, Map<String, Long>>();
+			Map<Long, List<String>> phaseTestsTmpMap = new HashMap<Long, List<String>>();
+			Map<Long, Map<String, Boolean>> tempStatusMap = new HashMap<Long, Map<String, Boolean>>();
+
+			for (TestCaseResultModel testCaseWithStatus: testcases) {
 				RemoteTestcase remoteTestcase = testCaseWithStatus
 						.getRemoteTestcase();
 
@@ -262,62 +225,44 @@ public class ZephyrSoapClient {
 				} else {
 					tree = packageRepositoryStructureMap.get("parentPhase");
 				}
-				testcaseTreeId = tree.getId();
 
-				RemoteCriteria rm11 = new RemoteCriteria();
-				rm11.setSearchName("testcase.name");
-				rm11.setSearchOperation(SearchOperation.EQUALS);
-				rm11.setSearchValue(remoteTestcase.getName());
-
-				RemoteCriteria rm22 = new RemoteCriteria();
-				rm22.setSearchName("tcrCatalogTreeId");
-				rm22.setSearchOperation(SearchOperation.EQUALS);
-				rm22.setSearchValue(tree.getId() + "");
-
-				List<RemoteCriteria> searchCriterias1 = new ArrayList<RemoteCriteria>();
-				searchCriterias1.add(rm11);
-				searchCriterias1.add(rm22);
-				List<RemoteRepositoryTreeTestcase> testCasesByCriteria11 = null;
-				try {
-					testCasesByCriteria11 = client.getTestcasesByCriteria(
-							searchCriterias1, false, token);
-				} catch (ZephyrServiceException e1) {
-					System.out.println("Error in getting phase name");
-					e1.printStackTrace();
+				if(!map.containsKey(tree.getId())) {
+					Map<String, Long> testsInThePhaseNode = TestCaseUtil.searchTestCaseDetails(zephyrData.getReleaseId(), rc, REST_VERSION, tree.getId());
+					map.put(tree.getId(), testsInThePhaseNode);
 				}
+				long testCaseId;
+				if (map.get(tree.getId()) != null && map.get(tree.getId()).get(remoteTestcase.getName()) != null) {
+					testCaseId = map.get(tree.getId()).get(remoteTestcase.getName());
+					testCaseIdResultMap.put(testCaseId,
+							testCaseWithStatus.getPassed());
+				} else {
+//					remoteTestcase.setExternalId(tree.getId() + "");
+//					testCaseId = createTestCase(tree, remoteTestcase, token);
+					
+					if(!phaseTestsTmpMap.containsKey(tree.getId())) {
+						List<String> l = new ArrayList<String>();
+						l.add(remoteTestcase.getName());
+						phaseTestsTmpMap.put(tree.getId(), l);
+						
+						Map<String, Boolean> mmmmp = new HashMap<String, Boolean>();
+						mmmmp.put(remoteTestcase.getName(), testCaseWithStatus.getPassed());
+						tempStatusMap.put(tree.getId(), mmmmp);
+					} else {
+						phaseTestsTmpMap.get(tree.getId()).add(remoteTestcase.getName());
+						tempStatusMap.get(tree.getId()).put(remoteTestcase.getName(), testCaseWithStatus.getPassed());
 
-				long testCaseId = 0L;
-
-				try {
-					if (testCasesByCriteria11 != null) {
-
-						for (Iterator iterator2 = testCasesByCriteria11
-								.iterator(); iterator2.hasNext();) {
-							RemoteRepositoryTreeTestcase remoteRepositoryTreeTestcase = (RemoteRepositoryTreeTestcase) iterator2
-									.next();
-							Long releaseId = remoteRepositoryTreeTestcase
-									.getTestcase().getReleaseId();
-							Long id = remoteRepositoryTreeTestcase
-									.getTestcase().getId();
-
-							if (releaseId == zephyrData.getReleaseId() && remoteRepositoryTreeTestcase.isOriginal()) {
-								testCaseId = id;
-							}
-						}
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
-
-				if (testCaseId == 0L) {
-					remoteTestcase.setExternalId(tree.getId() + "");
-					testCaseId = createTestCase(tree, remoteTestcase, token);
-				}
-
-				testCaseIdResultMap.put(testCaseId,
-						testCaseWithStatus.getPassed());
-
 			}
+			
+			for (Long tcrCatalogTreeId : phaseTestsTmpMap.keySet()) {
+				Map<String, Long> t = TestCaseUtil.createTestCases(zephyrData.getZephyrProjectId(), zephyrData.getReleaseId(), tcrCatalogTreeId, phaseTestsTmpMap.get(tcrCatalogTreeId), rc, "33");
+				for (Entry<String, Long> testNameId : t.entrySet()) {
+					testCaseIdResultMap.put(testNameId.getValue(), tempStatusMap.get(tcrCatalogTreeId).get(testNameId.getKey()));
+				}
+			}
+			
+			rc.destroy();
 
 			RemotePhase remotePhase = new RemotePhase();
 
@@ -343,7 +288,7 @@ public class ZephyrSoapClient {
 			remotePhase.setEndDate(endDate1);
 			Long cyclePhaseID = client.addPhaseToCycle(remotePhase, 1, token);
 
-			Map<Long, Long> remoteTestcaseIdTestScheduleIdMap = fetchTestSchedules(zephyrData, cyclePhaseID);
+			Map<Long, Long> remoteTestcaseIdTestScheduleIdMap = TestSchedulesUtil.searchTestScheduleDetails(cyclePhaseID, new RestClient(zephyrData.getSelectedZephyrServer().getServerAddress(), zephyrData.getSelectedZephyrServer().getUsername(), zephyrData.getSelectedZephyrServer().getPassword()), REST_VERSION);
 			updateTestCaseExecution(remoteTestcaseIdTestScheduleIdMap, testCaseIdResultMap);
 
 
@@ -363,15 +308,15 @@ public class ZephyrSoapClient {
 				System.out.println("Problem Getting Project ID");
 				return;
 			}
-			RemoteRelease releaseById = null;
-			try {
-				releaseById = client.getReleaseById(zephyrData.getReleaseId(),
-						token);
-			} catch (ZephyrServiceException e) {
-				System.out.println("Problem Getting Release ID");
-
-				return;
-			}
+//			RemoteRelease releaseById = null;
+//			try {
+//				releaseById = client.getReleaseById(zephyrData.getReleaseId(),
+//						token);
+//			} catch (ZephyrServiceException e) {
+//				System.out.println("Problem Getting Release ID");
+//
+//				return;
+//			}
 
 			RemoteCycle rCycle = new RemoteCycle();
 			
@@ -498,7 +443,7 @@ public class ZephyrSoapClient {
 
 		Set<String> packageNames = zephyrData.getPackageNames();
 
-		for (Iterator iterator = packageNames.iterator(); iterator.hasNext();) {
+		for (Iterator<String> iterator = packageNames.iterator(); iterator.hasNext();) {
 			String string = (String) iterator.next();
 
 			String[] packageNameArray = string.split("\\.");

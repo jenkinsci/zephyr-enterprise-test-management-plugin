@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -42,6 +43,7 @@ import com.thed.service.soap.ZephyrSoapService_Service;
 import com.thed.zephyr.jenkins.model.TestCaseResultModel;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import com.thed.zephyr.jenkins.reporter.ZeeConstants;
+import com.thed.zephyr.jenkins.utils.rest.Cycle;
 import com.thed.zephyr.jenkins.utils.rest.RestClient;
 import com.thed.zephyr.jenkins.utils.rest.TestCaseUtil;
 import com.thed.zephyr.jenkins.utils.rest.TestSchedulesUtil;
@@ -56,6 +58,8 @@ public class ZephyrSoapClient {
 
 	private static ZephyrSoapService client;
 	private static String token;
+	
+	private static Logger log = Logger.getLogger(ZephyrSoapClient.class.getName());
 
 	private static void updateTestCaseExecution(Map<Long, Long> remoteTestcaseIdTestScheduleIdMap,
 			Map<Long, Boolean> testCaseIdResultMap) {
@@ -197,6 +201,7 @@ public class ZephyrSoapClient {
 	public void uploadTestResults(ZephyrConfigModel zephyrData)
 			throws DatatypeConfigurationException {
 
+		log.info("Publishing results to Zephyr ...");
 		token = initializeClient(zephyrData);
 		Map<String, RemoteRepositoryTree> packageRepositoryStructureMap = null;
 		RestClient rc = new RestClient(zephyrData.getSelectedZephyrServer().getServerAddress(), zephyrData.getSelectedZephyrServer().getUsername(), zephyrData.getSelectedZephyrServer().getPassword());
@@ -305,26 +310,21 @@ public class ZephyrSoapClient {
 				projectById = client.getProjectById(
 						zephyrData.getZephyrProjectId(), token);
 			} catch (ZephyrServiceException e) {
-				System.out.println("Problem Getting Project ID");
+				log.info("Problem Getting Project ID");
 				return;
 			}
-//			RemoteRelease releaseById = null;
-//			try {
-//				releaseById = client.getReleaseById(zephyrData.getReleaseId(),
-//						token);
-//			} catch (ZephyrServiceException e) {
-//				System.out.println("Problem Getting Release ID");
-//
-//				return;
-//			}
 
 			RemoteCycle rCycle = new RemoteCycle();
 			
-			GregorianCalendar gCal = new GregorianCalendar();
 			try {
+				XMLGregorianCalendar projectEndDate = projectById.getEndDate();
+				XMLGregorianCalendar projectStartDate = projectById.getStartDate();
+
+				GregorianCalendar gCal = new GregorianCalendar(projectStartDate.getTimeZone(projectStartDate.getTimezone()));
+				
 				XMLGregorianCalendar startDate = DatatypeFactory.newInstance()
 						.newXMLGregorianCalendar(gCal);
-				
+
 				if (zephyrData.getCycleDuration().trim().equalsIgnoreCase("30 days")) {
 					gCal.add(Calendar.DAY_OF_MONTH, +29);
 				} else if (zephyrData.getCycleDuration().trim().equalsIgnoreCase("7 days")) {
@@ -345,9 +345,6 @@ public class ZephyrSoapClient {
 				rCycle.setEndDate(endDate);
 
 				
-				XMLGregorianCalendar projectEndDate = projectById.getEndDate();
-
-				XMLGregorianCalendar projectStartDate = projectById.getStartDate();
 
 					if(projectEndDate != null) {
 
@@ -399,8 +396,6 @@ public class ZephyrSoapClient {
 								}
 							
 							}
-
-							
 						}
 					
 					}
@@ -420,10 +415,13 @@ public class ZephyrSoapClient {
 				Long createNewCycleID = client.createNewCycle(rCycle, token);
 				zephyrData.setCycleId(createNewCycleID);
 			} catch (ZephyrServiceException e) {
-				System.out.println("Problem Creating new cycle");
+				log.info("Problem Creating new cycle");
 				e.printStackTrace();
 				return;
 			}
+		} else {
+			RestClient rc = new RestClient(zephyrData.getSelectedZephyrServer().getServerAddress(), zephyrData.getSelectedZephyrServer().getUsername(), zephyrData.getSelectedZephyrServer().getPassword());
+			Cycle.updateCycle(zephyrData.getCycleId(), zephyrData.getBuilNumber(), rc, "v3");
 		}
 	}
 
@@ -438,10 +436,11 @@ public class ZephyrSoapClient {
 
 		RemoteRepositoryTreeMap.put("parentPhase", tree);
 
-		if (!zephyrData.isCreatePackage())
-			return RemoteRepositoryTreeMap;
+		if (!zephyrData.isCreatePackage()) return RemoteRepositoryTreeMap;
 
 		Set<String> packageNames = zephyrData.getPackageNames();
+		
+		if(packageNames == null || packageNames.size() == 0) return RemoteRepositoryTreeMap;
 
 		for (Iterator<String> iterator = packageNames.iterator(); iterator.hasNext();) {
 			String string = (String) iterator.next();
@@ -490,7 +489,7 @@ public class ZephyrSoapClient {
 									.get(0);
 						}
 					} catch (ZephyrServiceException e1) {
-						System.out.println("Error in getting phase name");
+						log.info("Error in getting phase name");
 						e1.printStackTrace();
 					}
 
@@ -571,7 +570,7 @@ public class ZephyrSoapClient {
 				}
 			}
 		} catch (ZephyrServiceException e1) {
-			System.out.println("Error in getting phase name");
+			log.info("Error in getting phase name");
 			e1.printStackTrace();
 		}
 
@@ -608,7 +607,7 @@ public class ZephyrSoapClient {
 			projectById = client.getProjectById(
 					zephyrData.getZephyrProjectId(), token);
 		} catch (ZephyrServiceException e) {
-			System.out.println("Problem Getting Project ID");
+			log.info("Problem Getting Project Duration");
 			return daysBtwnProjectStartEndDate;
 		}
 

@@ -12,7 +12,8 @@ public class Testcase {
 	private int writerId = 0;
 	private int lastUpdaterId = 0;
 	private int oldId = 0;
-	private boolean automated = false;
+	private boolean automated = true;
+	private String scriptName = "Created By Jenkins";
 	private List<Object> requirementIds = new ArrayList<>();
 	private int attachmentCount = 0;
 	private long releaseId;
@@ -130,6 +131,18 @@ public class Testcase {
 
 	public void setProjectId(long projectId2) {
 		this.projectId = projectId2;
+	}
+
+	public String getScriptName() {
+		return scriptName;
+	}
+
+	public void setScriptName(String scriptName) {
+		this.scriptName = scriptName;
+	}
+
+	public void setComplex(boolean isComplex) {
+		this.isComplex = isComplex;
 	}
 
 }

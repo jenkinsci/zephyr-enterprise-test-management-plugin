@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 
@@ -42,6 +44,8 @@ import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 
 @Extension
 public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
+
+	private static Logger logger = Logger.getLogger(ZeeDescriptor.class.getName());
 
 	private List<ZephyrInstance> zephyrInstances;
 
@@ -73,6 +77,9 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	public boolean configure(StaplerRequest req, JSONObject formData)
 			throws FormException {
 		req.bindParameters(this);
+		
+		logger.info("Displaying Zephyr server config section");
+		
 		this.zephyrInstances = new ArrayList<ZephyrInstance>();
 		Object object = formData.get("zephyrInstances");
 		if (object instanceof JSONArray) {
@@ -81,6 +88,8 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 				JSONObject jObj = (JSONObject) iterator.next();
 				ZephyrInstance zephyrInstance = new ZephyrInstance();
 
+				RestClient restClient = null;
+				try {
 				String server = URLValidator.validateURL(jObj.getString("serverAddress").trim());
 				String user = jObj.getString("username").trim();
 				String pass = jObj.getString("password").trim();
@@ -88,16 +97,17 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 				zephyrInstance.setServerAddress(server);
 				zephyrInstance.setUsername(user);
 				zephyrInstance.setPassword(pass);
-				RestClient restClient = null;
-				boolean zephyrServerValidation;
-				try {
+				boolean zephyrServerValidation = false;
 					restClient = new RestClient(server, user, pass);
 					zephyrServerValidation = ConfigurationValidator.validateZephyrConfiguration(restClient, getZephyrRestVersion(restClient));
-				} finally {
+					if (zephyrServerValidation) {
+						this.zephyrInstances.add(zephyrInstance);
+					}
+				} catch (Throwable e) {
+					logger.log(Level.ALL, "Error in validating server and credentials. ");
+					logger.log(Level.ALL, e.getMessage());
+				}	finally {
 					closeHTTPClient(restClient);
-				}
-				if (zephyrServerValidation) {
-					this.zephyrInstances.add(zephyrInstance);
 				}
 			}
 
@@ -105,6 +115,8 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			JSONObject jObj = formData.getJSONObject("zephyrInstances");
 			ZephyrInstance zephyrInstance = new ZephyrInstance();
 
+			RestClient restClient = null;
+			try {
 			String server = URLValidator.validateURL(jObj.getString("serverAddress").trim());
 			String user = jObj.getString("username").trim();
 			String pass = jObj.getString("password").trim();
@@ -113,17 +125,18 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			zephyrInstance.setUsername(user);
 			zephyrInstance.setPassword(pass);
 
-			RestClient restClient = null;
-			boolean zephyrServerValidation;
-			try {
+			boolean zephyrServerValidation = false;
 				restClient = new RestClient(server, user, pass);
 				zephyrServerValidation = ConfigurationValidator
                         .validateZephyrConfiguration(restClient, getZephyrRestVersion(restClient));
+				if (zephyrServerValidation) {
+					this.zephyrInstances.add(zephyrInstance);
+				}
+			} catch (Throwable e) {
+				logger.log(Level.ALL, "Error in validating server and credentials. ");
+				logger.log(Level.ALL, e.getMessage());
 			} finally {
 				closeHTTPClient(restClient);
-			}
-			if (zephyrServerValidation) {
-				this.zephyrInstances.add(zephyrInstance);
 			}
 
 		}

@@ -42,7 +42,6 @@ public class TestSchedulesUtil {
 					long testcaseId = tests.getJSONObject(i).getJSONObject("tcrTreeTestcase").getJSONObject("testcase")
 							.getLong("id");
 
-					System.out.println(executionId + ":" + testcaseId);
 
 					remoteTestcaseIdTestScheduleIdMap.put(testcaseId, executionId);
 
@@ -61,12 +60,5 @@ public class TestSchedulesUtil {
 
 		return remoteTestcaseIdTestScheduleIdMap;
 
-	}
-
-	public static void main(String[] args) {
-		RestClient rc = new RestClient("http://192.168.11.47", "test.manager", "test.manager");
-
-		searchTestScheduleDetails(5L, rc, "V3");
-		rc.destroy();
 	}
 }

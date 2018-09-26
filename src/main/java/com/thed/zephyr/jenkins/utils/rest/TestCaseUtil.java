@@ -94,8 +94,6 @@ public class TestCaseUtil {
 			
 			String json = gson.toJson(list, list.getClass());
 			
-			System.out.println(json);
-
 			HttpResponse response = null;
 			StringEntity payload = new StringEntity(json,
 	                ContentType.APPLICATION_FORM_URLENCODED);
@@ -138,19 +136,5 @@ public class TestCaseUtil {
 			e.printStackTrace();
 		}
 		return map;
-	}
-
-	public static void main(String[] args) {
-		RestClient rc = new RestClient("http://192.168.11.47", "test.manager", "test.manager");
-
-//		Map<String, Long> searchTestCaseDetails = searchTestCaseDetails(1L, rc, "V3", 35);
-//		System.out.println(searchTestCaseDetails);
-		
-		List<String> testNames = new ArrayList<String>();
-		testNames.add("Naresh");
-		testNames.add("Arun");
-		Map<String, Long> createTestCases = createTestCases(1L, 1L, 34, testNames , rc, "v3");
-		System.out.println(createTestCases);
-		rc.destroy();
 	}
 }

@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 
+import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -41,6 +42,7 @@ import com.thed.zephyr.jenkins.utils.rest.Project;
 import com.thed.zephyr.jenkins.utils.rest.Release;
 import com.thed.zephyr.jenkins.utils.rest.RestClient;
 import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
+import org.kohsuke.stapler.verb.POST;
 
 @Extension
 public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
@@ -166,11 +168,12 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 //		}
 //	}
 
+    @POST
 	public FormValidation doTestConnection(
 			@QueryParameter String serverAddress,
 			@QueryParameter String username, @QueryParameter String password) {
 
-
+        Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
 		if (StringUtils.isBlank(serverAddress)) {
 			return FormValidation.error("Please enter the server name");
 		}

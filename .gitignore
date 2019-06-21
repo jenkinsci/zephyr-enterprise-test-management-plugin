@@ -7,3 +7,4 @@ target
 /.project
 /pom.xml.bak
 /release.properties
+/.idea

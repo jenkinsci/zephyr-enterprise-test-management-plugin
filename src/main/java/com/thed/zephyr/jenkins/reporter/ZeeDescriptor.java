@@ -6,6 +6,15 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_DURATION_30_DA
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_DURATION_7_DAYS;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NAME_POST_BUILD_ACTION;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.thed.service.HttpClientService;
+import com.thed.service.ZephyrRestService;
+import com.thed.service.impl.HttpClientServiceImpl;
+import com.thed.service.impl.ZephyrRestServiceImpl;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.tasks.BuildStepDescriptor;
@@ -13,12 +22,8 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.*;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,10 +49,13 @@ import com.thed.zephyr.jenkins.utils.rest.RestClient;
 import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 import org.kohsuke.stapler.verb.POST;
 
+
 @Extension
 public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 	private static Logger logger = Logger.getLogger(ZeeDescriptor.class.getName());
+
+    ZephyrRestService zephyrRestService;
 
 	private List<ZephyrInstance> zephyrInstances;
 
@@ -62,6 +70,8 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	public ZeeDescriptor() {
 		super(ZeeReporter.class);
 		load();
+
+        zephyrRestService = new ZephyrRestServiceImpl();
 	}
 
 	@Override
@@ -174,6 +184,26 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			@QueryParameter String username, @QueryParameter String password) {
 
         Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
+
+        try {
+//            zephyrRestService.login("http://localhost:8080", "test.manager", "test.manager");
+//            com.thed.model.Project project = zephyrRestService.getProjectById(1l);
+//            System.out.println(project);
+            com.thed.model.Cycle cycle = new com.thed.model.Cycle();
+            cycle.setName("tester cycle");
+            cycle.setReleaseId(1l);
+            cycle.setStartDate(new Date());
+            cycle.setEndDate(new Date());
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            Gson gson = gsonBuilder.create();
+            String json = gson.toJson(cycle);
+            System.out.println(json);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+
+
 		if (StringUtils.isBlank(serverAddress)) {
 			return FormValidation.error("Please enter the server name");
 		}

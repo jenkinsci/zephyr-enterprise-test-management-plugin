@@ -186,7 +186,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
         Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
 
         try {
-//            zephyrRestService.login("http://localhost:8080", "test.manager", "test.manager");
+            zephyrRestService.login("http://localhost:8080", "test.manager", "test.manager");
 //            com.thed.model.Project project = zephyrRestService.getProjectById(1l);
 //            System.out.println(project);
             com.thed.model.Cycle cycle = new com.thed.model.Cycle();
@@ -194,9 +194,12 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
             cycle.setReleaseId(1l);
             cycle.setStartDate(new Date());
             cycle.setEndDate(new Date());
+
+            com.thed.model.Cycle cycle1 = zephyrRestService.createCycle(cycle);
+
             GsonBuilder gsonBuilder = new GsonBuilder();
             Gson gson = gsonBuilder.create();
-            String json = gson.toJson(cycle);
+            String json = gson.toJson(cycle1);
             System.out.println(json);
         } catch(Exception e) {
             e.printStackTrace();

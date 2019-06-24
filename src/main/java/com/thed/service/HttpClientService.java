@@ -16,9 +16,9 @@ public interface HttpClientService {
 
     String getRequest(String url);
 
-    void postRequest();
+    String postRequest(String url, String content);
 
-    void putRequest();
+    String putRequest(String url, String content);
 
     void clear();
 

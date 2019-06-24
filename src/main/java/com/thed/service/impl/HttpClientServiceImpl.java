@@ -6,8 +6,13 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.*;
 
@@ -62,7 +67,7 @@ public class HttpClientServiceImpl implements HttpClientService {
             }
 
         }catch(Exception e) {
-
+            e.printStackTrace();
         }
 
         return null;
@@ -85,7 +90,7 @@ public class HttpClientServiceImpl implements HttpClientService {
             }
 
         }catch(Exception e) {
-
+            e.printStackTrace();
         }
 
         return null;
@@ -93,13 +98,57 @@ public class HttpClientServiceImpl implements HttpClientService {
     }
 
     @Override
-    public void postRequest() {
-        System.out.println("post request in impl");
+    public String postRequest(String url, String content) {
+        if(StringUtils.isEmpty(url)) {
+            return null;
+        }
+
+        try{
+            HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+            HttpPost httpPost = new HttpPost(url);
+
+            if(!StringUtils.isEmpty(content)) {
+                StringEntity stringEntity = new StringEntity(content, ContentType.APPLICATION_JSON);
+                httpPost.setEntity(stringEntity);
+            }
+
+            HttpResponse response = httpClient.execute(httpPost);
+            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
+                return convertInputStreamToString(response.getEntity().getContent());
+            }
+
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     @Override
-    public void putRequest() {
-        System.out.println("put request in impl");
+    public String putRequest(String url, String content) {
+        if(StringUtils.isEmpty(url)) {
+            return null;
+        }
+
+        try{
+            HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+            HttpPut httpPut = new HttpPut(url);
+
+            if(!StringUtils.isEmpty(content)) {
+                StringEntity stringEntity = new StringEntity(content, ContentType.APPLICATION_JSON);
+                httpPut.setEntity(stringEntity);
+            }
+
+            HttpResponse response = httpClient.execute(httpPut);
+            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
+                return convertInputStreamToString(response.getEntity().getContent());
+            }
+
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     @Override

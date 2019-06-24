@@ -1,5 +1,6 @@
 package com.thed.service;
 
+import com.thed.model.Cycle;
 import com.thed.model.Project;
 
 import java.net.URISyntaxException;
@@ -36,6 +37,13 @@ public interface ZephyrRestService {
      * @throws URISyntaxException
      */
     Project getProjectById(Long projectId) throws URISyntaxException;
+
+    /**
+     * Create a new cycle with given cycle.
+     * @param cycle
+     * @return
+     */
+    Cycle createCycle(Cycle cycle);
 
     /**
      * Clears all data saved in this instance and related to this.

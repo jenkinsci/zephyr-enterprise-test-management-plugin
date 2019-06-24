@@ -2,6 +2,7 @@ package com.thed.service.impl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.thed.model.Cycle;
 import com.thed.model.Project;
 import com.thed.service.HttpClientService;
 import com.thed.service.ZephyrRestService;
@@ -19,15 +20,20 @@ import java.util.Map;
 public class ZephyrRestServiceImpl implements ZephyrRestService {
 
     public static final String GET_CURRENT_USER_URL = "/flex/services/rest/v3/user/current";
-    public static final String GET_PROJECT_BY_ID = "/flex/services/rest/v3/project/{projectId}";
+    public static final String GET_PROJECT_BY_ID_URL = "/flex/services/rest/v3/project/{projectId}";
+    public static final String CREATE_CYCLE_URL = "/flex/services/rest/v3/cycle";
 
 
     private String hostAddress;
 
     private HttpClientService httpClientService;
+    private Gson gson;
 
     public ZephyrRestServiceImpl() {
         httpClientService = new HttpClientServiceImpl();
+
+        GsonBuilder builder = new GsonBuilder();
+        gson = builder.create();
     }
 
     public String buildUrl(String url, Map<String, String> pathParams, List<NameValuePair> queryParams) throws URISyntaxException {
@@ -72,13 +78,17 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("projectId", String.valueOf(projectId));
 
-        String url = getHostAddress() + GET_PROJECT_BY_ID;
+        String url = getHostAddress() + GET_PROJECT_BY_ID_URL;
         url = buildUrl(url, pathParams, null);
-
         String res = httpClientService.getRequest(url);
-        GsonBuilder builder = new GsonBuilder();
-        Gson gson = builder.create();
         return gson.fromJson(res, Project.class);
+    }
+
+    @Override
+    public Cycle createCycle(Cycle cycle) {
+        String url = getHostAddress() + CREATE_CYCLE_URL;
+        String res = httpClientService.postRequest(url, gson.toJson(cycle));
+        return gson.fromJson(res, Cycle.class);
     }
 
     public String getHostAddress() {

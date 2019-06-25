@@ -12,8 +12,12 @@ import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.thed.service.HttpClientService;
+import com.thed.service.ProjectService;
+import com.thed.service.UserService;
 import com.thed.service.ZephyrRestService;
 import com.thed.service.impl.HttpClientServiceImpl;
+import com.thed.service.impl.ProjectServiceImpl;
+import com.thed.service.impl.UserServiceImpl;
 import com.thed.service.impl.ZephyrRestServiceImpl;
 import hudson.Extension;
 import hudson.model.AbstractProject;
@@ -56,6 +60,9 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	private static Logger logger = Logger.getLogger(ZeeDescriptor.class.getName());
 
     ZephyrRestService zephyrRestService;
+
+    private UserService userService = new UserServiceImpl();
+    private ProjectService projectService = new ProjectServiceImpl();
 
 	private List<ZephyrInstance> zephyrInstances;
 
@@ -185,25 +192,25 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
         Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
 
-        try {
-            zephyrRestService.login("http://localhost:8080", "test.manager", "test.manager");
-//            com.thed.model.Project project = zephyrRestService.getProjectById(1l);
-//            System.out.println(project);
-            com.thed.model.Cycle cycle = new com.thed.model.Cycle();
-            cycle.setName("tester cycle");
-            cycle.setReleaseId(1l);
-            cycle.setStartDate(new Date());
-            cycle.setEndDate(new Date());
-
-            com.thed.model.Cycle cycle1 = zephyrRestService.createCycle(cycle);
-
-            GsonBuilder gsonBuilder = new GsonBuilder();
-            Gson gson = gsonBuilder.create();
-            String json = gson.toJson(cycle1);
-            System.out.println(json);
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            zephyrRestService.login("http://localhost:8080", "test.manager", "test.manager");
+////            com.thed.model.Project project = zephyrRestService.getProjectById(1l);
+////            System.out.println(project);
+//            com.thed.model.Cycle cycle = new com.thed.model.Cycle();
+//            cycle.setName("tester cycle");
+//            cycle.setReleaseId(1l);
+//            cycle.setStartDate(new Date());
+//            cycle.setEndDate(new Date());
+//
+//            com.thed.model.Cycle cycle1 = zephyrRestService.createCycle(cycle);
+//
+//            GsonBuilder gsonBuilder = new GsonBuilder();
+//            Gson gson = gsonBuilder.create();
+//            String json = gson.toJson(cycle1);
+//            System.out.println(json);
+//        } catch(Exception e) {
+//            e.printStackTrace();
+//        }
 
 
 
@@ -225,28 +232,37 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		}
 
 		String zephyrURL = URLValidator.validateURL(serverAddress);
-		Map<Boolean, String> credentialValidationResultMap;
-		RestClient restClient = null;
-		try {
-	    	restClient = new RestClient(serverAddress, username, password);
+//		Map<Boolean, String> credentialValidationResultMap;
+//		RestClient restClient = null;
+//		try {
+//	    	restClient = new RestClient(serverAddress, username, password);
+//
+//			if (!zephyrURL.startsWith("http")) {
+//                return FormValidation.error(zephyrURL);
+//            }
+//
+//			if (!ServerInfo.findServerAddressIsValidZephyrURL(restClient)) {
+//                return FormValidation.error("This is not a valid Zephyr Server");
+//            }
+//
+//			credentialValidationResultMap = ServerInfo
+//                    .validateCredentials(restClient, getZephyrRestVersion(restClient));
+//		} finally {
+//			closeHTTPClient(restClient);
+//		}
+//		if (credentialValidationResultMap.containsKey(false)) {
+//			return FormValidation.error(credentialValidationResultMap
+//					.get(false));
+//		}
 
-			if (!zephyrURL.startsWith("http")) {
-                return FormValidation.error(zephyrURL);
+        try {
+            Boolean verifyCredentials = userService.verifyCredentials(serverAddress, username, password);
+            if(!verifyCredentials) {
+                return FormValidation.error("Username or password is incorrect.");
             }
-
-			if (!ServerInfo.findServerAddressIsValidZephyrURL(restClient)) {
-                return FormValidation.error("This is not a valid Zephyr Server");
-            }
-
-			credentialValidationResultMap = ServerInfo
-                    .validateCredentials(restClient, getZephyrRestVersion(restClient));
-		} finally {
-			closeHTTPClient(restClient);
-		}
-		if (credentialValidationResultMap.containsKey(false)) {
-			return FormValidation.error(credentialValidationResultMap
-					.get(false));
-		}
+        } catch (Exception e) {
+            return FormValidation.error("Error occurred while verifying credentials. Please try again later.");
+        }
 
 		return FormValidation.ok("Connection to Zephyr has been validated");
 	}
@@ -265,7 +281,6 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public ListBoxModel doFillServerAddressItems(
 			@QueryParameter String serverAddress) {
-
 		return fetchServerList(serverAddress);
 	}
 
@@ -304,22 +319,39 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			return m;
 		}
 
+//      Legacy
+//		RestClient restClient = null;
+//		Map<Long, String> projects;
+//		try {
+//	    	restClient = getRestclient(serverAddress);
+//			projects = Project.getAllProjects(restClient, getZephyrRestVersion(restClient));
+//		} finally {
+//			closeHTTPClient(restClient);
+//		}
+//		Set<Entry<Long, String>> projectEntrySet = projects.entrySet();
+//
+//		for (Iterator<Entry<Long, String>> iterator = projectEntrySet
+//				.iterator(); iterator.hasNext();) {
+//			Entry<Long, String> entry = iterator.next();
+//			m.add(entry.getValue(), entry.getKey() + "");
+//		}
 
-		RestClient restClient = null;
-		Map<Long, String> projects;
-		try {
-	    	restClient = getRestclient(serverAddress);
-			projects = Project.getAllProjects(restClient, getZephyrRestVersion(restClient));
-		} finally {
-			closeHTTPClient(restClient);
-		}
-		Set<Entry<Long, String>> projectEntrySet = projects.entrySet();
+        try {
 
-		for (Iterator<Entry<Long, String>> iterator = projectEntrySet
-				.iterator(); iterator.hasNext();) {
-			Entry<Long, String> entry = iterator.next();
-			m.add(entry.getValue(), entry.getKey() + "");
-		}
+            ZephyrInstance zephyrInstance = fetchZephyrInstance(serverAddress);
+            userService.login(zephyrInstance.getServerAddress(), zephyrInstance.getUsername(), zephyrInstance.getPassword());
+
+            List<com.thed.model.Project> projects = projectService.getAllProjectsForCurrentUser();
+            for (com.thed.model.Project project : projects) {
+                if(project.getGlobalProject() == Boolean.FALSE) {
+                    m.add(project.getName(), project.getId().toString());
+                }
+            }
+        }
+        catch(Exception e) {
+            //Todo: handle exceptions gracefully
+            e.printStackTrace();
+        }
 
 		return m;
 	}

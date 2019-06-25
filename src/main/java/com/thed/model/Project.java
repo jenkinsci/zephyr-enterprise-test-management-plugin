@@ -7,16 +7,8 @@ import java.io.Serializable;
  */
 public class Project extends BaseEntity {
 
-    private Long id;
     private String name;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
+    private Boolean globalProject;
 
     public String getName() {
         return name;
@@ -28,6 +20,14 @@ public class Project extends BaseEntity {
 
     @Override
     public String toString() {
-        return "{id: " + id + ", name: " + name + "}";
+        return "{id: " + getId() + ", name: " + name + "}";
+    }
+
+    public Boolean getGlobalProject() {
+        return globalProject;
+    }
+
+    public void setGlobalProject(Boolean globalProject) {
+        this.globalProject = globalProject;
     }
 }

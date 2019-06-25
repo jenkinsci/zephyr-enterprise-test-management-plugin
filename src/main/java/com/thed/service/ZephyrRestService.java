@@ -4,6 +4,7 @@ import com.thed.model.Cycle;
 import com.thed.model.Project;
 
 import java.net.URISyntaxException;
+import java.util.List;
 
 /**
  * Created by prashant on 20/6/19.
@@ -43,7 +44,13 @@ public interface ZephyrRestService {
      * @param cycle
      * @return
      */
-    Cycle createCycle(Cycle cycle);
+    Cycle createCycle(Cycle cycle) throws URISyntaxException;
+
+    /**
+     * Get all projects for current user.
+     * @return
+     */
+    public List<Project> getAllProjectsForCurrentUser() throws URISyntaxException;
 
     /**
      * Clears all data saved in this instance and related to this.

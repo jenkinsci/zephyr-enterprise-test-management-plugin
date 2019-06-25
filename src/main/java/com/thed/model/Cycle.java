@@ -12,21 +12,12 @@ public class Cycle extends BaseEntity {
 
     private final static String DATE_FORMAT = "MM/dd/yyyy";
 
-    private Long id;
     private String name;
     private Long releaseId;
     private Long startDate;
     private Long endDate;
     private String cycleStartDate;
     private String cycleEndDate;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public String getName() {
         return name;

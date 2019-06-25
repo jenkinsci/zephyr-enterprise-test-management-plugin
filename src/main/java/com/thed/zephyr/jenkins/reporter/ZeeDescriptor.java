@@ -288,6 +288,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public ListBoxModel doFillProjectKeyItems(
 			@QueryParameter String serverAddress) {
+
 		return fetchProjectList(serverAddress);
 	}
 

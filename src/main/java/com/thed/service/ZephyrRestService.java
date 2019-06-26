@@ -3,6 +3,7 @@ package com.thed.service;
 import com.thed.model.Cycle;
 import com.thed.model.Project;
 import com.thed.model.Release;
+import com.thed.model.TestCase;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -66,8 +67,19 @@ public interface ZephyrRestService {
      * @param releaseId
      * @return
      * @throws URISyntaxException
-     */
+     */https://github.com/pv-smartbear/zephyr-enterprise-test-management-plugin
     List<Cycle> getAllCyclesForReleaseId(Long releaseId) throws URISyntaxException;
+
+    /**
+     * Create Test Cases
+     * @param projectId
+     * @param releaseId
+     * @param tcrCatalogTreeId
+     * @param testNames
+     * @return
+     * @throws URISyntaxException
+     */
+    List<TestCase> createTestCases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException;
 
     /**
      * Clears all data saved in this instance and related to this.

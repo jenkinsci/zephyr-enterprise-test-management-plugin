@@ -11,14 +11,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.thed.service.HttpClientService;
-import com.thed.service.ProjectService;
-import com.thed.service.UserService;
-import com.thed.service.ZephyrRestService;
-import com.thed.service.impl.HttpClientServiceImpl;
-import com.thed.service.impl.ProjectServiceImpl;
-import com.thed.service.impl.UserServiceImpl;
-import com.thed.service.impl.ZephyrRestServiceImpl;
+import com.thed.service.*;
+import com.thed.service.impl.*;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.tasks.BuildStepDescriptor;
@@ -63,6 +57,8 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
     private UserService userService = new UserServiceImpl();
     private ProjectService projectService = new ProjectServiceImpl();
+    private ReleaseService releaseService = new ReleaseServiceImpl();
+    private CycleService cycleService = new CycleServiceImpl();
 
 	private List<ZephyrInstance> zephyrInstances;
 
@@ -405,27 +401,39 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			return listBoxModel;
 		}
 
-		long parseLong = 0;
-		try {
-			parseLong = Long.parseLong(projectKey);
-		} catch (NumberFormatException e) {
-			return listBoxModel;
-		}
-		RestClient restClient = null;
-		Map<Long, String> releases;
-		try {
-	    	restClient = getRestclient(serverAddress);
-			releases = Release.getAllReleasesByProjectID(parseLong,restClient, getZephyrRestVersion(restClient));
-		} finally {
-			closeHTTPClient(restClient);
-		}
-		Set<Entry<Long, String>> releaseEntrySet = releases.entrySet();
+//		long parseLong = 0;
+//		try {
+//			parseLong = Long.parseLong(projectKey);
+//		} catch (NumberFormatException e) {
+//			return listBoxModel;
+//		}
+//		RestClient restClient = null;
+//		Map<Long, String> releases;
+//		try {
+//	    	restClient = getRestclient(serverAddress);
+//			releases = Release.getAllReleasesByProjectID(parseLong,restClient, getZephyrRestVersion(restClient));
+//		} finally {
+//			closeHTTPClient(restClient);
+//		}
+//		Set<Entry<Long, String>> releaseEntrySet = releases.entrySet();
+//
+//		for (Iterator<Entry<Lo             context) {ng, String>> iterator = releaseEntrySet
+//				.iterator(); iterator.hasNext();) {
+//			Entry<Long, String> entry = iterator.next();
+//			listBoxModel.add(entry.getValue(), entry.getKey() + "");
+//		}
 
-		for (Iterator<Entry<Long, String>> iterator = releaseEntrySet
-				.iterator(); iterator.hasNext();) {
-			Entry<Long, String> entry = iterator.next();
-			listBoxModel.add(entry.getValue(), entry.getKey() + "");
-		}
+        try {
+            Long projectId = Long.parseLong(projectKey);
+            List<com.thed.model.Release> releases = releaseService.getAllReleasesForProjectId(projectId);
+            for (com.thed.model.Release release : releases) {
+                listBoxModel.add(release.getName(), release.getId().toString());
+            }
+        }
+        catch(Exception e) {
+            //todo: handle exception gracefully
+            e.printStackTrace();
+        }
 
 		return listBoxModel;
 	}
@@ -452,29 +460,41 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			return listBoxModel;
 		}
 
-		long parseLong;
-		try {
-			parseLong = Long.parseLong(releaseKey);
-		} catch (NumberFormatException e) {
-			return listBoxModel;
-		}
+//		long parseLong;
+//		try {
+//			parseLong = Long.parseLong(releaseKey);
+//		} catch (NumberFormatException e) {
+//			return listBoxModel;
+//		}
+//
+//		RestClient restClient = null;
+//		Map<Long, String> cycles;
+//		try {
+//	    	restClient = getRestclient(serverAddress);
+//			cycles = Cycle.getAllCyclesByReleaseID(parseLong, restClient, getZephyrRestVersion(restClient));
+//		} finally {
+//			closeHTTPClient(restClient);
+//		}
+//
+//		Set<Entry<Long, String>> releaseEntrySet = cycles.entrySet();
+//
+//		for (Iterator<Entry<Long, String>> iterator = releaseEntrySet
+//				.iterator(); iterator.hasNext();) {
+//			Entry<Long, String> entry = iterator.next();
+//			listBoxModel.add(entry.getValue(), entry.getKey() + "");
+//		}
 
-		RestClient restClient = null;
-		Map<Long, String> cycles;
-		try {
-	    	restClient = getRestclient(serverAddress);
-			cycles = Cycle.getAllCyclesByReleaseID(parseLong, restClient, getZephyrRestVersion(restClient));
-		} finally {
-			closeHTTPClient(restClient);
-		}
-
-		Set<Entry<Long, String>> releaseEntrySet = cycles.entrySet();
-
-		for (Iterator<Entry<Long, String>> iterator = releaseEntrySet
-				.iterator(); iterator.hasNext();) {
-			Entry<Long, String> entry = iterator.next();
-			listBoxModel.add(entry.getValue(), entry.getKey() + "");
-		}
+        try {
+            Long releaseId = Long.parseLong(releaseKey);
+            List<com.thed.model.Cycle> cycles = cycleService.getAllCyclesForReleaseId(releaseId);
+            for (com.thed.model.Cycle cycle : cycles) {
+                listBoxModel.add(cycle.getName(), cycle.getId().toString());
+            }
+        }
+        catch(Exception e) {
+            //todo: handle exceptions gracefully
+            e.printStackTrace();
+        }
 
 		listBoxModel.add("New Cycle", NEW_CYCLE_KEY);
 
@@ -486,40 +506,50 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			@QueryParameter String projectKey) {
 
 		ListBoxModel listBoxModel = new ListBoxModel();
-		long zephyrProjectId;
-		try {
-			zephyrProjectId = Long.parseLong(projectKey);
-		} catch (NumberFormatException e1) {
-			listBoxModel.add(CYCLE_DURATION_1_DAY);
-			return listBoxModel;
-		}
-		ZephyrConfigModel zephyrData = new ZephyrConfigModel();
-		zephyrData.setZephyrProjectId(zephyrProjectId);
-		int fetchProjectDuration = 1;
+//		long zephyrProjectId;
+//		try {
+//			zephyrProjectId = Long.parseLong(projectKey);
+//		} catch (NumberFormatException e1) {
+//			listBoxModel.add(CYCLE_DURATION_1_DAY);
+//			return listBoxModel;
+//		}
+//		ZephyrConfigModel zephyrData = new ZephyrConfigModel();
+//		zephyrData.setZephyrProjectId(zephyrProjectId);
+//		int fetchProjectDuration = 1;
+//
+//		zephyrData.setSelectedZephyrServer(fetchZephyrInstance(serverAddress));
+//		try {
+//			fetchProjectDuration = ZephyrSoapClient
+//					.fetchProjectDuration(zephyrData);
+//
+//		} catch (DatatypeConfigurationException e) {
+//			e.printStackTrace();
+//		}
 
-		zephyrData.setSelectedZephyrServer(fetchZephyrInstance(serverAddress));
-		try {
-			fetchProjectDuration = ZephyrSoapClient
-					.fetchProjectDuration(zephyrData);
+        try {
+            Long projectId = Long.parseLong(projectKey);
+            Long projectDuration = projectService.getProjectDurationInDays(projectId);
 
-		} catch (DatatypeConfigurationException e) {
-			e.printStackTrace();
-		}
+            if (projectDuration == -1) {
+                listBoxModel.add(CYCLE_DURATION_30_DAYS);
+                listBoxModel.add(CYCLE_DURATION_7_DAYS);
+                listBoxModel.add(CYCLE_DURATION_1_DAY);
+                return listBoxModel;
+            }
 
-		if (fetchProjectDuration == -1) {
-			listBoxModel.add(CYCLE_DURATION_30_DAYS);
-			listBoxModel.add(CYCLE_DURATION_7_DAYS);
-			listBoxModel.add(CYCLE_DURATION_1_DAY);
-			return listBoxModel;
-		}
+            if (projectDuration >= 29) {
+                listBoxModel.add(CYCLE_DURATION_30_DAYS);
+            }
 
-		if (fetchProjectDuration >= 29) {
-			listBoxModel.add(CYCLE_DURATION_30_DAYS);
-		}
+            if (projectDuration >= 6) {
+                listBoxModel.add(CYCLE_DURATION_7_DAYS);
+            }
+        }
+        catch (Exception e) {
+            //todo: handle exception gracefully
+            e.printStackTrace();
+        }
 
-		if (fetchProjectDuration >= 6) {
-			listBoxModel.add(CYCLE_DURATION_7_DAYS);
-		}
 		listBoxModel.add(CYCLE_DURATION_1_DAY);
 		return listBoxModel;
 	}

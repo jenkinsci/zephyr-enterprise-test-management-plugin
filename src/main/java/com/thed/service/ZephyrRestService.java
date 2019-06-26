@@ -2,6 +2,7 @@ package com.thed.service;
 
 import com.thed.model.Cycle;
 import com.thed.model.Project;
+import com.thed.model.Release;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -51,6 +52,22 @@ public interface ZephyrRestService {
      * @return
      */
     public List<Project> getAllProjectsForCurrentUser() throws URISyntaxException;
+
+    /**
+     * Get all releases for given projectId.
+     * @param projectId
+     * @return
+     * @throws URISyntaxException
+     */
+    List<Release> getAllReleasesForProjectId(Long projectId) throws URISyntaxException;
+
+    /**
+     * Get all cycles for given releaseId.
+     * @param releaseId
+     * @return
+     * @throws URISyntaxException
+     */
+    List<Cycle> getAllCyclesForReleaseId(Long releaseId) throws URISyntaxException;
 
     /**
      * Clears all data saved in this instance and related to this.

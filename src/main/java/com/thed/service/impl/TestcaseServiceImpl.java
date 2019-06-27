@@ -17,6 +17,6 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
 
     @Override
     public List<Testcase> createTestCases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException {
-        return zephyrRestService.createTestCases(projectId, releaseId, tcrCatalogTreeId, testNames);
+        return zephyrRestService.createTestcases(projectId, releaseId, tcrCatalogTreeId, testNames);
     }
 }

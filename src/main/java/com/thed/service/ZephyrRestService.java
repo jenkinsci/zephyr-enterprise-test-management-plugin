@@ -79,7 +79,7 @@ public interface ZephyrRestService {
      * @return
      * @throws URISyntaxException
      */
-    List<Testcase> createTestCases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException;
+    List<Testcase> createTestcases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException;
 
     /**
      * Clears all data saved in this instance and related to this.

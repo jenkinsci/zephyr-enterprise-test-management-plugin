@@ -13,6 +13,7 @@ public class Cycle extends BaseEntity {
     private final static String DATE_FORMAT = "MM/dd/yyyy";
 
     private String name;
+    private String build;
     private Long releaseId;
     private Long startDate;
     private Long endDate;
@@ -25,6 +26,14 @@ public class Cycle extends BaseEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getBuild() {
+        return build;
+    }
+
+    public void setBuild(String build) {
+        this.build = build;
     }
 
     public Long getReleaseId() {

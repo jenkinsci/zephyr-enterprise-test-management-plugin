@@ -1,6 +1,7 @@
 package com.thed.model;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * Created by prashant on 21/6/19.
@@ -9,6 +10,8 @@ public class Project extends BaseEntity {
 
     private String name;
     private Boolean globalProject;
+    private Date startDate;
+    private Date endDate;
 
     public String getName() {
         return name;
@@ -29,5 +32,21 @@ public class Project extends BaseEntity {
 
     public void setGlobalProject(Boolean globalProject) {
         this.globalProject = globalProject;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
     }
 }

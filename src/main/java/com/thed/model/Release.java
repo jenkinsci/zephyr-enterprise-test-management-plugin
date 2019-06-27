@@ -3,7 +3,7 @@ package com.thed.model;
 /**
  * Created by prashant on 25/6/19.
  */
-public class Release {
+public class Release extends BaseEntity {
 
     private String name;
 

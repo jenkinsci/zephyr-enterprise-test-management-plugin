@@ -1,10 +1,10 @@
 package com.thed.service.impl;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.thed.model.Cycle;
 import com.thed.model.Project;
+import com.thed.model.Release;
 import com.thed.model.TestCase;
 import com.thed.model.User;
 import com.thed.service.HttpClientService;
@@ -16,6 +16,7 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Type;
 import java.net.URISyntaxException;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,14 +30,15 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_CURRENT_USER_URL = "/flex/services/rest/{restVersion}/user/current";
 
     public static final String GET_PROJECT_BY_ID_URL = "/flex/services/rest/{restVersion}/project/{projectId}";
+    public static final String GET_ALL_PROJECTS_FOR_CURRENT_USER_URL = "/flex/services/rest/{restVersion}/project/user/{userId}";
 
-    public static final String GET_ALL_PROJECTS_FOR_CURRENT_USER = "/flex/services/rest/{restVersion}/project/user/{userId}";
+    public static final String GET_ALL_RELEASES_FOR_PROJECT_ID_URL = "/flex/services/rest/{restVersion}/release/project/{projectId}";
 
 //    public static final String GET_CYCLE_BY_ID_URL = "/flex/services/rest/{restVersion}/cycle/{id}";
     public static final String CREATE_CYCLE_URL = "/flex/services/rest/{restVersion}/cycle";
+    public static final String GET_ALL_CYCLES_FOR_RELEASE_ID_URL = "/flex/services/rest/{restVersion}/cycle/release/{releaseId}";
 
     public static final String URL_CREATE_TEST_CASES_BULK = "/flex/services/rest/{restVersion}/testcase/bulk?scheduleId=1";
-
 
     private User currentUser;
     private String hostAddress;
@@ -46,8 +48,26 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     private Gson gson;
 
     public ZephyrRestServiceImpl() {
+
+        JsonSerializer<Date> ser = new JsonSerializer<Date>() {
+            @Override
+            public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
+                    context) {
+                return src == null ? null : new JsonPrimitive(src.getTime());
+            }
+        };
+
+        JsonDeserializer<Date> deser = new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonElement json, Type typeOfT,
+                                    JsonDeserializationContext context) throws JsonParseException {
+                return json == null ? null : new Date(json.getAsLong());
+            }
+        };
+
         GsonBuilder builder = new GsonBuilder();
-        gson = builder.create();
+        gson = builder.registerTypeAdapter(Date.class, ser)
+                .registerTypeAdapter(Date.class, deser).create();
     }
 
     public String buildUrl(String url, Map<String, String> pathParams, List<NameValuePair> queryParams) throws URISyntaxException {
@@ -124,13 +144,35 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("userId", currentUser.getId().toString());
-        String url = buildUrl(prepareUrl(GET_ALL_PROJECTS_FOR_CURRENT_USER), pathParams, null);
+        String url = buildUrl(prepareUrl(GET_ALL_PROJECTS_FOR_CURRENT_USER_URL), pathParams, null);
 
         String res = httpClientService.getRequest(url);
 
         Type projectListType = new TypeToken<List<Project>>(){}.getType();
-
         return gson.fromJson(res, projectListType);
+    }
+
+    public List<Release> getAllReleasesForProjectId(Long projectId) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("projectId", projectId.toString());
+        String url = buildUrl(prepareUrl(GET_ALL_RELEASES_FOR_PROJECT_ID_URL), pathParams, null);
+
+        String res = httpClientService.getRequest(url);
+
+        Type releaseListType = new TypeToken<List<Release>>(){}.getType();
+        return gson.fromJson(res, releaseListType);
+    }
+
+    public List<Cycle> getAllCyclesForReleaseId(Long releaseId) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("releaseId", releaseId.toString());
+
+        String url = buildUrl(prepareUrl(GET_ALL_CYCLES_FOR_RELEASE_ID_URL), pathParams, null);
+        String res = httpClientService.getRequest(url);
+
+        Type releaseListType = new TypeToken<List<Cycle>>(){}.getType();
+        return gson.fromJson(res, releaseListType);
+
     }
 
     @Override

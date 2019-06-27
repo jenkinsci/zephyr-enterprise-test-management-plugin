@@ -177,8 +177,6 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
     @Override
     public List<TestCase> createTestCases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException {
-        List<TestCase> result = new ArrayList<>();
-
         //Create the payload for request
         List<TestCase> list = new ArrayList<>();
         for (String string : testNames) {
@@ -194,33 +192,9 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
         String url = prepareUrl(URL_CREATE_TEST_CASES_BULK);
         String res = httpClientService.postRequest(url, json);
-        JSONArray tests = new JSONArray(res);
 
-        int length = tests.length();
-        for (int i = 0; i < length; i++) {
-            JSONObject testObject = tests.getJSONObject(i).getJSONObject("testcase");
-            Long relId = testObject.getLong("releaseId");
-            Long testId = testObject.getLong("id");
-            final String name = testObject.getString("name");
-
-            Boolean testExist = Boolean.FALSE;
-            if (releaseId == relId) {
-                for(TestCase tc : result){
-                    if(testId.equals(tc.getId())){
-                        testExist = Boolean.TRUE;
-                        break;
-                    }
-                }
-                //TestCase tc = result.stream().filter(x -> testId.equals(x.getId())).findAny().orElse(null);
-                if(!testExist){
-                    TestCase testCase = new TestCase();
-                    testCase.setId(testId);
-                    testCase.setName(name);
-                    result.add(testCase);
-                }
-            }
-        }
-        return result;
+        Type testCaseListType = new TypeToken<List<TestCase>>(){}.getType();
+        return gson.fromJson(res, testCaseListType);
     }
 
     public User getCurrentUser() {

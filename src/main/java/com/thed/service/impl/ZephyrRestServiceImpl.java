@@ -161,9 +161,16 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
             Long testId = testObject.getLong("id");
             final String name = testObject.getString("name");
 
+            Boolean testExist = Boolean.FALSE;
             if (releaseId == relId) {
-                TestCase tc = result.stream().filter(x -> testId.equals(x.getId())).findAny().orElse(null);
-                if(tc == null){
+                for(TestCase tc : result){
+                    if(testId.equals(tc.getId())){
+                        testExist = Boolean.TRUE;
+                        break;
+                    }
+                }
+                //TestCase tc = result.stream().filter(x -> testId.equals(x.getId())).findAny().orElse(null);
+                if(!testExist){
                     TestCase testCase = new TestCase();
                     testCase.setId(testId);
                     testCase.setName(name);

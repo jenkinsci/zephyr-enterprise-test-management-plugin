@@ -67,7 +67,7 @@ public interface ZephyrRestService {
      * @param releaseId
      * @return
      * @throws URISyntaxException
-     */https://github.com/pv-smartbear/zephyr-enterprise-test-management-plugin
+     */
     List<Cycle> getAllCyclesForReleaseId(Long releaseId) throws URISyntaxException;
 
     /**

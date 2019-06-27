@@ -176,9 +176,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     @Override
-    public List<Testcase> createTestCases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException {
-        List<Testcase> result = new ArrayList<>();
-
+    public List<Testcase> createTestcases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException {
         //Create the payload for request
         List<Testcase> list = new ArrayList<>();
         for (String string : testNames) {
@@ -194,33 +192,9 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
         String url = prepareUrl(URL_CREATE_TEST_CASES_BULK);
         String res = httpClientService.postRequest(url, json);
-        JSONArray tests = new JSONArray(res);
 
-        int length = tests.length();
-        for (int i = 0; i < length; i++) {
-            JSONObject testObject = tests.getJSONObject(i).getJSONObject("testcase");
-            Long relId = testObject.getLong("releaseId");
-            Long testId = testObject.getLong("id");
-            final String name = testObject.getString("name");
-
-            Boolean testExist = Boolean.FALSE;
-            if (releaseId == relId) {
-                for(Testcase tc : result){
-                    if(testId.equals(tc.getId())){
-                        testExist = Boolean.TRUE;
-                        break;
-                    }
-                }
-                //TestCase tc = result.stream().filter(x -> testId.equals(x.getId())).findAny().orElse(null);
-                if(!testExist){
-                    Testcase testcase = new Testcase();
-                    testcase.setId(testId);
-                    testcase.setName(name);
-                    result.add(testcase);
-                }
-            }
-        }
-        return result;
+        Type testcaseListType = new TypeToken<List<Testcase>>(){}.getType();
+        return gson.fromJson(res, testcaseListType);
     }
 
     public User getCurrentUser() {

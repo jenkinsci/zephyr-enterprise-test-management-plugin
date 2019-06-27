@@ -96,6 +96,7 @@ public class ZeeReporter extends Notifier {
 		}
 
 		int number = build.getRootBuild().getNumber();
+        //todo: no need for for initializeZephyrData(), get server, username and pass from descriptor, and convert all values to Long( or required data type) and continue
 		ZephyrConfigModel zephyrConfig = initializeZephyrData();
 		ZephyrSoapClient client = new ZephyrSoapClient();
 		zephyrConfig.setBuilNumber(number);

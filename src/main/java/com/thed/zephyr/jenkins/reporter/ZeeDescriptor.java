@@ -114,7 +114,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 				zephyrInstance.setPassword(pass);
 				boolean zephyrServerValidation = false;
 					restClient = new RestClient(server, user, pass);
-					zephyrServerValidation = ConfigurationValidator.validateZephyrConfiguration(restClient, getZephyrRestVersion(restClient));
+					zephyrServerValidation = userService.verifyCredentials(server, user, pass);
 					if (zephyrServerValidation) {
 						this.zephyrInstances.add(zephyrInstance);
 					}
@@ -142,8 +142,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 			boolean zephyrServerValidation = false;
 				restClient = new RestClient(server, user, pass);
-				zephyrServerValidation = ConfigurationValidator
-                        .validateZephyrConfiguration(restClient, getZephyrRestVersion(restClient));
+				zephyrServerValidation = userService.verifyCredentials(server, user, pass);
 				if (zephyrServerValidation) {
 					this.zephyrInstances.add(zephyrInstance);
 				}

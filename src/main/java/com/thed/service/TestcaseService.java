@@ -1,6 +1,6 @@
 package com.thed.service;
 
-import com.thed.model.TestCase;
+import com.thed.model.Testcase;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by tarun on 25/6/19.
  */
-public interface TestCaseService extends BaseService {
+public interface TestcaseService extends BaseService {
 
     /**
      * Create Test Cases
@@ -19,6 +19,6 @@ public interface TestCaseService extends BaseService {
      * @return
      * @throws java.net.URISyntaxException
      */
-    List<TestCase> createTestCases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException;
+    List<Testcase> createTestCases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException;
 
 }

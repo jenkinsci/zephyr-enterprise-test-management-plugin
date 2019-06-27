@@ -5,7 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.thed.model.Cycle;
 import com.thed.model.Project;
 import com.thed.model.Release;
-import com.thed.model.TestCase;
+import com.thed.model.Testcase;
 import com.thed.model.User;
 import com.thed.service.HttpClientService;
 import com.thed.service.ZephyrRestService;
@@ -176,13 +176,13 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     @Override
-    public List<TestCase> createTestCases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException {
-        List<TestCase> result = new ArrayList<>();
+    public List<Testcase> createTestCases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException {
+        List<Testcase> result = new ArrayList<>();
 
         //Create the payload for request
-        List<TestCase> list = new ArrayList<>();
+        List<Testcase> list = new ArrayList<>();
         for (String string : testNames) {
-            TestCase t = new TestCase();
+            Testcase t = new Testcase();
             t.setProjectId(projectId);
             t.setReleaseId(releaseId);
             t.setName(string);
@@ -205,7 +205,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
             Boolean testExist = Boolean.FALSE;
             if (releaseId == relId) {
-                for(TestCase tc : result){
+                for(Testcase tc : result){
                     if(testId.equals(tc.getId())){
                         testExist = Boolean.TRUE;
                         break;
@@ -213,10 +213,10 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
                 }
                 //TestCase tc = result.stream().filter(x -> testId.equals(x.getId())).findAny().orElse(null);
                 if(!testExist){
-                    TestCase testCase = new TestCase();
-                    testCase.setId(testId);
-                    testCase.setName(name);
-                    result.add(testCase);
+                    Testcase testcase = new Testcase();
+                    testcase.setId(testId);
+                    testcase.setName(name);
+                    result.add(testcase);
                 }
             }
         }

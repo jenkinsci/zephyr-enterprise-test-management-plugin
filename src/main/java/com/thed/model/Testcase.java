@@ -1,6 +1,6 @@
 package com.thed.model;
 
-public class TestCase extends BaseEntity {
+public class Testcase extends BaseEntity {
 
     private String name;
     private Long projectId;

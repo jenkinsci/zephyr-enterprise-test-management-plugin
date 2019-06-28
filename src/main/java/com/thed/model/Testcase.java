@@ -3,9 +3,9 @@ package com.thed.model;
 public class Testcase extends BaseEntity {
 
     private String name;
+    private String description;
     private Long projectId;
     private Long releaseId;
-    private Long tcrCatalogTreeId;
 
     public String getName() {
         return name;
@@ -13,6 +13,14 @@ public class Testcase extends BaseEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Long getProjectId() {
@@ -31,11 +39,4 @@ public class Testcase extends BaseEntity {
         this.releaseId = releaseId;
     }
 
-    public Long getTcrCatalogTreeId() {
-        return tcrCatalogTreeId;
-    }
-
-    public void setTcrCatalogTreeId(Long tcrCatalogTreeId) {
-        this.tcrCatalogTreeId = tcrCatalogTreeId;
-    }
 }

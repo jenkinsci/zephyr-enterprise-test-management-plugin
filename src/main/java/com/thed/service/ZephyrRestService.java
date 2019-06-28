@@ -1,9 +1,6 @@
 package com.thed.service;
 
-import com.thed.model.Cycle;
-import com.thed.model.Project;
-import com.thed.model.Release;
-import com.thed.model.Testcase;
+import com.thed.model.*;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -71,15 +68,62 @@ public interface ZephyrRestService {
     List<Cycle> getAllCyclesForReleaseId(Long releaseId) throws URISyntaxException;
 
     /**
-     * Create Test Cases
-     * @param projectId
+     * Get all tree nodes such as phases for given releaseId.
+     * @param type
+     * @param revisionId
      * @param releaseId
-     * @param tcrCatalogTreeId
-     * @param testNames
      * @return
      * @throws URISyntaxException
      */
-    List<Testcase> createTestcases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException;
+    List<TCRCatalogTreeDTO> getTCRCatalogTreeNodes(String type, Long revisionId, Long releaseId) throws URISyntaxException;
+
+    /**
+     * Create a tree node such as phase.
+     * @param tcrCatalogTreeDTO
+     * @return
+     * @throws URISyntaxException
+     */
+    TCRCatalogTreeDTO createTCRCatalogTreeNode(TCRCatalogTreeDTO tcrCatalogTreeDTO) throws URISyntaxException;
+
+    /**
+     * Get testcases for given tree id.
+     * @param tcrCatalogTreeId
+     * @return
+     * @throws URISyntaxException
+     */
+    List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException;
+
+    /**
+     * Create testcases in bulk
+     * @param tcrCatalogTreeTestcases
+     * @return
+     * @throws URISyntaxException
+     */
+    List<TCRCatalogTreeTestcase> createTestcases(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcases) throws URISyntaxException;
+
+    /**
+     * Get cycle for id.
+     * @param cycleId
+     * @return
+     * @throws URISyntaxException
+     */
+    Cycle getCycleById(Long cycleId) throws URISyntaxException;
+
+    /**
+     * Create cycle phase.
+     * @param cyclePhase
+     * @return
+     * @throws URISyntaxException
+     */
+    CyclePhase createCyclePhase(CyclePhase cyclePhase) throws URISyntaxException;
+
+    /**
+     * Assigns cycle phase to creator.
+     * @param cyclePhaseId
+     * @return
+     * @throws URISyntaxException
+     */
+    Integer assignCyclePhase(Long cyclePhaseId) throws URISyntaxException;
 
     /**
      * Clears all data saved in this instance and related to this.

@@ -1,9 +1,12 @@
 package com.thed.service;
 
+import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.model.Testcase;
+import hudson.tasks.junit.CaseResult;
 
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by tarun on 25/6/19.
@@ -11,14 +14,26 @@ import java.util.List;
 public interface TestcaseService extends BaseService {
 
     /**
-     * Create Test Cases
-     * @param projectId
-     * @param releaseId
+     * Get testcases for given tree id.
      * @param tcrCatalogTreeId
-     * @param testNames
      * @return
-     * @throws java.net.URISyntaxException
+     * @throws URISyntaxException
      */
-    List<Testcase> createTestCases(Long projectId, Long releaseId, Long tcrCatalogTreeId, List<String> testNames) throws URISyntaxException;
+    List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException;
 
+    /**
+     * Create testcases in bulk.
+     * @param tcrCatalogTreeTestcases
+     * @return
+     * @throws URISyntaxException
+     */
+    List<TCRCatalogTreeTestcase> createTestcases(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcases) throws URISyntaxException;
+
+    /**
+     * Create testcases from CaseResults and return testcases with their execution status
+     * @param treeIdCaseResultMap
+     * @return
+     * @throws URISyntaxException
+     */
+    Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(Map<Long, List<CaseResult>> treeIdCaseResultMap) throws URISyntaxException;
 }

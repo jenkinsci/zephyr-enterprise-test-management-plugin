@@ -1,9 +1,11 @@
 package com.thed.zephyr.jenkins.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.thed.zephyr.jenkins.utils.rest.RestClient;
+import hudson.tasks.junit.CaseResult;
 
 public class ZephyrConfigModel {
 
@@ -18,6 +20,7 @@ public class ZephyrConfigModel {
 	private boolean createPackage;
 	private ZephyrInstance selectedZephyrServer;
 	private int builNumber;
+    private Map<String, List<CaseResult>> packageCaseResultMap;
 
 
 	public boolean isCreatePackage() {
@@ -107,4 +110,12 @@ public class ZephyrConfigModel {
 	public void setBuilNumber(int builNumber) {
 		this.builNumber = builNumber;
 	}
+
+    public Map<String, List<CaseResult>> getPackageCaseResultMap() {
+        return packageCaseResultMap;
+    }
+
+    public void setPackageCaseResultMap(Map<String, List<CaseResult>> packageCaseResultMap) {
+        this.packageCaseResultMap = packageCaseResultMap;
+    }
 }

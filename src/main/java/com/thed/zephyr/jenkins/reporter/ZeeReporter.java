@@ -14,7 +14,9 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_COMMENT;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_PRIORITY;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_TAG;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.thed.model.CyclePhase;
+import com.thed.model.ReleaseTestSchedule;
 import com.thed.model.TCRCatalogTreeDTO;
 import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.service.*;
@@ -80,6 +82,7 @@ public class ZeeReporter extends Notifier {
     private TCRCatalogTreeService tcrCatalogTreeService = new TCRCatalogTreeServiceImpl();
     private TestcaseService testcaseService = new TestcaseServiceImpl();
     private CycleService cycleService = new CycleServiceImpl();
+    private ExecutionService executionService = new ExecutionServiceImpl();
 
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
@@ -206,7 +209,28 @@ public class ZeeReporter extends Notifier {
             cyclePhase = cycleService.createCyclePhase(cyclePhase);
             cycleService.assignCyclePhase(cyclePhase.getId());
 
+            List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
 
+            Map<Boolean, Set<Long>> executionMap = new HashMap<>();
+            executionMap.put(Boolean.TRUE, new HashSet<>());
+            executionMap.put(Boolean.FALSE, new HashSet<>());
+
+            Set<Map.Entry<CaseResult, TCRCatalogTreeTestcase>> caseMapEntrySet = caseMap.entrySet();
+
+            loop1 : for(Map.Entry<CaseResult, TCRCatalogTreeTestcase> caseEntry : caseMapEntrySet) {
+
+                for(ReleaseTestSchedule releaseTestSchedule : releaseTestSchedules) {
+
+                    if(Objects.equals(releaseTestSchedule.getTcrTreeTestcase().getId(), caseEntry.getValue().getId())) {
+                        // tcrTestcase matched, map caseResult.isPass status to rtsId
+                        executionMap.get(caseEntry.getKey().isPassed()).add(releaseTestSchedule.getId());
+                        continue loop1;
+                    }
+                }
+            }
+
+            executionService.executeReleaseTestSchedules(executionMap.get(Boolean.TRUE), Boolean.TRUE);
+            executionService.executeReleaseTestSchedules(executionMap.get(Boolean.FALSE), Boolean.FALSE);
         }
         catch(Exception e) {
             //todo:handle exceptions gracefully

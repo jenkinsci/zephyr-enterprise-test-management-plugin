@@ -12,5 +12,8 @@ public class ZephyrConstants {
 
     public static final String TCR_CATALOG_TREE_TYPE_PHASE = "phase";
 
+    public static final String EXECUTION_STATUS_PASS = "1";
+    public static final String EXECUTION_STATUS_FAIL = "2";
+
 
 }

@@ -13,11 +13,7 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Type;
 import java.net.URISyntaxException;
-import java.util.Date;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**user
  * Created by prashant on 20/6/19.
@@ -43,7 +39,8 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
     public static final String CREATE_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/cycle/{cycleId}/phase";
     public static final String ASSIGN_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/assignmenttree/{cyclephaseid}/assign";
-    public static final String GET_RELEASE_TEST_SCHEDULES_URL = "/flex/services/rest/v3/execution"; //?cyclephaseid=11&pagesize=10000;
+    public static final String GET_RELEASE_TEST_SCHEDULES_URL = "/flex/services/rest/{restVersion}/execution"; //?cyclephaseid=11&pagesize=10000;
+    public static final String EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL = "/flex/services/rest/{restVersion}/execution/bulk";//?status=1&testerid=1&allExecutions=false&includeanyoneuser=true
 
     private User currentUser;
     private String hostAddress;
@@ -75,7 +72,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
                 .registerTypeAdapter(Date.class, deser).create();
     }
 
-    public String buildUrl(String url, Map<String, String> pathParams, List<NameValuePair> queryParams) throws URISyntaxException {
+    private String buildUrl(String url, Map<String, String> pathParams, List<NameValuePair> queryParams) throws URISyntaxException {
 
         if(pathParams != null) {
             for (String key : pathParams.keySet()) {
@@ -269,13 +266,36 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         return Integer.parseInt(res);
     }
 
-    public void getReleaseTestSchedules(Long cyclePhaseId) throws URISyntaxException {
+    @Override
+    public List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId) throws URISyntaxException {
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("cyclephaseid", cyclePhaseId.toString()));
         queryParams.add(new BasicNameValuePair("pagesize", "10000"));
 
         String url = buildUrl(prepareUrl(GET_RELEASE_TEST_SCHEDULES_URL), null, queryParams);
         String res = httpClientService.getRequest(url);
+
+        Type releaseTestScheduleListType = new TypeToken<List<ReleaseTestSchedule>>(){}.getType();
+        return gson.fromJson(res, releaseTestScheduleListType);
+    }
+
+    @Override
+    public List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String executionStatus) throws URISyntaxException {
+        List<NameValuePair> queryParams = new ArrayList<>();
+        queryParams.add(new BasicNameValuePair("status", executionStatus));
+        queryParams.add(new BasicNameValuePair("testerid", getCurrentUser().getId().toString()));
+        queryParams.add(new BasicNameValuePair("allExecutions", "false"));
+        queryParams.add(new BasicNameValuePair("includeanyoneuser", "true"));
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("ids", rtsIds);
+        jsonObject.put("serachView", false);
+
+        String url = buildUrl(prepareUrl(EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL), null, queryParams);
+        String res = httpClientService.putRequest(url, jsonObject.toString());
+
+        Type releaseTestScheduleListType = new TypeToken<List<ReleaseTestSchedule>>(){}.getType();
+        return gson.fromJson(res, releaseTestScheduleListType);
     }
 
     public User getCurrentUser() {

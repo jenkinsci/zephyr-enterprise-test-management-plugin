@@ -4,6 +4,7 @@ import com.thed.model.*;
 
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by prashant on 20/6/19.
@@ -124,6 +125,23 @@ public interface ZephyrRestService {
      * @throws URISyntaxException
      */
     Integer assignCyclePhase(Long cyclePhaseId) throws URISyntaxException;
+
+    /**
+     * Get testcases scheduled under this cycle phase.
+     * @param cyclePhaseId
+     * @return
+     * @throws URISyntaxException
+     */
+    List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId) throws URISyntaxException;
+
+    /**
+     * Execute given releaseTestSchedule ids with given status.
+     * @param rtsIds
+     * @param executionStatus
+     * @return
+     * @throws URISyntaxException
+     */
+    List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String executionStatus) throws URISyntaxException;
 
     /**
      * Clears all data saved in this instance and related to this.

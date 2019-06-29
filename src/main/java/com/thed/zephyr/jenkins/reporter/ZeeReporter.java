@@ -219,7 +219,7 @@ public class ZeeReporter extends Notifier {
 
                 for(ReleaseTestSchedule releaseTestSchedule : releaseTestSchedules) {
 
-                    if(Objects.equals(releaseTestSchedule.getTcrTreeTestcase().getId(), caseEntry.getValue().getId())) {
+                    if(Objects.equals(releaseTestSchedule.getTcrTreeTestcase().getTestcase().getId(), caseEntry.getValue().getTestcase().getId())) {
                         // tcrTestcase matched, map caseResult.isPass status to rtsId
                         executionMap.get(caseEntry.getKey().isPassed()).add(releaseTestSchedule.getId());
                         continue loop1;

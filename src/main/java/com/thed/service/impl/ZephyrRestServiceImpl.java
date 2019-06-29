@@ -30,7 +30,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_TCR_CATALOG_TREE_NODES_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?type=Phase&revisionid=0&releaseid=10
     public static final String CREATE_TCR_CATALOG_TREE_NODE_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?parentid=0
 
-    public static final String GET_TESTCASES_FOR_TREE_ID = "flex/services/rest/{restVersion}/testcase/tree/{tcrCatalogTreeId}"; //?offset=0&pagesize=50&dbsearch=true&isascorder=true&order=orderId&frozen=false&is_cfield=false
+    public static final String GET_TESTCASES_FOR_TREE_ID = "/flex/services/rest/{restVersion}/testcase/tree/{tcrCatalogTreeId}"; //?offset=0&pagesize=50&dbsearch=true&isascorder=true&order=orderId&frozen=false&is_cfield=false
     public static final String CREATE_TESTCASES_BULK_URL = "/flex/services/rest/{restVersion}/testcase/bulk";
 
     public static final String GET_CYCLE_BY_ID_URL = "/flex/services/rest/{restVersion}/cycle/{id}";
@@ -38,7 +38,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_ALL_CYCLES_FOR_RELEASE_ID_URL = "/flex/services/rest/{restVersion}/cycle/release/{releaseId}";
 
     public static final String CREATE_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/cycle/{cycleId}/phase";
-    public static final String ASSIGN_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/assignmenttree/{cyclephaseid}/assign";
+    public static final String ASSIGN_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/assignmenttree/{cyclePhaseId}/assign";
     public static final String GET_RELEASE_TEST_SCHEDULES_URL = "/flex/services/rest/{restVersion}/execution"; //?cyclephaseid=11&pagesize=10000;
     public static final String EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL = "/flex/services/rest/{restVersion}/execution/bulk";//?status=1&testerid=1&allExecutions=false&includeanyoneuser=true
 
@@ -182,8 +182,8 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public List<TCRCatalogTreeDTO> getTCRCatalogTreeNodes(String type, Long revisionId, Long releaseId) throws URISyntaxException {
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("type", type));
-        queryParams.add(new BasicNameValuePair("revisionId", revisionId.toString()));
-        queryParams.add(new BasicNameValuePair("releaseId", releaseId.toString()));
+        queryParams.add(new BasicNameValuePair("revisionid", revisionId.toString()));
+        queryParams.add(new BasicNameValuePair("releaseid", releaseId.toString()));
 
         String url = buildUrl(prepareUrl(GET_TCR_CATALOG_TREE_NODES_URL), null, queryParams);
         String res = httpClientService.getRequest(url);
@@ -195,7 +195,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     @Override
     public TCRCatalogTreeDTO createTCRCatalogTreeNode(TCRCatalogTreeDTO tcrCatalogTreeDTO) throws URISyntaxException {
         List<NameValuePair> queryParams = new ArrayList<>();
-        queryParams.add(new BasicNameValuePair("parentId", tcrCatalogTreeDTO.getParentId().toString()));
+        queryParams.add(new BasicNameValuePair("parentid", tcrCatalogTreeDTO.getParentId().toString()));
         tcrCatalogTreeDTO.setParentId(null);
 
         String url = buildUrl(prepareUrl(CREATE_TCR_CATALOG_TREE_NODE_URL), null, queryParams);
@@ -220,7 +220,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         String url = buildUrl(prepareUrl(GET_TESTCASES_FOR_TREE_ID), pathParams, queryParams);
         String res = httpClientService.getRequest(url);
         JSONObject resObject = new JSONObject(res);
-        JSONArray jsonArray = resObject.getJSONArray("result");
+        JSONArray jsonArray = resObject.getJSONArray("results");
         String resultStr = jsonArray.toString();
 
         Type tcrCatalogTreeTestcaseListType = new TypeToken<List<TCRCatalogTreeTestcase>>(){}.getType();
@@ -275,8 +275,12 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         String url = buildUrl(prepareUrl(GET_RELEASE_TEST_SCHEDULES_URL), null, queryParams);
         String res = httpClientService.getRequest(url);
 
+        JSONObject resObject = new JSONObject(res);
+        JSONArray jsonArray = resObject.getJSONArray("results");
+        String resultStr = jsonArray.toString();
+
         Type releaseTestScheduleListType = new TypeToken<List<ReleaseTestSchedule>>(){}.getType();
-        return gson.fromJson(res, releaseTestScheduleListType);
+        return gson.fromJson(resultStr, releaseTestScheduleListType);
     }
 
     @Override

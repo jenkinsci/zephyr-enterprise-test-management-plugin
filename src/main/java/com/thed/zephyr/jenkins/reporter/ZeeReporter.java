@@ -14,7 +14,6 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_COMMENT;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_PRIORITY;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_TAG;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.thed.model.CyclePhase;
 import com.thed.model.ReleaseTestSchedule;
 import com.thed.model.TCRCatalogTreeDTO;
@@ -130,7 +129,6 @@ public class ZeeReporter extends Notifier {
                 zephyrConfigModel.setCycleId(Long.parseLong(getCycleKey()));
             }
 
-            zephyrConfigModel.setCycleId(Long.parseLong(getCycleKey()));
             zephyrConfigModel.setCycleDuration(getCycleDuration());
             zephyrConfigModel.setCyclePrefix(getCyclePrefix() + "_");
             zephyrConfigModel.setCreatePackage(isCreatePackage());
@@ -212,8 +210,8 @@ public class ZeeReporter extends Notifier {
             List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
 
             Map<Boolean, Set<Long>> executionMap = new HashMap<>();
-            executionMap.put(Boolean.TRUE, new HashSet<>());
-            executionMap.put(Boolean.FALSE, new HashSet<>());
+            executionMap.put(Boolean.TRUE, new HashSet<Long>());
+            executionMap.put(Boolean.FALSE, new HashSet<Long>());
 
             Set<Map.Entry<CaseResult, TCRCatalogTreeTestcase>> caseMapEntrySet = caseMap.entrySet();
 
@@ -314,9 +312,10 @@ public class ZeeReporter extends Notifier {
 
                     if(searchedPhase == null) {
                         //no more children to this phase to search, need to create new phases
-                        endingNode = tcrCatalogTreeService.createPhase(pName, phaseDescription, zephyrConfigModel.getReleaseId(), endingNode.getId());
+                        searchedPhase = tcrCatalogTreeService.createPhase(pName, phaseDescription, zephyrConfigModel.getReleaseId(), endingNode.getId());
                         createPhase = true;
                     }
+                    endingNode = searchedPhase;
                 }
             }
             packagePhaseMap.put(packageName, endingNode);
@@ -368,7 +367,13 @@ public class ZeeReporter extends Notifier {
 
             Map<String, List<CaseResult>> packageCaseResultMap = zephyrConfigModel.getPackageCaseResultMap();
             List<CaseResult> caseResults = new ArrayList<>();
-            packageCaseResultMap.values().forEach(caseResults::addAll);
+
+            Collection<List<CaseResult>> tmpCol = packageCaseResultMap.values();
+            for (List<CaseResult> tmpList : tmpCol) {
+                caseResults.addAll(tmpList);
+            }
+
+
 
             caseResultLoop : for (CaseResult caseResult : caseResults) {
                 for (TCRCatalogTreeTestcase tcrTestcase : tcrTestcases) {

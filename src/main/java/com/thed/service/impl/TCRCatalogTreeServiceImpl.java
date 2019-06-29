@@ -33,7 +33,7 @@ public class TCRCatalogTreeServiceImpl extends BaseServiceImpl implements TCRCat
         tcrCatalogTreeDTO.setDescription(description);
         tcrCatalogTreeDTO.setReleaseId(releaseId);
         tcrCatalogTreeDTO.setParentId(parentId);
-        tcrCatalogTreeDTO.setType(ZephyrConstants.TCR_CATALOG_TREE_TYPE_PHASE);
+        tcrCatalogTreeDTO.setType((parentId == null || parentId == 0) ? ZephyrConstants.TCR_CATALOG_TREE_TYPE_PHASE : ZephyrConstants.TCR_CATALOG_TREE_TYPE_MODULE);
 
         return createTCRCatalogTreeNode(tcrCatalogTreeDTO);
     }

@@ -2,6 +2,7 @@ package com.thed.service;
 
 import com.thed.model.Cycle;
 import com.thed.model.CyclePhase;
+import com.thed.model.TCRCatalogTreeTestcase;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -19,6 +20,8 @@ public interface CycleService extends BaseService {
 
     CyclePhase createCyclePhase(CyclePhase cyclePhase) throws URISyntaxException;
 
-    Integer assignCyclePhase(Long cyclePhaseId) throws URISyntaxException;
+    Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException;
+
+    String addTestcasesToFreeFormCyclePhase(CyclePhase cyclePhase, List<TCRCatalogTreeTestcase> testcases, Boolean includeHierarchy) throws URISyntaxException;
 
 }

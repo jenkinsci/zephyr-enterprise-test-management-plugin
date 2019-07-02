@@ -38,6 +38,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_ALL_CYCLES_FOR_RELEASE_ID_URL = "/flex/services/rest/{restVersion}/cycle/release/{releaseId}";
 
     public static final String CREATE_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/cycle/{cycleId}/phase";
+    public static final String ADD_TESTCASES_TO_FREE_FORM_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/assignmenttree/{cyclePhaseId}/assign/bytree/{tcrCatalogTreeId}"; //?includehierarchy=false;
     public static final String ASSIGN_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/assignmenttree/{cyclePhaseId}/assign";
     public static final String GET_RELEASE_TEST_SCHEDULES_URL = "/flex/services/rest/{restVersion}/execution"; //?cyclephaseid=11&pagesize=10000;
     public static final String EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL = "/flex/services/rest/{restVersion}/execution/bulk";//?status=1&testerid=1&allExecutions=false&includeanyoneuser=true
@@ -257,7 +258,32 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     @Override
-    public Integer assignCyclePhase(Long cyclePhaseId) throws URISyntaxException {
+    public String addTestcasesToFreeFormCyclePhase(CyclePhase cyclePhase, Map<Long, Set<Long>> treeTestcaseMap, Boolean includeHierarchy) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("cyclePhaseId", cyclePhase.getId().toString());
+        pathParams.put("tcrCatalogTreeId", cyclePhase.getTcrCatalogTreeId().toString());
+
+        List<NameValuePair> queryParams = new ArrayList<>();
+        queryParams.add(new BasicNameValuePair("includehierarchy", includeHierarchy.toString()));
+
+        JSONArray contentJsonArray = new JSONArray();
+
+        for (Map.Entry<Long, Set<Long>> entry : treeTestcaseMap.entrySet()) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("treeid", entry.getKey());
+            jsonObject.put("tctIds", entry.getValue());
+            jsonObject.put("isExclusion", Boolean.TRUE);
+
+            contentJsonArray.put(jsonObject);
+        }
+
+        String url = buildUrl(prepareUrl(ADD_TESTCASES_TO_FREE_FORM_CYCLE_PHASE_URL), pathParams, queryParams);
+
+        return httpClientService.postRequest(url, contentJsonArray.toString());
+    }
+
+    @Override
+    public Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("cyclePhaseId", cyclePhaseId.toString());
 

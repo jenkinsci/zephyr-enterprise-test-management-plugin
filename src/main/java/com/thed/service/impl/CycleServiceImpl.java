@@ -2,10 +2,12 @@ package com.thed.service.impl;
 
 import com.thed.model.Cycle;
 import com.thed.model.CyclePhase;
+import com.thed.model.TCRCatalogTreeTestcase;
+import com.thed.model.Testcase;
 import com.thed.service.CycleService;
 
 import java.net.URISyntaxException;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by prashant on 26/6/19.
@@ -37,7 +39,26 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
     }
 
     @Override
-    public Integer assignCyclePhase(Long cyclePhaseId) throws URISyntaxException {
-        return zephyrRestService.assignCyclePhase(cyclePhaseId);
+    public Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException {
+        return zephyrRestService.assignCyclePhaseToCreator(cyclePhaseId);
+    }
+
+    @Override
+    public String addTestcasesToFreeFormCyclePhase(CyclePhase cyclePhase, List<TCRCatalogTreeTestcase> testcases, Boolean includeHierarchy) throws URISyntaxException {
+        //todo: this data parsing loop runs two times, once here and once in ZephyrRestService, need to fix this
+        Map<Long, Set<Long>> treeTestcaseMap = new HashMap<>();
+
+        for (TCRCatalogTreeTestcase testcase : testcases) {
+            if(treeTestcaseMap.containsKey(testcase.getTcrCatalogTreeId())) {
+                treeTestcaseMap.get(testcase.getTcrCatalogTreeId()).add(testcase.getTestcase().getId());
+            }
+            else {
+                Set<Long> tctIds = new HashSet<>();
+                tctIds.add(testcase.getTestcase().getId());
+                treeTestcaseMap.put(testcase.getTcrCatalogTreeId(), tctIds);
+            }
+        }
+
+        return zephyrRestService.addTestcasesToFreeFormCyclePhase(cyclePhase, treeTestcaseMap, includeHierarchy);
     }
 }

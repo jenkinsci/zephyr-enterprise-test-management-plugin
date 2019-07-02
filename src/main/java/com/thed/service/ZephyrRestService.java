@@ -4,6 +4,7 @@ import com.thed.model.*;
 
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -119,12 +120,22 @@ public interface ZephyrRestService {
     CyclePhase createCyclePhase(CyclePhase cyclePhase) throws URISyntaxException;
 
     /**
+     * Adds testcases to free form cycle phase.
+     * @param cyclePhase
+     * @param treeTestcaseMap
+     * @param includeHierarchy
+     * @return
+     * @throws URISyntaxException
+     */
+    String addTestcasesToFreeFormCyclePhase(CyclePhase cyclePhase, Map<Long, Set<Long>> treeTestcaseMap, Boolean includeHierarchy) throws URISyntaxException;
+
+    /**
      * Assigns cycle phase to creator.
      * @param cyclePhaseId
      * @return
      * @throws URISyntaxException
      */
-    Integer assignCyclePhase(Long cyclePhaseId) throws URISyntaxException;
+    Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException;
 
     /**
      * Get testcases scheduled under this cycle phase.

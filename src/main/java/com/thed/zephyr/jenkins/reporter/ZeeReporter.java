@@ -5,14 +5,9 @@ package com.thed.zephyr.jenkins.reporter;
  */
 
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.ADD_ZEPHYR_GLOBAL_CONFIG;
-import static com.thed.zephyr.jenkins.reporter.ZeeConstants.AUTOMATED;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_PREFIX_DEFAULT;
-import static com.thed.zephyr.jenkins.reporter.ZeeConstants.EXTERNAL_ID;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY_IDENTIFIER;
-import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_COMMENT;
-import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_PRIORITY;
-import static com.thed.zephyr.jenkins.reporter.ZeeConstants.TEST_CASE_TAG;
 
 import com.thed.model.CyclePhase;
 import com.thed.model.ReleaseTestSchedule;
@@ -38,19 +33,13 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import javax.xml.datatype.DatatypeConfigurationException;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.types.FileSet;
 import org.kohsuke.stapler.DataBoundConstructor;
 
-import com.thed.service.soap.RemoteTestcase;
-import com.thed.zephyr.jenkins.model.TestCaseResultModel;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import com.thed.zephyr.jenkins.model.ZephyrInstance;
-import com.thed.zephyr.jenkins.utils.URLValidator;
-import com.thed.zephyr.jenkins.utils.ZephyrSoapClient;
 import com.thed.zephyr.jenkins.utils.rest.Cycle;
 import com.thed.zephyr.jenkins.utils.rest.Project;
 import com.thed.zephyr.jenkins.utils.rest.Release;
@@ -197,15 +186,20 @@ public class ZeeReporter extends Notifier {
             }
 
             CyclePhase cyclePhase = new CyclePhase();
+            cyclePhase.setName(packagePhaseMap.get("parentPhase").getName());
             cyclePhase.setCycleId(cycle.getId());
             cyclePhase.setStartDate(new Date(cycle.getStartDate()));
             cyclePhase.setEndDate(new Date(cycle.getEndDate()));
             cyclePhase.setReleaseId(zephyrConfigModel.getReleaseId());
-            cyclePhase.setFreeForm(false);
-            cyclePhase.setTcrCatalogTreeId(packagePhaseMap.get("parentPhase").getId());
+            cyclePhase.setFreeForm(true);
 
             cyclePhase = cycleService.createCyclePhase(cyclePhase);
-            cycleService.assignCyclePhase(cyclePhase.getId());
+
+            //adding testcases to free form cycle phase
+            cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(caseMap.values()), zephyrConfigModel.isCreatePackage());
+
+            //assigning testcases in cycle phase to creator
+            cycleService.assignCyclePhaseToCreator(cyclePhase.getId());
 
             List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
 

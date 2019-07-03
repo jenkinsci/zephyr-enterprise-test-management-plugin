@@ -328,6 +328,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         return gson.fromJson(res, releaseTestScheduleListType);
     }
 
+    @Override
     public User getCurrentUser() {
         return currentUser;
     }

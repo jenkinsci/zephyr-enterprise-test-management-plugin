@@ -154,6 +154,8 @@ public interface ZephyrRestService {
      */
     List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String executionStatus) throws URISyntaxException;
 
+    User getCurrentUser();
+
     /**
      * Clears all data saved in this instance and related to this.
      */

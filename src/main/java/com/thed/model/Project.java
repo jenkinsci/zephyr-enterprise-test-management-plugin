@@ -2,6 +2,7 @@ package com.thed.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by prashant on 21/6/19.
@@ -10,6 +11,7 @@ public class Project extends BaseEntity {
 
     private String name;
     private Boolean globalProject;
+    private List<ProjectTeam> members;
     private Date startDate;
     private Date endDate;
 
@@ -32,6 +34,14 @@ public class Project extends BaseEntity {
 
     public void setGlobalProject(Boolean globalProject) {
         this.globalProject = globalProject;
+    }
+
+    public List<ProjectTeam> getMembers() {
+        return members;
+    }
+
+    public void setMembers(List<ProjectTeam> members) {
+        this.members = members;
     }
 
     public Date getStartDate() {

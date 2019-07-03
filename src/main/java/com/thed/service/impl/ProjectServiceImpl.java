@@ -1,9 +1,12 @@
 package com.thed.service.impl;
 
 import com.thed.model.Project;
+import com.thed.model.ProjectTeam;
+import com.thed.model.User;
 import com.thed.service.ProjectService;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -19,7 +22,27 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
 
     @Override
     public List<Project> getAllProjectsForCurrentUser() throws URISyntaxException {
-        return zephyrRestService.getAllProjectsForCurrentUser();
+        List<Project> projects = zephyrRestService.getAllProjectsForCurrentUser();
+        User user = zephyrRestService.getCurrentUser();
+
+        List<Project> userProjects = new ArrayList<>();
+
+        projectLoop : for (Project project : projects) {
+            List<ProjectTeam> projectTeams = project.getMembers();
+
+            if(projectTeams == null) {
+                continue;
+            }
+
+            for (ProjectTeam projectTeam : projectTeams) {
+                if(projectTeam.getUserId().equals(user.getId())) {
+                    userProjects.add(project);
+                    continue projectLoop;
+                }
+            }
+        }
+
+        return userProjects;
     }
 
     @Override

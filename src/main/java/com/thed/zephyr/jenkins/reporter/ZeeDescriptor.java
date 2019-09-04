@@ -32,6 +32,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -47,13 +48,11 @@ import com.thed.zephyr.jenkins.utils.rest.RestClient;
 import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 import org.kohsuke.stapler.verb.POST;
 
-
+@Symbol("zeeReporter")
 @Extension
-public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
+public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 	private static Logger logger = Logger.getLogger(ZeeDescriptor.class.getName());
-
-    ZephyrRestService zephyrRestService;
 
     private UserService userService = new UserServiceImpl();
     private ProjectService projectService = new ProjectServiceImpl();
@@ -74,7 +73,7 @@ public final class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		super(ZeeReporter.class);
 		load();
 
-        zephyrRestService = new ZephyrRestServiceImpl();
+//        zephyrRestService = new ZephyrRestServiceImpl();
 	}
 
 	@Override

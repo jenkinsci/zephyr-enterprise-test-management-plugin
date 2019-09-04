@@ -16,12 +16,12 @@ import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import com.thed.utils.ZephyrConstants;
+import hudson.Extension;
+import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
-import hudson.model.BuildListener;
-import hudson.model.AbstractBuild;
-import hudson.tasks.BuildStepMonitor;
-import hudson.tasks.Notifier;
+import hudson.model.*;
+import hudson.tasks.*;
 import hudson.tasks.junit.*;
 import hudson.tasks.test.AggregatedTestResultAction;
 import hudson.tasks.test.AggregatedTestResultAction.ChildReport;
@@ -32,10 +32,13 @@ import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.IntStream;
 
+import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.types.FileSet;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
@@ -46,7 +49,7 @@ import com.thed.zephyr.jenkins.utils.rest.Release;
 import com.thed.zephyr.jenkins.utils.rest.RestClient;
 import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 
-public class ZeeReporter extends Notifier {
+public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
 	private String projectKey;
 	private String releaseKey;
@@ -90,9 +93,18 @@ public class ZeeReporter extends Notifier {
 		return BuildStepMonitor.NONE;
 	}
 
-	@Override
-	public boolean perform(final AbstractBuild build, final Launcher launcher,
-			final BuildListener listener) throws IOException, InterruptedException {
+    @Override
+    public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
+        perform(run, listener);
+    }
+
+    @Override
+    public boolean perform(final AbstractBuild build, final Launcher launcher,
+                           final BuildListener listener) throws IOException, InterruptedException {
+        return perform(build, listener);
+    }
+
+	public boolean perform(final Run build, final TaskListener listener) throws IOException, InterruptedException {
 		logger = listener.getLogger();
 		logger.printf("%s Examining test results...%n", pInfo);
 
@@ -101,7 +113,7 @@ public class ZeeReporter extends Notifier {
 			return false;
 		}
 
-		int number = build.getRootBuild().getNumber();
+		int number = build.getNumber();
         //todo: no need for for initializeZephyrData(), get server, username and pass from descriptor, and convert all values to Long( or required data type) and continue
 //		ZephyrConfigModel zephyrConfig = initializeZephyrData();
 
@@ -135,7 +147,7 @@ public class ZeeReporter extends Notifier {
             }
 
             //creating Map<testcaseName, passed>, Set<packageName> and set to zephyrConfigModel
-            boolean prepareZephyrTests = prepareZephyrTests(listener, launcher, build, zephyrConfigModel);
+            boolean prepareZephyrTests = prepareZephyrTests(build, zephyrConfigModel);
             if(!prepareZephyrTests) {
                 logger.println("Error parsing surefire reports.");
                 logger.println("Please ensure \"Publish JUnit test result report is added\" as a post build action");
@@ -428,13 +440,13 @@ public class ZeeReporter extends Notifier {
      * @param zephyrConfig
      * @return
      */
-    private boolean prepareZephyrTests(BuildListener listener, Launcher launcher, final AbstractBuild build,
-                                       ZephyrConfigModel zephyrConfig) throws IOException, InterruptedException {
+    private boolean prepareZephyrTests(final Run build, ZephyrConfigModel zephyrConfig) throws IOException, InterruptedException {
 
         boolean status = true;
         Collection<SuiteResult> suites = new ArrayList<>();
 
-        boolean isMavenProject = build.getProject().getClass().getName().toLowerCase().contains("maven");
+
+        boolean isMavenProject = build.getClass().getName().toLowerCase().contains("maven");
         TestResultAction testResultAction = null;
         if (isMavenProject) {
         	AggregatedTestResultAction testResultAction1 = build.getAction(AggregatedTestResultAction.class);
@@ -455,25 +467,6 @@ public class ZeeReporter extends Notifier {
             if (suites == null || suites.size() == 0) {
                 return false;
             }
-
-//            String basedDir = build.getWorkspace().toURI().getPath();
-//            List<String> resultFolders = scanJunitTestResultFolder(basedDir);
-//
-//            if (resultFolders == null || resultFolders.size() == 0) {
-//                return false;
-//            }
-//            for (String res : resultFolders) {
-//                if (res.contains(SUREFIRE_REPORT)) {
-//                    try {
-//                        List<TestResult> results = parse(listener, launcher, build, res + JUNIT_SFX);
-//                        for (TestResult testResult : results) {
-//                            suites.addAll(testResult.getSuites());
-//                        }
-//                    } catch (Exception e) {
-//                        logger.print("Could not parse results from surefire reports" + e.getMessage());
-//                    }
-//                }
-//            }
         } else {
             testResultAction = build.getAction(TestResultAction.class);
             try {
@@ -494,65 +487,12 @@ public class ZeeReporter extends Notifier {
 		Integer noOfCases = prepareTestResults(suites, packageNames, packageCaseMap);
 
 		logger.print("Total Test Cases : " + noOfCases);
-		
-//		List<TestCaseResultModel> testcases = new ArrayList<TestCaseResultModel>();
-//		Set<String> keySet = zephyrTestCaseMap.keySet();
-//
-//		for (Iterator<String> iterator = keySet.iterator(); iterator.hasNext();) {
-//			String testCaseName = iterator.next();
-//			Boolean isPassed = zephyrTestCaseMap.get(testCaseName);
-//			RemoteTestcase testcase = new RemoteTestcase();
-//			testcase.setName(testCaseName);
-//			testcase.setComments(TEST_CASE_COMMENT);
-//			testcase.setAutomated(AUTOMATED);
-//			testcase.setExternalId(EXTERNAL_ID);
-//			testcase.setPriority(TEST_CASE_PRIORITY);
-//			testcase.setTag(TEST_CASE_TAG);
-//
-//			TestCaseResultModel caseWithStatus = new TestCaseResultModel();
-//			caseWithStatus.setPassed(isPassed);
-//			caseWithStatus.setRemoteTestcase(testcase);
-//			testcases.add(caseWithStatus);
-//		}
 
         zephyrConfig.setPackageCaseResultMap(packageCaseMap);
 		zephyrConfig.setPackageNames(packageNames);
 		
 		return status;
 	}
-
-
-    private List<TestResult> parse(BuildListener listener,
-                                   Launcher launcher, AbstractBuild build, String testResultLocation) throws Exception {
-        JUnitParser jUnitParser = new JUnitParser(true);
-        List<TestResult> testResults = new ArrayList<>();
-        testResults.add(jUnitParser.parseResult(testResultLocation, build, build.getWorkspace(), launcher, listener));
-        GregorianCalendar gregorianCalendar = new GregorianCalendar();
-        gregorianCalendar.setTimeInMillis(build.getStartTimeInMillis());
-        return testResults;
-    }
-
-    private static List<String> scanJunitTestResultFolder(String basedDir) {
-        File currentBasedDir = new File(basedDir);
-        FileSet fs = Util.createFileSet(new File(basedDir), JUNIT_PFX);
-        DirectoryScanner ds = fs.getDirectoryScanner();
-        List<String> resultFolders = new ArrayList<>();
-        //if based dir match junit file, we add based dir
-        if (ds.getIncludedFiles().length > 0)
-            resultFolders.add("");
-
-        for (String notIncludedDirName : ds.getNotIncludedDirectories()) {
-            if (!StringUtils.isEmpty(notIncludedDirName)) {
-                File dirToScan = new File(currentBasedDir.getPath(), notIncludedDirName);
-                FileSet subFileSet = Util.createFileSet(dirToScan, JUNIT_PFX);
-                DirectoryScanner subDirScanner = subFileSet.getDirectoryScanner();
-                if (subDirScanner.getIncludedFiles().length > 0) {
-                    resultFolders.add(notIncludedDirName);
-                }
-            }
-        }
-        return resultFolders;
-    }
 
 	/**
 	 * Validates the build configuration details

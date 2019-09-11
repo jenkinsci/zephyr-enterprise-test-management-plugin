@@ -443,14 +443,28 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		
 		if (StringUtils.isBlank(serverAddress)) {
 	        ListBoxModel mi = fetchServerList(serverAddress);
+            if(mi.size() == 0) {
+                listBoxModel.add(ADD_ZEPHYR_GLOBAL_CONFIG);
+                return listBoxModel;
+            }
 			serverAddress = mi.get(0).value;
 		}
 
+        if(StringUtils.isBlank(projectKey)) {
+            ListBoxModel mi = fetchProjectList(serverAddress);
+            if(mi.size() == 0) {
+                return listBoxModel;
+            }
+            projectKey = mi.get(0).value;
+        }
+
 		if (StringUtils.isBlank(releaseKey)) {
 	        ListBoxModel mi = fetchReleaseList(projectKey, serverAddress);
+            if(mi.size() == 0) {
+                return listBoxModel;
+            }
 	        releaseKey = mi.get(0).value;
 		}
-
 
 		if (releaseKey.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
 				|| (this.zephyrInstances.size() == 0)) {

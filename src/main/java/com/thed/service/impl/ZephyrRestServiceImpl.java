@@ -25,7 +25,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_PROJECT_BY_ID_URL = "/flex/services/rest/{restVersion}/project/{projectId}";
     public static final String GET_ALL_PROJECTS_FOR_CURRENT_USER_URL = "/flex/services/rest/{restVersion}/project/user/{userId}";
 
-    public static final String GET_ALL_RELEASES_FOR_PROJECT_ID_URL = "/flex/services/rest/{restVersion}/release/project/{projectId}";
+    public static final String GET_ALL_RELEASES_FOR_PROJECT_ID_URL = "/flex/services/rest/{restVersion}/release/paged/project/{projectId}"; //?order=id&isascorder=true&isVisible=false
 
     public static final String GET_TCR_CATALOG_TREE_NODES_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?type=Phase&revisionid=0&releaseid=10
     public static final String CREATE_TCR_CATALOG_TREE_NODE_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?parentid=0
@@ -160,12 +160,21 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public List<Release> getAllReleasesForProjectId(Long projectId) throws URISyntaxException {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("projectId", projectId.toString());
-        String url = buildUrl(prepareUrl(GET_ALL_RELEASES_FOR_PROJECT_ID_URL), pathParams, null);
+
+        List<NameValuePair> queryParams = new ArrayList<>();
+        queryParams.add(new BasicNameValuePair("order", "id"));
+        queryParams.add(new BasicNameValuePair("isascorder", "true"));
+        queryParams.add(new BasicNameValuePair("isVisible", "false"));
+
+        String url = buildUrl(prepareUrl(GET_ALL_RELEASES_FOR_PROJECT_ID_URL), pathParams, queryParams);
 
         String res = httpClientService.getRequest(url);
+        JSONObject resObject = new JSONObject(res);
+        JSONArray jsonArray = resObject.getJSONArray("results");
+        String resultStr = jsonArray.toString();
 
         Type releaseListType = new TypeToken<List<Release>>(){}.getType();
-        return gson.fromJson(res, releaseListType);
+        return gson.fromJson(resultStr, releaseListType);
     }
 
     @Override

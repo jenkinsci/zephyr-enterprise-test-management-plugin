@@ -3,7 +3,9 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>2.5</version><!-- which version of Jenkins is this plugin built against? -->
+      <version>2.5</version>
+      <!-- <version>3.49</version> -->
+      <!-- which version of Jenkins is this plugin built against? -->
   </parent>
 
   <groupId>org.jenkins-ci.plugins</groupId>
@@ -23,8 +25,12 @@
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jenkins.version>2.62</jenkins.version>
-    <maven.javadoc.skip>true</maven.javadoc.skip>
+      <jenkins.version>2.62</jenkins.version>
+      <maven.javadoc.skip>true</maven.javadoc.skip>
+      <!--
+      <jenkins.version>2.176.3</jenkins.version>
+      <jenkins.version>2.164.3</jenkins.version>
+      <java.level>8</java.level> -->
   </properties>
 
   <build>
@@ -71,7 +77,14 @@
   </reporting>
 
   <dependencies>
-    <dependency>
+      <!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
+      <dependency>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+          <version>1.13</version>
+      </dependency>
+
+      <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
       <version>4.3.5</version>

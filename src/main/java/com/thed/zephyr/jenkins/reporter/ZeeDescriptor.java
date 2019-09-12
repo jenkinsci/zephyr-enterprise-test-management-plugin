@@ -390,23 +390,39 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 		ListBoxModel listBoxModel = new ListBoxModel();
 
+        if (StringUtils.isBlank(serverAddress)) {
+            ListBoxModel mi = fetchServerList(serverAddress);
+            if(mi.size() > 0) {
+                serverAddress = mi.get(0).value;
+            }
+        }
+
+        if(StringUtils.isBlank(projectKey)) {
+            ListBoxModel mi = fetchProjectList(serverAddress);
+            if(mi.size() > 0) {
+                projectKey = mi.get(0).value;
+            }
+        }
+
         try {
-            Long projectId = Long.parseLong(projectKey);
-            Long projectDuration = projectService.getProjectDurationInDays(projectId);
+            if(!StringUtils.isBlank(projectKey)) {
+                Long projectId = Long.parseLong(projectKey);
+                Long projectDuration = projectService.getProjectDurationInDays(projectId);
 
-            if (projectDuration == -1) {
-                listBoxModel.add(CYCLE_DURATION_30_DAYS);
-                listBoxModel.add(CYCLE_DURATION_7_DAYS);
-                listBoxModel.add(CYCLE_DURATION_1_DAY);
-                return listBoxModel;
-            }
+                if (projectDuration == -1) {
+                    listBoxModel.add(CYCLE_DURATION_30_DAYS);
+                    listBoxModel.add(CYCLE_DURATION_7_DAYS);
+                    listBoxModel.add(CYCLE_DURATION_1_DAY);
+                    return listBoxModel;
+                }
 
-            if (projectDuration >= 29) {
-                listBoxModel.add(CYCLE_DURATION_30_DAYS);
-            }
+                if (projectDuration >= 29) {
+                    listBoxModel.add(CYCLE_DURATION_30_DAYS);
+                }
 
-            if (projectDuration >= 6) {
-                listBoxModel.add(CYCLE_DURATION_7_DAYS);
+                if (projectDuration >= 6) {
+                    listBoxModel.add(CYCLE_DURATION_7_DAYS);
+                }
             }
         }
         catch (Exception e) {

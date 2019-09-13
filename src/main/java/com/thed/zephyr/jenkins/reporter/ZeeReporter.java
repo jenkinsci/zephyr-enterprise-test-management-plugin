@@ -16,38 +16,26 @@ import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import com.thed.utils.ZephyrConstants;
-import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.Util;
 import hudson.model.*;
 import hudson.tasks.*;
 import hudson.tasks.junit.*;
 import hudson.tasks.test.AggregatedTestResultAction;
 import hudson.tasks.test.AggregatedTestResultAction.ChildReport;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.IntStream;
 
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
-import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.types.FileSet;
-import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import com.thed.zephyr.jenkins.model.ZephyrInstance;
-import com.thed.zephyr.jenkins.utils.rest.Cycle;
-import com.thed.zephyr.jenkins.utils.rest.Project;
-import com.thed.zephyr.jenkins.utils.rest.Release;
-import com.thed.zephyr.jenkins.utils.rest.RestClient;
-import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 
 public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
@@ -114,9 +102,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		}
 
 		int number = build.getNumber();
-        //todo: no need for for initializeZephyrData(), get server, username and pass from descriptor, and convert all values to Long( or required data type) and continue
-//		ZephyrConfigModel zephyrConfig = initializeZephyrData();
-
 
         try {
             ZephyrConfigModel zephyrConfigModel = new ZephyrConfigModel();
@@ -131,7 +116,13 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             }
 
             zephyrConfigModel.setCycleDuration(getCycleDuration());
-            zephyrConfigModel.setCyclePrefix(getCyclePrefix() + "_");
+
+            if (StringUtils.isNotBlank(getCyclePrefix())) {
+                zephyrConfigModel.setCyclePrefix(getCyclePrefix() + "_");
+            } else {
+                zephyrConfigModel.setCyclePrefix(CYCLE_PREFIX_DEFAULT);
+            }
+
             zephyrConfigModel.setCreatePackage(isCreatePackage());
             zephyrConfigModel.setBuilNumber(number);
 
@@ -242,16 +233,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             logger.printf("Error uploading test results to Zephyr");
             return false;
         }
-
-
-//		ZephyrSoapClient client = new ZephyrSoapClient();
-
-
-//		try {
-//			client.uploadTestResults(zephyrConfig);
-//		} catch (DatatypeConfigurationException e) {
-//			logger.printf("Error uploading test results to Zephyr");
-//		}
 
 		logger.printf("%s Done uploading tests to Zephyr.%n", pInfo);
 		return true;
@@ -406,23 +387,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return existingTestcases;
     }
 
-	/**
-	 * Fetches the credentials from the global configuration and creates a restClient
-	 * @return RestClient
-	 */
-	private RestClient buildRestClient(ZephyrConfigModel zephyrData) {
-		List<ZephyrInstance> zephyrServers = getDescriptor().getZephyrInstances();
-
-		for (ZephyrInstance zephyrServer : zephyrServers) {
-			if (StringUtils.isNotBlank(zephyrServer.getServerAddress()) && zephyrServer.getServerAddress().trim().equals(serverAddress)) {
-				zephyrData.setSelectedZephyrServer(zephyrServer);
-				RestClient restClient = new RestClient(zephyrServer);
-				return restClient;
-			}
-		}
-		return null;
-	}
-
     private ZephyrInstance getZephyrInstance(String serverAddress) {
         List<ZephyrInstance> zephyrServers = getDescriptor().getZephyrInstances();
 
@@ -540,120 +504,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		}
 		return noOfCases;
 	}
-
-	/**
-	 *
-	 * @return ZephyrConfigModel
-	 */
-	private ZephyrConfigModel initializeZephyrData() {
-		ZephyrConfigModel zephyrData = new ZephyrConfigModel();
-		
-		RestClient restClient = buildRestClient(zephyrData);
-		try {
-			zephyrData.setCycleDuration(cycleDuration);
-			determineProjectID(zephyrData, restClient);
-			determineReleaseID(zephyrData, restClient);
-			determineCycleID(zephyrData, restClient);
-			determineCyclePrefix(zephyrData);
-			determineUserId(zephyrData, restClient);
-		}finally {
-			restClient.destroy();
-		}
-	
-		return zephyrData;
-	}
-
-	/**
-	 *
-	 * @param zephyrData
-	 * @param restClient
-	 */
-	private void determineUserId(ZephyrConfigModel zephyrData, RestClient restClient) {
-		long userId = ServerInfo.getUserId(restClient, getZephyrRestVersion(restClient));
-		zephyrData.setUserId(userId);
-	}
-
-    private String getZephyrRestVersion(RestClient restClient) {
-//        String zephyrVersion = ServerInfo.findZephyrVersion(restClient);
-        String zephyrRestVersion = "v1";
-//			if (zephyrVersion.equals("4.8") || zephyrVersion.equals("5.0")) {
-//				zephyrRestVersion = "v1";
-//			} else {
-//				zephyrRestVersion = "latest";
-//			}
-
-        return zephyrRestVersion;
-    }
-
-	private void determineCyclePrefix(ZephyrConfigModel zephyrData) {
-		if (StringUtils.isNotBlank(cyclePrefix)) {
-			zephyrData.setCyclePrefix(cyclePrefix + "_");
-		} else {
-			zephyrData.setCyclePrefix(CYCLE_PREFIX_DEFAULT);
-		}
-	}
-
-	private void determineProjectID(ZephyrConfigModel zephyrData, RestClient restClient) {
-		long projectId = 0;
-		try {
-			projectId = Long.parseLong(projectKey);
-		} catch (NumberFormatException e1) {
-			logger.println("Project Key appears to be Name of the project");
-			try {
-				Long projectIdByName = Project.getProjectIdByName(projectKey, restClient, getZephyrRestVersion(restClient));
-				projectId = projectIdByName;
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			e1.printStackTrace();
-		}
-	
-		zephyrData.setZephyrProjectId(projectId);
-	}
-
-	private void determineReleaseID(ZephyrConfigModel zephyrData, RestClient restClient) {
-
-		long releaseId = 0;
-		try {
-			releaseId = Long.parseLong(releaseKey);
-		} catch (NumberFormatException e1) {
-			logger.println("Release Key appears to be Name of the Release");
-			try {
-				long releaseIdByReleaseNameProjectId = Release
-						.getReleaseIdByNameProjectId(releaseKey, zephyrData.getZephyrProjectId(), restClient, getZephyrRestVersion(restClient));
-				releaseId = releaseIdByReleaseNameProjectId;
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			e1.printStackTrace();
-		}
-		zephyrData.setReleaseId(releaseId);
-	}
-
-	private void determineCycleID(ZephyrConfigModel zephyrData, RestClient restClient) {
-
-		if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
-			zephyrData.setCycleId(NEW_CYCLE_KEY_IDENTIFIER);
-			return;
-		}
-		long cycleId = 0;
-		try {
-			cycleId = Long.parseLong(cycleKey);
-		} catch (NumberFormatException e1) {
-			logger.println("Cycle Key appears to be the name of the cycle");
-			try {
-				Long cycleIdByCycleNameAndReleaseId = Cycle
-						.getCycleIdByCycleNameAndReleaseId(cycleKey, zephyrData.getReleaseId(), restClient, getZephyrRestVersion(restClient));
-				cycleId = cycleIdByCycleNameAndReleaseId;
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			e1.printStackTrace();
-		}
-	
-		zephyrData.setCycleId(cycleId);
-	}
-
 
 	@Override
 	public ZeeDescriptor getDescriptor() {

@@ -7,10 +7,6 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_DURATION_7_DAY
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NAME_POST_BUILD_ACTION;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import hudson.Extension;
@@ -21,11 +17,8 @@ import hudson.util.FormValidation;
 import hudson.util.*;
 
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.xml.datatype.DatatypeConfigurationException;
 
 import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
@@ -36,16 +29,8 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import com.thed.zephyr.jenkins.model.ZephyrInstance;
-import com.thed.zephyr.jenkins.utils.ConfigurationValidator;
 import com.thed.zephyr.jenkins.utils.URLValidator;
-import com.thed.zephyr.jenkins.utils.ZephyrSoapClient;
-import com.thed.zephyr.jenkins.utils.rest.Cycle;
-import com.thed.zephyr.jenkins.utils.rest.Project;
-import com.thed.zephyr.jenkins.utils.rest.Release;
-import com.thed.zephyr.jenkins.utils.rest.RestClient;
-import com.thed.zephyr.jenkins.utils.rest.ServerInfo;
 import org.kohsuke.stapler.verb.POST;
 
 @Symbol("zeeReporter")
@@ -98,71 +83,42 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			JSONArray jArr = (JSONArray) object;
 			for (Iterator iterator = jArr.iterator(); iterator.hasNext();) {
 				JSONObject jObj = (JSONObject) iterator.next();
-				ZephyrInstance zephyrInstance = new ZephyrInstance();
-
-				RestClient restClient = null;
-				try {
-				String server = URLValidator.validateURL(jObj.getString("serverAddress").trim());
-				String user = jObj.getString("username").trim();
-				String pass = jObj.getString("password").trim();
-
-				zephyrInstance.setServerAddress(server);
-				zephyrInstance.setUsername(user);
-				zephyrInstance.setPassword(pass);
-				boolean zephyrServerValidation = false;
-					restClient = new RestClient(server, user, pass);
-					zephyrServerValidation = userService.verifyCredentials(server, user, pass);
-					if (zephyrServerValidation) {
-						this.zephyrInstances.add(zephyrInstance);
-					}
-				} catch (Throwable e) {
-					logger.log(Level.ALL, "Error in validating server and credentials. ");
-					logger.log(Level.ALL, e.getMessage());
-				}	finally {
-					closeHTTPClient(restClient);
-				}
+				verifyCredentials(jObj);
 			}
 
 		} else if (object instanceof JSONObject) {
 			JSONObject jObj = formData.getJSONObject("zephyrInstances");
-			ZephyrInstance zephyrInstance = new ZephyrInstance();
-
-			RestClient restClient = null;
-			try {
-			String server = URLValidator.validateURL(jObj.getString("serverAddress").trim());
-			String user = jObj.getString("username").trim();
-			String pass = jObj.getString("password").trim();
-
-			zephyrInstance.setServerAddress(server);
-			zephyrInstance.setUsername(user);
-			zephyrInstance.setPassword(pass);
-
-			boolean zephyrServerValidation = false;
-				restClient = new RestClient(server, user, pass);
-				zephyrServerValidation = userService.verifyCredentials(server, user, pass);
-				if (zephyrServerValidation) {
-					this.zephyrInstances.add(zephyrInstance);
-				}
-			} catch (Throwable e) {
-				logger.log(Level.ALL, "Error in validating server and credentials. ");
-				logger.log(Level.ALL, e.getMessage());
-			} finally {
-				closeHTTPClient(restClient);
-			}
-
+            verifyCredentials(jObj);
 		}
 		save();
 		return super.configure(req, formData);
 	}
 
-	/**
-	 *
-	 */
-	private void closeHTTPClient(RestClient restClient) {
-		if(restClient != null) {
-			restClient.destroy();
-		}
-	}
+    /**
+     * Verifies credentials present in jsonObject
+     * @param jObj
+     */
+    private void verifyCredentials(JSONObject jObj) {
+        ZephyrInstance zephyrInstance = new ZephyrInstance();
+
+        try {
+            String server = URLValidator.validateURL(jObj.getString("serverAddress").trim());
+            String user = jObj.getString("username").trim();
+            String pass = jObj.getString("password").trim();
+
+            zephyrInstance.setServerAddress(server);
+            zephyrInstance.setUsername(user);
+            zephyrInstance.setPassword(pass);
+
+            boolean zephyrServerValidation = userService.verifyCredentials(server, user, pass);
+            if (zephyrServerValidation) {
+                this.zephyrInstances.add(zephyrInstance);
+            }
+        } catch (Throwable e) {
+            logger.log(Level.ALL, "Error in validating server and credentials. ");
+            logger.log(Level.ALL, e.getMessage());
+        }
+    }
 
 	@Override
 	public String getDisplayName() {

@@ -38,6 +38,10 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
     @Override
     public Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(Map<Long, List<CaseResult>> treeIdCaseResultMap) throws URISyntaxException {
 
+        if(treeIdCaseResultMap == null || treeIdCaseResultMap.isEmpty()) {
+            return new HashMap<>();
+        }
+
         List<CaseResult> caseResultList = new ArrayList<>();
         List<TCRCatalogTreeTestcase> treeTestcases = new ArrayList<>();
         Set<Long> treeIds = treeIdCaseResultMap.keySet();

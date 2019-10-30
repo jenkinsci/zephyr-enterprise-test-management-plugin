@@ -1,13 +1,13 @@
 package com.thed.zephyr.jenkins.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import com.thed.zephyr.jenkins.utils.rest.RestClient;
+import hudson.tasks.junit.CaseResult;
 
 public class ZephyrConfigModel {
 
-	private List<TestCaseResultModel> testcases;
 	private Set<String> packageNames;
 	private String cyclePrefix;
 	private String cycleDuration;
@@ -18,6 +18,7 @@ public class ZephyrConfigModel {
 	private boolean createPackage;
 	private ZephyrInstance selectedZephyrServer;
 	private int builNumber;
+    private Map<String, List<CaseResult>> packageCaseResultMap;
 
 
 	public boolean isCreatePackage() {
@@ -34,14 +35,6 @@ public class ZephyrConfigModel {
 
 	public void setCyclePrefix(String cyclePrefix) {
 		this.cyclePrefix = cyclePrefix;
-	}
-
-	public List<TestCaseResultModel> getTestcases() {
-		return testcases;
-	}
-
-	public void setTestcases(List<TestCaseResultModel> testcases) {
-		this.testcases = testcases;
 	}
 
 	public long getZephyrProjectId() {
@@ -107,4 +100,12 @@ public class ZephyrConfigModel {
 	public void setBuilNumber(int builNumber) {
 		this.builNumber = builNumber;
 	}
+
+    public Map<String, List<CaseResult>> getPackageCaseResultMap() {
+        return packageCaseResultMap;
+    }
+
+    public void setPackageCaseResultMap(Map<String, List<CaseResult>> packageCaseResultMap) {
+        this.packageCaseResultMap = packageCaseResultMap;
+    }
 }

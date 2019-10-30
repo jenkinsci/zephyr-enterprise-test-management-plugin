@@ -17,6 +17,14 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
         super();
     }
 
+    private Testcase parse(CaseResult caseResult) {
+        Testcase testcase = new Testcase();
+        testcase.setName(caseResult.getFullName());
+        testcase.setAutomated(true);
+        testcase.setScriptName("Created By Jenkins");
+        return testcase;
+    }
+
     @Override
     public List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException {
         return zephyrRestService.getTestcasesForTreeId(tcrCatalogTreeId);
@@ -29,6 +37,10 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
 
     @Override
     public Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(Map<Long, List<CaseResult>> treeIdCaseResultMap) throws URISyntaxException {
+
+        if(treeIdCaseResultMap == null || treeIdCaseResultMap.isEmpty()) {
+            return new HashMap<>();
+        }
 
         List<CaseResult> caseResultList = new ArrayList<>();
         List<TCRCatalogTreeTestcase> treeTestcases = new ArrayList<>();
@@ -43,9 +55,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
             for(CaseResult caseResult : caseResults) {
                 TCRCatalogTreeTestcase tcrCatalogTreeTestcase = new TCRCatalogTreeTestcase();
                 tcrCatalogTreeTestcase.setTcrCatalogTreeId(treeId);
-                Testcase testcase = new Testcase();
-                testcase.setName(caseResult.getFullName());
-                tcrCatalogTreeTestcase.setTestcase(testcase);
+                tcrCatalogTreeTestcase.setTestcase(parse(caseResult));
 
                 treeTestcases.add(tcrCatalogTreeTestcase);
             }

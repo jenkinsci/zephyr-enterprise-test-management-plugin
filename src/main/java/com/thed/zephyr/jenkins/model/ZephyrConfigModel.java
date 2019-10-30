@@ -4,12 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.thed.zephyr.jenkins.utils.rest.RestClient;
 import hudson.tasks.junit.CaseResult;
 
 public class ZephyrConfigModel {
 
-	private List<TestCaseResultModel> testcases;
 	private Set<String> packageNames;
 	private String cyclePrefix;
 	private String cycleDuration;
@@ -37,14 +35,6 @@ public class ZephyrConfigModel {
 
 	public void setCyclePrefix(String cyclePrefix) {
 		this.cyclePrefix = cyclePrefix;
-	}
-
-	public List<TestCaseResultModel> getTestcases() {
-		return testcases;
-	}
-
-	public void setTestcases(List<TestCaseResultModel> testcases) {
-		this.testcases = testcases;
 	}
 
 	public long getZephyrProjectId() {

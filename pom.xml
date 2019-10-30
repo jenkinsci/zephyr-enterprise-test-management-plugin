@@ -14,7 +14,7 @@
   <packaging>hpi</packaging>
   <name>Zephyr Enterprise Test Management plugin</name>
   <description>Creates Test Cases and update their statues for unit tests.</description>
-  <url>https://wiki.jenkins-ci.org/display/JENKINS/Zephyr+Enterprise+Test+Management+Plugin</url>
+  <url>https://github.com/jenkinsci/zephyr-enterprise-test-management-plugin</url>
   <developers>
     <developer>
       <id>developer</id>

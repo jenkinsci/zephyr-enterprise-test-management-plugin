@@ -1,16 +1,15 @@
 Creates test cases and publishes test results in
-[Zephyr](http://www.getzephyr.com){.external-link} Enterprise for JUnit
+[Zephyr](http://www.getzephyr.com) Enterprise for JUnit
 test cases
 
 Older versions of this plugin may not be safe to use. Please review the
 following warnings before using an older version:
 
 -   [CSRF vulnerability and missing permission check allow
-    SSRF](https://jenkins.io/security/advisory/2019-04-03/#SECURITY-993){.external-link}
+    SSRF](https://jenkins.io/security/advisory/2019-04-03/#SECURITY-993)
 
 
-![](docs/images/worddav8cd1c1c9fecd6fe8dfd9426222832e12.png){.confluence-embedded-image
-width="130" height="38"}
+![](docs/images/worddav8cd1c1c9fecd6fe8dfd9426222832e12.png)
 
 ## **About the Plugin**
 
@@ -31,8 +30,8 @@ in Zephyr Enterprise using this plugin; this includes
 
 ## **Requirements**
 
-1.  Zephyr Enterprise 4.7.X, 4.8.X, 5.0.X, 6.1.X, 6.2.X
-2.  Jenkins installation (Upto version 2.89.4)
+1.  Zephyr Enterprise 6.X
+2.  Jenkins installation (v2.62 or later)
 
 ## **Adding Zephyr Servers in Jenkins global settings**
 
@@ -44,33 +43,28 @@ connection with Zephyr Server(s). Follow the below steps
     screenshot.
 
 
-![](docs/images/worddav3e8272c72e5620a3b49e3dc5bbd23c84.png){.confluence-embedded-image
-width="234" height="280"}
+![](docs/images/worddav3e8272c72e5620a3b49e3dc5bbd23c84.png)
 
 -   Click on "Configure System".
 
 
-![](docs/images/worddav41dcb2ac489a02abb5f94c5fc35dbe9b.png){.confluence-embedded-image
-width="624" height="362"}
+![](docs/images/worddav41dcb2ac489a02abb5f94c5fc35dbe9b.png)
 
 -   Locate the section "Zephyr Server Configuration" and click "Add".
     You can add more than one Zephyr Server by clicking on "Add" button.
 
-![](docs/images/worddav13d2d1b859c6cd1c72c17270dfe84a8b.png){.confluence-embedded-image
-width="624" height="167"}
+![](docs/images/worddav13d2d1b859c6cd1c72c17270dfe84a8b.png)
 
 -   Enter Zephyr Server URL and user credentials. Note that the user
     credentials must be that of Zephyr "Test Manager" or "Test Lead".
     Click on "Test Configuration" to validate connection to Zephyr
     Server.
 
-![](docs/images/worddav2b368b865651a19e5fd65b93a278a6b9.png){.confluence-embedded-image
-width="624" height="209"}
+![](docs/images/worddav2b368b865651a19e5fd65b93a278a6b9.png)
 
 -   Click on "Save" button to save the configuration changes.
 
-![](docs/images/worddava93e3befecbf4a5ffd2b07e58fc40423.png){.confluence-embedded-image
-width="624" height="254"}
+![](docs/images/worddava93e3befecbf4a5ffd2b07e58fc40423.png)
 
 # **Configuring a standard Jenkins job**
 
@@ -83,65 +77,54 @@ build action:
 1\. Create a new Jenkins job by clicking the "New Item" link found on the
 menu.
 
-![](docs/images/worddavab4067eb8b3b9cb4c3baa72c5f99c599.png){.confluence-embedded-image
-width="247" height="275"}
+![](docs/images/worddavab4067eb8b3b9cb4c3baa72c5f99c599.png)
 
 2\. Give a name for your job, check the box "Freestyle project" and click
 on "OK" button.
 
-![](docs/images/worddav6e461d9e7908dbff44f7148ffe57b2df.png){.confluence-embedded-image
-width="624" height="248"}
+![](docs/images/worddav6e461d9e7908dbff44f7148ffe57b2df.png)
 
 3\. To configure the job you just created, click the \<job name\> on the
 Jenkins home page.
 
-![](docs/images/worddavc3d84cbb0446ba1c12cf90cedb5bd92c.png){.confluence-embedded-image
-width="624" height="155"}
+![](docs/images/worddavc3d84cbb0446ba1c12cf90cedb5bd92c.png)
 
 4\. Click the "Configure" link.
 
-![](docs/images/worddav46aff734fdfd756c63c5785d0799f97f.png){.confluence-embedded-image
-width="280" height="327"}
+![](docs/images/worddav46aff734fdfd756c63c5785d0799f97f.png)
 
 5\. Choose "Subversion" option in the "Source Code Management" section.
 
-![](docs/images/worddav98a0233b9c432ca9339e07ac02eceebb.png){.confluence-embedded-image
-width="381" height="140"}
+![](docs/images/worddav98a0233b9c432ca9339e07ac02eceebb.png)
 
 6\. Enter the subversion URL where the target project resides and press
 Tab.
 
-![](docs/images/worddav43269e625399dfe9a1299d654bdc03e0.png){.confluence-embedded-image
-width="624" height="192"}
+![](docs/images/worddav43269e625399dfe9a1299d654bdc03e0.png)
 Note: User credentials needs to be setup to access SVN server. Click on
 "enter credential" link to set it up if you see below error.
-![](docs/images/worddavda06736083fe517c7fbe7b3bc5fdcab1.png){.confluence-embedded-image
-width="539" height="62"}
+![](docs/images/worddavda06736083fe517c7fbe7b3bc5fdcab1.png)
 
 7\. To add a build step, locate the "Build' section and select "Invoke
 top-level maven targets" from the "Add build step" dropdown.
 
-![](docs/images/worddav63ae9fa47858a2c51daa0bf9165a371e.png){.confluence-embedded-image
-width="427" height="214"}
+![](docs/images/worddav63ae9fa47858a2c51daa0bf9165a371e.png)
 
 8\. Select "clean package" as your Goals.
 
-![](docs/images/worddav118b96747a7fbd86cc477dbb91c4944c.png){.confluence-embedded-image
-width="624" height="73"}
+![](docs/images/worddav118b96747a7fbd86cc477dbb91c4944c.png)
 
 **9. The plugin requires JUnit test result**. Locate the "Post-build
 Actions" section and select "Publish JUnit test result report" from "Add
 post-build Actions" dropdown.
 
-![](docs/images/worddav09a0b1e31d6b7089435a28fb09d9277c.png){.confluence-embedded-image
-width="531" height="190"}
+![](docs/images/worddav09a0b1e31d6b7089435a28fb09d9277c.png)
 
 10\. Enter the path to the test report. In the example below the location
 is "Proj1\\target\\surefire-reports/\*.xml" where Proj1 is the target
 project.
 
-![](docs/images/worddavb923d948a25329959cbf9d000444ca35.png){.confluence-embedded-image
-width="624" height="145"}
+![](docs/images/worddavb923d948a25329959cbf9d000444ca35.png)
 
 # **Configuring Zephyr Enterprise Test Management plugin as a post-build action**
 
@@ -152,13 +135,11 @@ In order to publish results in Zephyr, define another post-build action.
 post-build Actions" dropdown.
 
 
-![](docs/images/worddav4ef115780e39bf33bb484a2932b6b80d.png){.confluence-embedded-image
-width="528" height="188"}
+![](docs/images/worddav4ef115780e39bf33bb484a2932b6b80d.png)
 
 2\. Configure Zephyr plugin job.
 
-![](docs/images/worddav37b24965660fe9359bb036d154d1da50.png){.confluence-embedded-image
-width="613" height="310"}
+![](docs/images/worddav37b24965660fe9359bb036d154d1da50.png)
 
 1.  1.  1.  Select the Zephyr URL from the dropdown. (Servers configured
             in the Jenkins global configuration are available here to
@@ -187,19 +168,16 @@ width="613" height="310"}
 To trigger a job manually, click "Build Now" link on the menu. This
 builds the project and publishes the JUnit result.
 
-![](docs/images/worddav89ee482c9e8e48d693ad00376dceb132.png){.confluence-embedded-image
-width="231" height="265"}
+![](docs/images/worddav89ee482c9e8e48d693ad00376dceb132.png)
 
 In Zephyr Enterprise Jenkins creates a phase named "Automation" along
 with package structure of the JUnit test cases found in the project.
-![](docs/images/zee-1.png){.confluence-embedded-image
-width="800"}
+![](docs/images/zee-1.png)
 
 
 Finally, Jenkins assigns this phase to the selected cycle and executes
 all the tests in Zephyr.
-![](docs/images/zee-2.png){.confluence-embedded-image
-width="800"}
+![](docs/images/zee-2.png)
 
 # **License**
 
@@ -216,7 +194,7 @@ It forbids you to:
 -   redistribute any piece of our originated software without proper
     attribution;
 -   use any marks owned by us in any way that might state or imply that
-    we [www.getzephyr.com](http://www.getzephyr.com){.external-link}
+    we [www.getzephyr.com](http://www.getzephyr.com)
     endorse your distribution;
 -   Use any marks owned by us in any way that might state or imply that
     you created this software in question.
@@ -226,7 +204,7 @@ It requires you to:
 -   include a copy of the license in any redistribution you may make
     that includes this software;
 -   provide clear attribution to us,
-    [www.getzephyr.com](http://www.getzephyr.com){.external-link} for
+    [www.getzephyr.com](http://www.getzephyr.com) for
     any distributions that include this software
 
 It does not require you to:
@@ -243,8 +221,8 @@ for more details.
 # **Feedback**
 
 -   Please provide feedback at [JENKINS
-    JIRA](https://issues.jenkins-ci.org/projects/JENKINS){.external-link}
+    JIRA](https://issues.jenkins-ci.org/projects/JENKINS)
     or at [Zephyr
-    Community](https://support.getzephyr.com/hc/communities/public/topics/200179869-Developer-Zone-Zephyr-Enterprise-Community){.external-link}
+    Community](https://support.getzephyr.com/hc/communities/public/topics/200179869-Developer-Zone-Zephyr-Enterprise-Community)
 -   For code questions, send an email to
-    [developer@getzephyr.com](https://wiki.jenkins.io/display/JENKINS/mailto:developer%40getzephyr.com){.external-link}
+    [developer@getzephyr.com](https://wiki.jenkins.io/display/JENKINS/mailto:developer%40getzephyr.com)

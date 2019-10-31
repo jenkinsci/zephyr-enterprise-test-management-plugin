@@ -203,10 +203,11 @@ all the tests in Zephyr.
 ![](docs/images/5_2_zee_pipeline_script.png)
 
 8. Paste copied pipeline script to script section in configure.
--   Add path of project in this line checkout filesystem(clearWorkspace: false, copyHidden: false, path: 'D://jenkins//Proj1-10')
--   Add copied script of junit target file under post  junit 'target/surefire-reports/*.xml'
--   Add copied script from zee reporter
--   Use bat if we configured with windows or sh if we configured with Linux
+Changes in pipeline script
+    -   Add path of project in this line checkout filesystem(clearWorkspace: false, copyHidden: false, path: 'D://jenkins//Proj1-10')
+    -   Add copied script of junit target file under post  junit 'target/surefire-reports/*.xml'
+    -   Add copied script from zee reporter
+    -   Use bat if we configured with windows or sh if we configured with Linux
 
 **Sample script**
 ```

@@ -179,6 +179,68 @@ Finally, Jenkins assigns this phase to the selected cycle and executes
 all the tests in Zephyr.
 ![](docs/images/zee-2.png)
 
+# **Configuring a pipeline Jenkins job**
+
+1. Select Pipeline project in new item instead of freestyle project while creating project.
+![](docs/images/1_create_pipeline_project.png)
+
+2. In configure section select pipeline script option.
+![](docs/images/2_pipeline_job_configuration.png)
+
+3. Copy pipeline script in script section.
+
+4. Click on pipeline syntax.
+![](docs/images/3_click_pipeline_syntax.png)
+
+5. Select Junit: Archive-JUnit Formatted test results and add tartget XML file → Click on Generate Pipeline Script.
+![](docs/images/4_1_junit_pipeline_script.png)
+![](docs/images/4_2_junit_pipeline_script.png)
+
+6. Select zeeReporter: Publish test result to Zephyr Enterprise → Enter all details.
+![](docs/images/5_1_zee_pipeline_script.png)
+
+7. Click on Generate Pipeline Script → Copy generated pipeline script.
+![](docs/images/5_2_zee_pipeline_script.png)
+
+8. Paste copied pipeline script to script section in configure.
+-   Add path of project in this line checkout filesystem(clearWorkspace: false, copyHidden: false, path: 'D://jenkins//Proj1-10')
+-   Add copied script of junit target file under post  junit 'target/surefire-reports/*.xml'
+-   Add copied script from zee reporter
+-   Use bat if we configured with windows or sh if we configured with Linux
+
+**Sample script**
+```
+pipeline {
+    agent any
+        stages {
+            stage('proj1 - Checkout') {
+                steps{
+                    checkout filesystem(clearWorkspace: false, copyHidden: false, path: 'D://jenkins//Proj1-10')
+                }
+            }
+            stage('proj1 - Build') {
+                steps{
+                    withMaven(options: [
+                    junitPublisher(disabled: true)]) {
+                        bat "mvn clean test"
+                    }
+                }
+            }
+        }
+        
+    post {
+        always{
+            junit 'target/surefire-reports/*.xml'
+            zeeReporter createPackage: false, cycleDuration: '1 day', cycleKey: '1', cyclePrefix: 'zxcvbnm<12#%^>', projectKey: '4', releaseKey: '7', serverAddress: 'http://10.16.2.25'
+        }
+    }
+}
+```
+
+![](docs/images/6_paste_copied_scripts.png)
+
+9. Trigger the build.
+
 # **License**
 
 This plugin is open source. It follows the Apache License version 2.0

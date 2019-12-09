@@ -4,6 +4,7 @@ import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.model.Testcase;
 import com.thed.service.TestcaseService;
 import hudson.tasks.junit.CaseResult;
+import org.jaxen.pantry.Test;
 
 import java.net.URISyntaxException;
 import java.util.*;
@@ -75,5 +76,24 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
         }
 
         return map;
+    }
+
+    @Override
+    public void createTestcasesWithList(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException {
+        List<TCRCatalogTreeTestcase> treeTestcases = new ArrayList<>();
+        Set<Long> treeIds = treeIdTestcaseMap.keySet();
+
+        for (Long treeId : treeIds) {
+            List<Testcase> testcaseList = treeIdTestcaseMap.get(treeId);
+            for (Testcase testcase : testcaseList) {
+                TCRCatalogTreeTestcase tcrCatalogTreeTestcase = new TCRCatalogTreeTestcase();
+                tcrCatalogTreeTestcase.setTcrCatalogTreeId(treeId);
+                tcrCatalogTreeTestcase.setTestcase(testcase);
+
+                treeTestcases.add(tcrCatalogTreeTestcase);
+            }
+        }
+
+        treeTestcases = createTestcases(treeTestcases);
     }
 }

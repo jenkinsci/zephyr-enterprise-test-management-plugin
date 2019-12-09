@@ -26,6 +26,13 @@
   <f:entry title="Create Package Structure" field="createPackage">
     <f:checkbox field="createPackage" checked="${createPackage}"/>
   </f:entry>
-  
+
+  <f:entry title="Test Result XML" field="resultXmlFilePath">
+      <f:textbox field="resultXmlFilePath"/>
+  </f:entry>
+
+  <f:entry title="Parser" field="parserIndex">
+      <f:select />
+    </f:entry>
   
 </j:jelly>

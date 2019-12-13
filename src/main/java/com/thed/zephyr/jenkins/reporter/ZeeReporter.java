@@ -116,9 +116,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		logger.printf("%s Examining test results...%n", pInfo);
 
         parserTemplateArr = new String[] {
-                "{ \"status\": \"$testsuite.testcase.failure\", \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}",//junit
-                "{ \"status\": \"$testsuite.testcase.failure\", \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}", //cucumber
-                "{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\" , \"testcase\" : {\"name\": \"$testng-results.suite.test:name\"}}" //testng
+                "{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}",//junit
+                "{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}", //cucumber
+                "{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}" //testng
         };
 
 		if (!validateBuildConfig()) {
@@ -554,12 +554,22 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
         Map<String, Boolean> testcaseNameStatusMap = new HashMap<>();
 
-        for (Map dataMap : dataMapList) {
+        dataMapLoop: for (Map dataMap : dataMapList) {
 
             Map testcaseMap = (Map) dataMap.get("testcase");
 
             String testcaseJson = new Gson().toJson(testcaseMap);
             Testcase testcase = new Gson().fromJson(testcaseJson, Testcase.class);
+
+            if(dataMap.containsKey("skipTestcaseNames")) {
+                String[] skipTestcaseNames = dataMap.get("skipTestcaseNames").toString().split(",");
+                for (String testcaseName : skipTestcaseNames) {
+                    if(testcase.getName().equals(testcaseName)) {
+                        //name matches, skip this testcase
+                        continue dataMapLoop;
+                    }
+                }
+            }
 
             String packageName = "parentPhase";
             if(isCreatePackage()) {
@@ -571,7 +581,12 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             if(dataMap.containsKey("statusString") && dataMap.get("statusString") != null) {
                 status = dataMap.get("status").equals(dataMap.get("statusString"));
             } else {
-                status = dataMap.get("status").toString().length() > 0;
+                if(Boolean.valueOf(dataMap.get("statusExistPass").toString())) {
+                    status = dataMap.get("status").toString().length() > 0;
+                } else {
+                    status = dataMap.get("status").toString().length() == 0;
+                }
+
             }
 
             TCRCatalogTreeDTO treeDTO = packagePhaseMap.get(packageName);
@@ -586,17 +601,17 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             testcaseNameStatusMap.put(testcase.getName(), status);
         }
         List<TCRCatalogTreeTestcase> tcrList =  testcaseService.createTestcasesWithList(treeIdTestcaseMap);
-        Map<TCRCatalogTreeTestcase, Boolean> testcaseIdStatusMap = new HashMap<>();
+        Map<TCRCatalogTreeTestcase, Boolean> tcrTestcaseStatusMap = new HashMap<>();
         loop1 : for (Map.Entry<String, Boolean> entry : testcaseNameStatusMap.entrySet()) {
             for(TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrList) {
                 if(tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey())) {
                     //same testcase, add id and status to map
-                    testcaseIdStatusMap.put(tcrCatalogTreeTestcase, entry.getValue());
+                    tcrTestcaseStatusMap.put(tcrCatalogTreeTestcase, entry.getValue());
                     continue loop1;
                 }
             }
         }
-        return testcaseIdStatusMap;
+        return tcrTestcaseStatusMap;
     }
 
     public void parseXML(Map<String, TCRCatalogTreeDTO> packagePhaseMap) throws ParserConfigurationException, IOException, SAXException, URISyntaxException {

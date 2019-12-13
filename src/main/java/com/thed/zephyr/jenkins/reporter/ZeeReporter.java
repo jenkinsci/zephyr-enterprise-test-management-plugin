@@ -561,6 +561,10 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             String testcaseJson = new Gson().toJson(testcaseMap);
             Testcase testcase = new Gson().fromJson(testcaseJson, Testcase.class);
 
+            if(testcase.getName().isEmpty()) {
+                continue;
+            }
+
             if(dataMap.containsKey("skipTestcaseNames")) {
                 String[] skipTestcaseNames = dataMap.get("skipTestcaseNames").toString().split(",");
                 for (String testcaseName : skipTestcaseNames) {

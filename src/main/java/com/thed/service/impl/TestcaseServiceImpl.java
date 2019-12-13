@@ -79,7 +79,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
     }
 
     @Override
-    public void createTestcasesWithList(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException {
+    public List<TCRCatalogTreeTestcase> createTestcasesWithList(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException {
         List<TCRCatalogTreeTestcase> treeTestcases = new ArrayList<>();
         Set<Long> treeIds = treeIdTestcaseMap.keySet();
 
@@ -94,6 +94,6 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
             }
         }
 
-        treeTestcases = createTestcases(treeTestcases);
+        return createTestcases(treeTestcases);
     }
 }

@@ -15,24 +15,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by prashant on 3/12/19.
  */
 public class ParserUtil {
 
-    Document getXMLDoc(String filePath) throws ParserConfigurationException, IOException, SAXException {
+    public static final String parserVariablePattern = "\\$[.:\\w]*[^.:\\s]";
+
+    public Document getXMLDoc(String filePath) throws ParserConfigurationException, IOException, SAXException {
         File xmlFile = new File(filePath);
         Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xmlFile);
         document.getDocumentElement().normalize();
-
-//        Element rootElement =  document.getDocumentElement();
-
         return document;
     }
 
-
-    //entry method
     public List<Map> parseXmlLang(String filePath, String parseTemplate) throws IOException, SAXException, ParserConfigurationException {
         Document document = getXMLDoc(filePath);
         Map<String, Object> parseTemplateMap = new Gson().fromJson(parseTemplate, Map.class);
@@ -53,17 +52,22 @@ public class ParserUtil {
                 if(((String) value).isEmpty()) {
                     continue;
                 }
-                String xmlPathVar = getXmlPathVar(String.valueOf(value));
-                if(deepLinks.size() == 0) {
-                    deepLinks.add(xmlPathVar);
-                } else {
-                    for (int i = 0; i < deepLinks.size(); i++) {
-                        if(xmlPathVar.startsWith(deepLinks.get(i)) && deepLinks.get(i).length() < xmlPathVar.length()) {
-                            //new xmlPathVar starts with already present
-                            deepLinks.set(i, xmlPathVar);
+
+                List<String> xmlPathVarList = getVariablesFromString(String.valueOf(value));
+                for (String xmlPathVarStr : xmlPathVarList) {
+                    String xmlPathVar = getXmlPathVar(String.valueOf(xmlPathVarStr));
+                    if(deepLinks.size() == 0) {
+                        deepLinks.add(xmlPathVar);
+                    } else {
+                        for (int i = 0; i < deepLinks.size(); i++) {
+                            if(xmlPathVar.startsWith(deepLinks.get(i)) && deepLinks.get(i).length() < xmlPathVar.length()) {
+                                //new xmlPathVar starts with already present
+                                deepLinks.set(i, xmlPathVar);
+                            }
                         }
                     }
                 }
+
             } else if(value instanceof Map) {
                 getXmlPathDeepLinks((Map) value, deepLinks);
             }
@@ -88,30 +92,41 @@ public class ParserUtil {
             nodeList = ((Element) node).getElementsByTagName(xmlVar);
         }
 
-        for (int i = 0; i < nodeList.getLength(); i++) {
-            Node childNode = nodeList.item(i);
+        if(nodeList.getLength() == 0) {
             Map<String, Object> newDataMap = deepCopy(dataMap);
-            fillMapWithElement(xmlPath, (Element) childNode, baseTemplateMap, newDataMap);
-            fillMapWithXML(childNode, baseTemplateMap, newDataMap, currentLinkIndex + 1, xmlNodes, dataMapList);
+            fillMapWithElement(xmlPath, null, baseTemplateMap, newDataMap);
+            dataMapList.add(newDataMap);
+        } else {
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node childNode = nodeList.item(i);
+                Map<String, Object> newDataMap = deepCopy(dataMap);
+                fillMapWithElement(xmlPath, (Element) childNode, baseTemplateMap, newDataMap);
+                fillMapWithXML(childNode, baseTemplateMap, newDataMap, currentLinkIndex + 1, xmlNodes, dataMapList);
+            }
         }
         return dataMapList;
     }
 
     //this method traverses data maps filling them with given element
-    void fillMapWithElement(String tagPath, Element element, Map<String, Object> baseTemplateMap, Map dataMap) {
-        for (String key : baseTemplateMap.keySet()) {
-            Object value = baseTemplateMap.get(key);
-            if(baseTemplateMap.get(key) instanceof Map) {
+    void fillMapWithElement(String tagPath, Element element, Map<String, Object> baseTemplateMap, Map<String, Object> dataMap) {
+        for (String key : dataMap.keySet()) {
+            Object value = dataMap.get(key);
+            if(value instanceof Map) {
                 // map found, also fill this with data
                 //todo: this recursion should be controlled because if there is no relevant key any deeper than the recursion is useless
                 fillMapWithElement(tagPath, element, (Map)baseTemplateMap.get(key), (Map)dataMap.get(key));
-            } else {
-                //check if this key-value uses any value from this element
-                if(value.equals(tagPath)) {
-                    dataMap.put(key, element.getNodeValue());
-                } else if(value.toString().startsWith(tagPath + ":")) {
-                    dataMap.put(key, element.getAttribute(getAttributeName(value.toString())));
+            } else if(value instanceof String) {
+
+                List<String> xmlPathVarList = getVariablesFromString(value.toString());
+                String resultValue = value.toString();
+                for (String xmlPathVar : xmlPathVarList) {
+                    if(xmlPathVar.equals("$"+tagPath)) {
+                        resultValue = resultValue.replace(xmlPathVar, element == null ? "" :element.getTextContent());
+                    } else if(xmlPathVar.startsWith("$" + tagPath + ":")) {
+                        resultValue = resultValue.replace(xmlPathVar, element == null ? "" : element.getAttribute(getAttributeName(xmlPathVar)));
+                    }
                 }
+                dataMap.put(key, resultValue);
             }
         }
     }
@@ -136,7 +151,7 @@ public class ParserUtil {
      */
     String getXmlPathVar(String xmlPath) {
         String values[] = xmlPath.split(":");
-        return values[0];
+        return values[0].replace("$", "");
     }
 
 
@@ -153,5 +168,15 @@ public class ParserUtil {
         String json = gson.toJson(originalMap);
         Map cloneMap = gson.fromJson(json, Map.class);
         return cloneMap;
+    }
+
+    List<String> getVariablesFromString(String value) {
+        Pattern pattern = Pattern.compile(parserVariablePattern);
+        Matcher matcher = pattern.matcher(value);
+        List<String> variables = new ArrayList<String>();
+        while (matcher.find()) {
+            variables.add(matcher.group());
+        }
+        return variables;
     }
 }

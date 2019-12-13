@@ -392,7 +392,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
     public ListBoxModel doFillParserIndexItems() {
         ListBoxModel listBoxModel = new ListBoxModel();
-        listBoxModel.add("Junit", "0");
+        listBoxModel.add("JUnit", "0");
         listBoxModel.add("Cucumber", "1");
         listBoxModel.add("TestNG", "2");
         return listBoxModel;

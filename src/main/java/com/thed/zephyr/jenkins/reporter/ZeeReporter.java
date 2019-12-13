@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import jenkins.model.Jenkins;
@@ -115,9 +116,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		logger.printf("%s Examining test results...%n", pInfo);
 
         parserTemplateArr = new String[] {
-                "{ \"packageName\": \"testsuite.testcase:classname\" , \"testcase\" : {\"name\": \"testsuite.testcase:name\"}}",//junit
-                "{ \"packageName\": \"testsuite.testcase:classname\" , \"testcase\" : {\"name\": \"testsuite.testcase:name\"}}", //cucumber
-                "{ \"packageName\": \"testng-results.suite.test.class:name\" , \"testcase\" : {\"name\": \"testng-results.suite.test:name\"}}" //testng
+                "{ \"status\": \"$testsuite.testcase.failure\", \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}",//junit
+                "{ \"status\": \"$testsuite.testcase.failure\", \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}", //cucumber
+                "{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\" , \"testcase\" : {\"name\": \"$testng-results.suite.test:name\"}}" //testng
         };
 
 		if (!validateBuildConfig()) {
@@ -174,87 +175,85 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             zephyrConfigModel.setPackageNames(getPackageNamesFromXML());
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
 //            parseXML(packagePhaseMap);
-            genericParserXML(packagePhaseMap, parserTemplateArr[parserIndex]);
+            Map<TCRCatalogTreeTestcase, Boolean> tcrStatusMap = genericParserXML(packagePhaseMap, parserTemplateArr[parserIndex]);
 
 //            Map<CaseResult, TCRCatalogTreeTestcase> caseMap = createTestcases(zephyrConfigModel, packagePhaseMap);
 //
-//            com.thed.model.Project project = projectService.getProjectById(zephyrConfigModel.getZephyrProjectId());
-//
-//            com.thed.model.Cycle cycle;
-//
-//            if(zephyrConfigModel.getCycleId() == NEW_CYCLE_KEY_IDENTIFIER) {
-//
-//                Date date = new Date();
-//                SimpleDateFormat sdf = new SimpleDateFormat("E dd, yyyy hh:mm a");
-//                String dateFormatForCycleCreation = sdf.format(date);
-//
-//                String cycleName = zephyrConfigModel.getCyclePrefix() + dateFormatForCycleCreation;
-//
-//                cycle = new com.thed.model.Cycle();
-//                cycle.setName(cycleName);
-//                cycle.setReleaseId(zephyrConfigModel.getReleaseId());
-//                cycle.setBuild(String.valueOf(zephyrConfigModel.getBuilNumber()));
-//                cycle.setStartDate(project.getStartDate());
-//
-//                Date projectStartDate = project.getStartDate();
-//
-//                Calendar calendar = Calendar.getInstance();
-//                calendar.setTime(projectStartDate);
-//
-//
-//                if(zephyrConfigModel.getCycleDuration().equals("30 days")) {
-//                    calendar.add(Calendar.DAY_OF_MONTH, 29);
-//                }
-//                else if(zephyrConfigModel.getCycleDuration().equals("7 days")) {
-//                    calendar.add(Calendar.DAY_OF_MONTH, 6);
-//                }
-//                cycle.setEndDate(calendar.getTime());
-//
-//                cycle = cycleService.createCycle(cycle);
-//                zephyrConfigModel.setCycleId(cycle.getId());
-//            }
-//            else {
-//                cycle = cycleService.getCycleById(zephyrConfigModel.getCycleId());
-//            }
-//
-//            CyclePhase cyclePhase = new CyclePhase();
-//            cyclePhase.setName(packagePhaseMap.get("parentPhase").getName());
-//            cyclePhase.setCycleId(cycle.getId());
-//            cyclePhase.setStartDate(new Date(cycle.getStartDate()));
-//            cyclePhase.setEndDate(new Date(cycle.getEndDate()));
-//            cyclePhase.setReleaseId(zephyrConfigModel.getReleaseId());
-//            cyclePhase.setFreeForm(true);
-//
-//            cyclePhase = cycleService.createCyclePhase(cyclePhase);
-//
-//            //adding testcases to free form cycle phase
-//            cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(caseMap.values()), zephyrConfigModel.isCreatePackage());
-//
-//            //assigning testcases in cycle phase to creator
-//            cycleService.assignCyclePhaseToCreator(cyclePhase.getId());
-//
-//            List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
-//
-//            Map<Boolean, Set<Long>> executionMap = new HashMap<>();
-//            executionMap.put(Boolean.TRUE, new HashSet<Long>());
-//            executionMap.put(Boolean.FALSE, new HashSet<Long>());
-//
-//            Set<Map.Entry<CaseResult, TCRCatalogTreeTestcase>> caseMapEntrySet = caseMap.entrySet();
-//
-//            loop1 : for(Map.Entry<CaseResult, TCRCatalogTreeTestcase> caseEntry : caseMapEntrySet) {
-//
-//                for(ReleaseTestSchedule releaseTestSchedule : releaseTestSchedules) {
-//
-//                    if(Objects.equals(releaseTestSchedule.getTcrTreeTestcase().getTestcase().getId(), caseEntry.getValue().getTestcase().getId())) {
-//                        // tcrTestcase matched, map caseResult.isPass status to rtsId
-//                        executionMap.get(caseEntry.getKey().isPassed()).add(releaseTestSchedule.getId());
-//                        continue loop1;
-//                    }
-//                }
-//            }
-//
-//            executionService.executeReleaseTestSchedules(executionMap.get(Boolean.TRUE), Boolean.TRUE);
-//            executionService.executeReleaseTestSchedules(executionMap.get(Boolean.FALSE), Boolean.FALSE);
+            com.thed.model.Project project = projectService.getProjectById(zephyrConfigModel.getZephyrProjectId());
+
+            com.thed.model.Cycle cycle;
+
+            if(zephyrConfigModel.getCycleId() == NEW_CYCLE_KEY_IDENTIFIER) {
+
+                Date date = new Date();
+                SimpleDateFormat sdf = new SimpleDateFormat("E dd, yyyy hh:mm a");
+                String dateFormatForCycleCreation = sdf.format(date);
+
+                String cycleName = zephyrConfigModel.getCyclePrefix() + dateFormatForCycleCreation;
+
+                cycle = new com.thed.model.Cycle();
+                cycle.setName(cycleName);
+                cycle.setReleaseId(zephyrConfigModel.getReleaseId());
+                cycle.setBuild(String.valueOf(zephyrConfigModel.getBuilNumber()));
+                cycle.setStartDate(project.getStartDate());
+
+                Date projectStartDate = project.getStartDate();
+
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(projectStartDate);
+
+
+                if(zephyrConfigModel.getCycleDuration().equals("30 days")) {
+                    calendar.add(Calendar.DAY_OF_MONTH, 29);
+                }
+                else if(zephyrConfigModel.getCycleDuration().equals("7 days")) {
+                    calendar.add(Calendar.DAY_OF_MONTH, 6);
+                }
+                cycle.setEndDate(calendar.getTime());
+
+                cycle = cycleService.createCycle(cycle);
+                zephyrConfigModel.setCycleId(cycle.getId());
+            }
+            else {
+                cycle = cycleService.getCycleById(zephyrConfigModel.getCycleId());
+            }
+
+            CyclePhase cyclePhase = new CyclePhase();
+            cyclePhase.setName(packagePhaseMap.get("parentPhase").getName());
+            cyclePhase.setCycleId(cycle.getId());
+            cyclePhase.setStartDate(new Date(cycle.getStartDate()));
+            cyclePhase.setEndDate(new Date(cycle.getEndDate()));
+            cyclePhase.setReleaseId(zephyrConfigModel.getReleaseId());
+            cyclePhase.setFreeForm(true);
+
+            cyclePhase = cycleService.createCyclePhase(cyclePhase);
+
+            //adding testcases to free form cycle phase
+            cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
+
+            //assigning testcases in cycle phase to creator
+            cycleService.assignCyclePhaseToCreator(cyclePhase.getId());
+
+            List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
+
+            Map<Boolean, Set<Long>> executionMap = new HashMap<>();
+            executionMap.put(Boolean.TRUE, new HashSet<Long>());
+            executionMap.put(Boolean.FALSE, new HashSet<Long>());
+
+            loop1 : for(Map.Entry<TCRCatalogTreeTestcase, Boolean> caseEntry : tcrStatusMap.entrySet()) {
+
+                for(ReleaseTestSchedule releaseTestSchedule : releaseTestSchedules) {
+
+                    if(Objects.equals(releaseTestSchedule.getTcrTreeTestcase().getTestcase().getId(), caseEntry.getKey().getTestcase().getId())) {
+                        // tcrTestcase matched, map caseResult.isPass status to rtsId
+                        executionMap.get(caseEntry.getValue()).add(releaseTestSchedule.getId());
+                        continue loop1;
+                    }
+                }
+            }
+
+            executionService.executeReleaseTestSchedules(executionMap.get(Boolean.TRUE), Boolean.TRUE);
+            executionService.executeReleaseTestSchedules(executionMap.get(Boolean.FALSE), Boolean.FALSE);
         }
         catch(Exception e) {
             //todo:handle exceptions gracefully
@@ -547,12 +546,13 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return packageNames;
     }
 
-    public void genericParserXML(Map<String, TCRCatalogTreeDTO> packagePhaseMap, String parserTemplate) throws ParserConfigurationException, SAXException, IOException, URISyntaxException {
+    public Map<TCRCatalogTreeTestcase, Boolean> genericParserXML(Map<String, TCRCatalogTreeDTO> packagePhaseMap, String parserTemplate) throws ParserConfigurationException, SAXException, IOException, URISyntaxException {
         String xmlFilePath = Jenkins.get().getWorkspaceFor(Jenkins.get().getItem(jenkinsProjectName)) + File.separator + resultXmlFilePath;
         ParserUtil parserUtil = new ParserUtil();
         List<Map> dataMapList = parserUtil.parseXmlLang(xmlFilePath, parserTemplate);
 
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
+        Map<String, Boolean> testcaseNameStatusMap = new HashMap<>();
 
         for (Map dataMap : dataMapList) {
 
@@ -565,7 +565,14 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             if(isCreatePackage()) {
                 packageName = dataMap.get("packageName").toString();
             }
-//            packageName = packageName.substring(0, packageName.lastIndexOf("."));
+
+            boolean status;
+
+            if(dataMap.containsKey("statusString") && dataMap.get("statusString") != null) {
+                status = dataMap.get("status").equals(dataMap.get("statusString"));
+            } else {
+                status = dataMap.get("status").toString().length() > 0;
+            }
 
             TCRCatalogTreeDTO treeDTO = packagePhaseMap.get(packageName);
 
@@ -576,8 +583,20 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 testcaseList.add(testcase);
                 treeIdTestcaseMap.put(treeDTO.getId(), testcaseList);
             }
+            testcaseNameStatusMap.put(testcase.getName(), status);
         }
-        testcaseService.createTestcasesWithList(treeIdTestcaseMap);
+        List<TCRCatalogTreeTestcase> tcrList =  testcaseService.createTestcasesWithList(treeIdTestcaseMap);
+        Map<TCRCatalogTreeTestcase, Boolean> testcaseIdStatusMap = new HashMap<>();
+        loop1 : for (Map.Entry<String, Boolean> entry : testcaseNameStatusMap.entrySet()) {
+            for(TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrList) {
+                if(tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey())) {
+                    //same testcase, add id and status to map
+                    testcaseIdStatusMap.put(tcrCatalogTreeTestcase, entry.getValue());
+                    continue loop1;
+                }
+            }
+        }
+        return testcaseIdStatusMap;
     }
 
     public void parseXML(Map<String, TCRCatalogTreeDTO> packagePhaseMap) throws ParserConfigurationException, IOException, SAXException, URISyntaxException {

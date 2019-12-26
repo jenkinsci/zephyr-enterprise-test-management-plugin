@@ -13,6 +13,7 @@ import com.google.gson.Gson;
 import com.thed.model.*;
 import com.thed.service.*;
 import com.thed.service.impl.*;
+import com.thed.utils.EggplantParser;
 import com.thed.utils.ParserUtil;
 import com.thed.utils.ZephyrConstants;
 import hudson.FilePath;
@@ -26,7 +27,9 @@ import hudson.tasks.test.AggregatedTestResultAction.ChildReport;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.Array;
 import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -56,6 +59,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 	private boolean createPackage;
     private String resultXmlFilePath;
     private Integer parserIndex;
+    private Integer eggplantParserIndex = 3;
 
     String parseMap1 = "{\"name\": \"testsuite.testcase1:time\"}";
 
@@ -118,7 +122,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         parserTemplateArr = new String[] {
                 "{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}",//junit
                 "{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}", //cucumber
-                "{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}" //testng
+                "{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}", //testng
+                "{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}"//eggplant
         };
 
 		if (!validateBuildConfig()) {
@@ -172,10 +177,26 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 //                return false;
 //            }
 
-            zephyrConfigModel.setPackageNames(getPackageNamesFromXML());
+            List<Map> dataMapList = new ArrayList<>();
+
+            List<String> xmlFiles = new ArrayList<>();
+
+            if(Objects.equals(parserIndex, eggplantParserIndex)) {
+                //use eggplant parser to find all related xml files
+                EggplantParser eggplantParser = new EggplantParser("unknownSUT", "url");
+                List<EggPlantResult> eggPlantResults = eggplantParser.invoke(new File(resolveRelativeFilePath(resultXmlFilePath)));
+                xmlFiles.addAll(getTestcasesForEggplant(eggPlantResults));
+            } else {
+                xmlFiles.add(resolveRelativeFilePath(resultXmlFilePath));
+            }
+
+            for(String xmlFilePath : xmlFiles) {
+                dataMapList.addAll(genericParserXML(xmlFilePath, parserTemplateArr[parserIndex]));
+            }
+
+            zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
-//            parseXML(packagePhaseMap);
-            Map<TCRCatalogTreeTestcase, Boolean> tcrStatusMap = genericParserXML(packagePhaseMap, parserTemplateArr[parserIndex]);
+            Map<TCRCatalogTreeTestcase, Boolean> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList);
 
 //            Map<CaseResult, TCRCatalogTreeTestcase> caseMap = createTestcases(zephyrConfigModel, packagePhaseMap);
 //
@@ -477,12 +498,11 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
         Map<String, List<CaseResult>> packageCaseMap = new HashMap<>();
 		Integer noOfCases = prepareTestResults(suites, packageNames, packageCaseMap);
-        packageNames = getPackageNamesFromXML();
 
 		logger.print("Total Test Cases : " + noOfCases);
 
         zephyrConfig.setPackageCaseResultMap(packageCaseMap);
-		zephyrConfig.setPackageNames(packageNames);
+//		zephyrConfig.setPackageNames(packageNames);
 		
 		return status;
 	}
@@ -534,11 +554,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		return noOfCases;
 	}
 
-    public Set<String> getPackageNamesFromXML() throws ParserConfigurationException, SAXException, IOException {
-        String xmlFilePath = Jenkins.get().getWorkspaceFor(Jenkins.get().getItem(jenkinsProjectName)) + File.separator + resultXmlFilePath;
-        ParserUtil parserUtil = new ParserUtil();
-        List<Map> dataMapList = parserUtil.parseXmlLang(xmlFilePath, parserTemplateArr[parserIndex]);
-
+    public Set<String> getPackageNamesFromXML(List<Map> dataMapList) throws ParserConfigurationException, SAXException, IOException {
         Set<String> packageNames = new HashSet<>();
         for (Map dataMap : dataMapList) {
             packageNames.add(dataMap.get("packageName").toString());
@@ -546,11 +562,12 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return packageNames;
     }
 
-    public Map<TCRCatalogTreeTestcase, Boolean> genericParserXML(Map<String, TCRCatalogTreeDTO> packagePhaseMap, String parserTemplate) throws ParserConfigurationException, SAXException, IOException, URISyntaxException {
-        String xmlFilePath = Jenkins.get().getWorkspaceFor(Jenkins.get().getItem(jenkinsProjectName)) + File.separator + resultXmlFilePath;
+    public List<Map> genericParserXML(String absoluteFilePath, String parserTemplate) throws ParserConfigurationException, SAXException, IOException {
         ParserUtil parserUtil = new ParserUtil();
-        List<Map> dataMapList = parserUtil.parseXmlLang(xmlFilePath, parserTemplate);
+        return parserUtil.parseXmlLang(absoluteFilePath, parserTemplate);
+    }
 
+    public Map<TCRCatalogTreeTestcase, Boolean> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList) throws URISyntaxException {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
         Map<String, Boolean> testcaseNameStatusMap = new HashMap<>();
 
@@ -583,14 +600,18 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             boolean status;
 
             if(dataMap.containsKey("statusString") && dataMap.get("statusString") != null) {
-                status = dataMap.get("status").equals(dataMap.get("statusString"));
+                boolean matched = dataMap.get("status").equals(dataMap.get("statusString"));
+                if(Boolean.valueOf(dataMap.get("statusExistPass").toString())) {
+                    status = matched;
+                } else {
+                    status = !matched;
+                }
             } else {
                 if(Boolean.valueOf(dataMap.get("statusExistPass").toString())) {
                     status = dataMap.get("status").toString().length() > 0;
                 } else {
                     status = dataMap.get("status").toString().length() == 0;
                 }
-
             }
 
             TCRCatalogTreeDTO treeDTO = packagePhaseMap.get(packageName);
@@ -618,56 +639,25 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return tcrTestcaseStatusMap;
     }
 
-    public void parseXML(Map<String, TCRCatalogTreeDTO> packagePhaseMap) throws ParserConfigurationException, IOException, SAXException, URISyntaxException {
-
-        Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
-
-        File xmlFile = new File(Jenkins.get().getWorkspaceFor(Jenkins.get().getItem(jenkinsProjectName)) + File.separator + resultXmlFilePath);
-        Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xmlFile);
-        document.getDocumentElement().normalize();
-
-        Element rootElement =  document.getDocumentElement();
-
-        NodeList testcaseNodeList = rootElement.getElementsByTagName("testcase");
-
-        JSONObject parseMapJson = new JSONObject(parseMap1);
-
-        for (int i = 0; i < testcaseNodeList.getLength(); i++) {
-            org.w3c.dom.Node testcaseNode = testcaseNodeList.item(i);
-
-            JSONObject testcaseJson = new JSONObject(parseMapJson.toString());
-
-            if(testcaseNode.getNodeType() == Node.ELEMENT_NODE) {
-                Element testcaseElement = (Element) testcaseNode;
-                String nameSyntax = parseMapJson.getString("name");
-                String keys[] = nameSyntax.split("\\.");
-                String lastKey = keys[keys.length-1];
-
-                if(lastKey.contains(":")) {
-                    String lk[] = lastKey.split(":");
-                    lastKey = lk[lk.length-1];
-
-                    testcaseJson.put("name", testcaseElement.getAttribute(lastKey));
-                } else {
-                    testcaseJson.put("name", testcaseElement.getTextContent());
-                }
-                Testcase testcase = new Gson().fromJson(testcaseJson.toString(), Testcase.class);
-
-                String packageName = testcaseElement.getAttribute("classname");
-                packageName = packageName.substring(0, packageName.lastIndexOf("."));
-
-                TCRCatalogTreeDTO treeDTO = packagePhaseMap.get(packageName);
-
-                if(treeIdTestcaseMap.containsKey(treeDTO.getId())) {
-                    treeIdTestcaseMap.get(treeDTO.getId()).add(testcase);
-                } else {
-                    List<Testcase> testcaseList = new ArrayList<>();
-                    testcaseList.add(testcase);
-                    treeIdTestcaseMap.put(treeDTO.getId(), testcaseList);
-                }
+    private List<String> getTestcasesForEggplant(List<EggPlantResult> eggPlantResults) throws ParseException, ParserConfigurationException, SAXException, IOException {
+        String scriptNameParseTemplate = "{\"scriptName\": \"$testsuite:name\"}";
+        ParserUtil parserUtil = new ParserUtil();
+        Map<String, EggPlantResult> eggPlantMap = new HashMap<>();//suite name, eggPlantResult
+        for (EggPlantResult eggPlantResult : eggPlantResults) {
+            List<Map> parseData = parserUtil.parseXmlLang(eggPlantResult.getXmlResultFile(), scriptNameParseTemplate);
+            EggPlantResult existingEPR = eggPlantMap.get(parseData.get(0).get("scriptName").toString());
+            if (existingEPR == null || existingEPR.getRunDateInDate().before(eggPlantResult.getRunDateInDate())) {
+                //either the file path for this eggplant script doesn't exist in map or it is older
+                eggPlantMap.put(parseData.get(0).get("scriptName").toString(), eggPlantResult);
             }
         }
-        testcaseService.createTestcasesWithList(treeIdTestcaseMap);
+        List<String> xmlFilePaths = new ArrayList<>();
+        eggPlantMap.forEach((key, value) -> xmlFilePaths.add(value.getXmlResultFile()));
+        return xmlFilePaths;
+    }
+
+    private String resolveRelativeFilePath(String resultXmlFilePath) {
+        return Jenkins.get().getWorkspaceFor(Jenkins.get().getItem(jenkinsProjectName)) + File.separator + resultXmlFilePath;
     }
 
 	@Override

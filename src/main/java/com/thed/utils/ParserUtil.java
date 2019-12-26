@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  */
 public class ParserUtil {
 
-    public static final String parserVariablePattern = "\\$[-.:\\w]*[^.:\\s]";
+    public static final String parserVariablePattern = "\\$[-.:\\w]*[^.:$\\s]";
 
     public Document getXMLDoc(String filePath) throws ParserConfigurationException, IOException, SAXException {
         File xmlFile = new File(filePath);

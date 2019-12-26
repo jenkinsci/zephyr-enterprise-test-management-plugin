@@ -27,7 +27,7 @@
     <f:checkbox field="createPackage" checked="${createPackage}"/>
   </f:entry>
 
-  <f:entry title="Test Result XML" field="resultXmlFilePath">
+  <f:entry title="Test Result File" field="resultXmlFilePath">
       <f:textbox field="resultXmlFilePath"/>
   </f:entry>
 

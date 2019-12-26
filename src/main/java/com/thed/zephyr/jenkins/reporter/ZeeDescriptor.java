@@ -395,6 +395,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
         listBoxModel.add("JUnit", "0");
         listBoxModel.add("Cucumber", "1");
         listBoxModel.add("TestNG", "2");
+        listBoxModel.add("Eggplant", "3");
         return listBoxModel;
     }
 

@@ -389,4 +389,14 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		listBoxModel.add(CYCLE_DURATION_1_DAY);
 		return listBoxModel;
 	}
+
+    public ListBoxModel doFillParserIndexItems() {
+        ListBoxModel listBoxModel = new ListBoxModel();
+        listBoxModel.add("JUnit", "0");
+        listBoxModel.add("Cucumber", "1");
+        listBoxModel.add("TestNG", "2");
+        listBoxModel.add("Eggplant", "3");
+        return listBoxModel;
+    }
+
 }

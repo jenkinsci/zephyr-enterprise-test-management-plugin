@@ -9,12 +9,12 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_PREFIX_DEFAULT
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY_IDENTIFIER;
 
-import com.thed.model.CyclePhase;
-import com.thed.model.ReleaseTestSchedule;
-import com.thed.model.TCRCatalogTreeDTO;
-import com.thed.model.TCRCatalogTreeTestcase;
+import com.google.gson.Gson;
+import com.thed.model.*;
 import com.thed.service.*;
 import com.thed.service.impl.*;
+import com.thed.utils.EggplantParser;
+import com.thed.utils.ParserUtil;
 import com.thed.utils.ZephyrConstants;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -24,18 +24,29 @@ import hudson.tasks.junit.*;
 import hudson.tasks.test.AggregatedTestResultAction;
 import hudson.tasks.test.AggregatedTestResultAction.ChildReport;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.Array;
 import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
+import org.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import com.thed.zephyr.jenkins.model.ZephyrInstance;
+import org.w3c.dom.*;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
@@ -46,6 +57,15 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 	private String serverAddress;
 	private String cycleDuration;
 	private boolean createPackage;
+    private String resultXmlFilePath;
+    private Integer parserIndex;
+    private Integer eggplantParserIndex = 3;
+
+    String parseMap1 = "{\"name\": \"testsuite.testcase1:time\"}";
+
+    private String[] parserTemplateArr = new String[] {
+            "{ \"packageName\": \"testsuite.testcase:classname\" , \"testcase\" : {\"name\": \"testsuite.testcase:name\", \"time\" : \"testsuite.testcase:time\", \"all\": {\"time\": \"testsuite:time\"}}}"
+    };
 
 
 	public static PrintStream logger;
@@ -54,6 +74,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
     private static final String SUREFIRE_REPORT = "surefire-reports";
     private static final String JUNIT_SFX = "/*.xml";
 	private final String pInfo = String.format("%s [INFO]", PluginName);
+    private String jenkinsProjectName;
 
 
     private UserService userService = new UserServiceImpl();
@@ -66,7 +87,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
 			String releaseKey, String cycleKey, String cyclePrefix,
-			String cycleDuration, boolean createPackage) {
+			String cycleDuration, boolean createPackage, String resultXmlFilePath, String parserIndex) {
 		this.serverAddress = serverAddress;
 		this.projectKey = projectKey;
 		this.releaseKey = releaseKey;
@@ -74,6 +95,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		this.cyclePrefix = cyclePrefix;
 		this.createPackage = createPackage;
 		this.cycleDuration = cycleDuration;
+        this.resultXmlFilePath = resultXmlFilePath;
+        this.parserIndex = Integer.parseInt(parserIndex);
 	}
 
 	@Override
@@ -96,11 +119,19 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		logger = listener.getLogger();
 		logger.printf("%s Examining test results...%n", pInfo);
 
+        parserTemplateArr = new String[] {
+                "{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}",//junit
+                "{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}", //cucumber
+                "{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}", //testng
+                "{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}"//eggplant
+        };
+
 		if (!validateBuildConfig()) {
 			logger.println("Cannot Proceed. Please verify the job configuration");
 			return false;
 		}
 
+        jenkinsProjectName = ((FreeStyleBuild) build).getProject().getName();
 		int number = build.getNumber();
 
         try {
@@ -139,16 +170,36 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             //creating Map<testcaseName, passed>, Set<packageName> and set to zephyrConfigModel
             boolean prepareZephyrTests = prepareZephyrTests(build, zephyrConfigModel);
-            if(!prepareZephyrTests) {
-                logger.println("Error parsing surefire reports.");
-                logger.println("Please ensure \"Publish JUnit test result report is added\" as a post build action");
-                return false;
+            //not checking for junit publisher
+//            if(!prepareZephyrTests) {
+//                logger.println("Error parsing surefire reports.");
+//                logger.println("Please ensure \"Publish JUnit test result report is added\" as a post build action");
+//                return false;
+//            }
+
+            List<Map> dataMapList = new ArrayList<>();
+
+            List<String> xmlFiles = new ArrayList<>();
+
+            if(Objects.equals(parserIndex, eggplantParserIndex)) {
+                //use eggplant parser to find all related xml files
+                EggplantParser eggplantParser = new EggplantParser("unknownSUT", "url");
+                List<EggPlantResult> eggPlantResults = eggplantParser.invoke(new File(resolveRelativeFilePath(resultXmlFilePath)));
+                xmlFiles.addAll(getTestcasesForEggplant(eggPlantResults));
+            } else {
+                xmlFiles.add(resolveRelativeFilePath(resultXmlFilePath));
             }
 
+            for(String xmlFilePath : xmlFiles) {
+                dataMapList.addAll(genericParserXML(xmlFilePath, parserTemplateArr[parserIndex]));
+            }
+
+            zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
+            Map<TCRCatalogTreeTestcase, Boolean> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList);
 
-            Map<CaseResult, TCRCatalogTreeTestcase> caseMap = createTestcases(zephyrConfigModel, packagePhaseMap);
-
+//            Map<CaseResult, TCRCatalogTreeTestcase> caseMap = createTestcases(zephyrConfigModel, packagePhaseMap);
+//
             com.thed.model.Project project = projectService.getProjectById(zephyrConfigModel.getZephyrProjectId());
 
             com.thed.model.Cycle cycle;
@@ -199,7 +250,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             cyclePhase = cycleService.createCyclePhase(cyclePhase);
 
             //adding testcases to free form cycle phase
-            cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(caseMap.values()), zephyrConfigModel.isCreatePackage());
+            cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
 
             //assigning testcases in cycle phase to creator
             cycleService.assignCyclePhaseToCreator(cyclePhase.getId());
@@ -210,15 +261,13 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             executionMap.put(Boolean.TRUE, new HashSet<Long>());
             executionMap.put(Boolean.FALSE, new HashSet<Long>());
 
-            Set<Map.Entry<CaseResult, TCRCatalogTreeTestcase>> caseMapEntrySet = caseMap.entrySet();
-
-            loop1 : for(Map.Entry<CaseResult, TCRCatalogTreeTestcase> caseEntry : caseMapEntrySet) {
+            loop1 : for(Map.Entry<TCRCatalogTreeTestcase, Boolean> caseEntry : tcrStatusMap.entrySet()) {
 
                 for(ReleaseTestSchedule releaseTestSchedule : releaseTestSchedules) {
 
-                    if(Objects.equals(releaseTestSchedule.getTcrTreeTestcase().getTestcase().getId(), caseEntry.getValue().getTestcase().getId())) {
+                    if(Objects.equals(releaseTestSchedule.getTcrTreeTestcase().getTestcase().getId(), caseEntry.getKey().getTestcase().getId())) {
                         // tcrTestcase matched, map caseResult.isPass status to rtsId
-                        executionMap.get(caseEntry.getKey().isPassed()).add(releaseTestSchedule.getId());
+                        executionMap.get(caseEntry.getValue()).add(releaseTestSchedule.getId());
                         continue loop1;
                     }
                 }
@@ -404,7 +453,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
      * @param zephyrConfig
      * @return
      */
-    private boolean prepareZephyrTests(final Run build, ZephyrConfigModel zephyrConfig) throws IOException, InterruptedException {
+    private boolean prepareZephyrTests(final Run build, ZephyrConfigModel zephyrConfig) throws IOException, InterruptedException, ParserConfigurationException, SAXException {
 
         boolean status = true;
         Collection<SuiteResult> suites = new ArrayList<>();
@@ -453,7 +502,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		logger.print("Total Test Cases : " + noOfCases);
 
         zephyrConfig.setPackageCaseResultMap(packageCaseMap);
-		zephyrConfig.setPackageNames(packageNames);
+//		zephyrConfig.setPackageNames(packageNames);
 		
 		return status;
 	}
@@ -504,6 +553,112 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		}
 		return noOfCases;
 	}
+
+    public Set<String> getPackageNamesFromXML(List<Map> dataMapList) throws ParserConfigurationException, SAXException, IOException {
+        Set<String> packageNames = new HashSet<>();
+        for (Map dataMap : dataMapList) {
+            packageNames.add(dataMap.get("packageName").toString());
+        }
+        return packageNames;
+    }
+
+    public List<Map> genericParserXML(String absoluteFilePath, String parserTemplate) throws ParserConfigurationException, SAXException, IOException {
+        ParserUtil parserUtil = new ParserUtil();
+        return parserUtil.parseXmlLang(absoluteFilePath, parserTemplate);
+    }
+
+    public Map<TCRCatalogTreeTestcase, Boolean> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList) throws URISyntaxException {
+        Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
+        Map<String, Boolean> testcaseNameStatusMap = new HashMap<>();
+
+        dataMapLoop: for (Map dataMap : dataMapList) {
+
+            Map testcaseMap = (Map) dataMap.get("testcase");
+
+            String testcaseJson = new Gson().toJson(testcaseMap);
+            Testcase testcase = new Gson().fromJson(testcaseJson, Testcase.class);
+
+            if(testcase.getName().isEmpty()) {
+                continue;
+            }
+
+            if(dataMap.containsKey("skipTestcaseNames")) {
+                String[] skipTestcaseNames = dataMap.get("skipTestcaseNames").toString().split(",");
+                for (String testcaseName : skipTestcaseNames) {
+                    if(testcase.getName().equals(testcaseName)) {
+                        //name matches, skip this testcase
+                        continue dataMapLoop;
+                    }
+                }
+            }
+
+            String packageName = "parentPhase";
+            if(isCreatePackage()) {
+                packageName = dataMap.get("packageName").toString();
+            }
+
+            boolean status;
+
+            if(dataMap.containsKey("statusString") && dataMap.get("statusString") != null) {
+                boolean matched = dataMap.get("status").equals(dataMap.get("statusString"));
+                if(Boolean.valueOf(dataMap.get("statusExistPass").toString())) {
+                    status = matched;
+                } else {
+                    status = !matched;
+                }
+            } else {
+                if(Boolean.valueOf(dataMap.get("statusExistPass").toString())) {
+                    status = dataMap.get("status").toString().length() > 0;
+                } else {
+                    status = dataMap.get("status").toString().length() == 0;
+                }
+            }
+
+            TCRCatalogTreeDTO treeDTO = packagePhaseMap.get(packageName);
+
+            if(treeIdTestcaseMap.containsKey(treeDTO.getId())) {
+                treeIdTestcaseMap.get(treeDTO.getId()).add(testcase);
+            } else {
+                List<Testcase> testcaseList = new ArrayList<>();
+                testcaseList.add(testcase);
+                treeIdTestcaseMap.put(treeDTO.getId(), testcaseList);
+            }
+            testcaseNameStatusMap.put(testcase.getName(), status);
+        }
+        List<TCRCatalogTreeTestcase> tcrList =  testcaseService.createTestcasesWithList(treeIdTestcaseMap);
+        Map<TCRCatalogTreeTestcase, Boolean> tcrTestcaseStatusMap = new HashMap<>();
+        loop1 : for (Map.Entry<String, Boolean> entry : testcaseNameStatusMap.entrySet()) {
+            for(TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrList) {
+                if(tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey())) {
+                    //same testcase, add id and status to map
+                    tcrTestcaseStatusMap.put(tcrCatalogTreeTestcase, entry.getValue());
+                    continue loop1;
+                }
+            }
+        }
+        return tcrTestcaseStatusMap;
+    }
+
+    private List<String> getTestcasesForEggplant(List<EggPlantResult> eggPlantResults) throws ParseException, ParserConfigurationException, SAXException, IOException {
+        String scriptNameParseTemplate = "{\"scriptName\": \"$testsuite:name\"}";
+        ParserUtil parserUtil = new ParserUtil();
+        Map<String, EggPlantResult> eggPlantMap = new HashMap<>();//suite name, eggPlantResult
+        for (EggPlantResult eggPlantResult : eggPlantResults) {
+            List<Map> parseData = parserUtil.parseXmlLang(eggPlantResult.getXmlResultFile(), scriptNameParseTemplate);
+            EggPlantResult existingEPR = eggPlantMap.get(parseData.get(0).get("scriptName").toString());
+            if (existingEPR == null || existingEPR.getRunDateInDate().before(eggPlantResult.getRunDateInDate())) {
+                //either the file path for this eggplant script doesn't exist in map or it is older
+                eggPlantMap.put(parseData.get(0).get("scriptName").toString(), eggPlantResult);
+            }
+        }
+        List<String> xmlFilePaths = new ArrayList<>();
+        eggPlantMap.forEach((key, value) -> xmlFilePaths.add(value.getXmlResultFile()));
+        return xmlFilePaths;
+    }
+
+    private String resolveRelativeFilePath(String resultXmlFilePath) {
+        return Jenkins.get().getWorkspaceFor(Jenkins.get().getItem(jenkinsProjectName)) + File.separator + resultXmlFilePath;
+    }
 
 	@Override
 	public ZeeDescriptor getDescriptor() {
@@ -566,4 +721,11 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		this.createPackage = createPackage;
 	}
 
+    public String getResultXmlFilePath() {
+        return resultXmlFilePath;
+    }
+
+    public void setResultXmlFilePath(String resultXmlFilePath) {
+        this.resultXmlFilePath = resultXmlFilePath;
+    }
 }

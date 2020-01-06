@@ -174,7 +174,14 @@ public class ParserUtil {
 //                            dataMapList.add(valueDataMap);
                         }
                     }
-                    dataMap.put(key, dataMapList);
+                    if(linkList.size() != 0) {
+                        dataMap.put(key, dataMapList);
+                    }
+                } else {
+                    List<XMLLink> linkList = xmlLink.getChildWithType(XMLLink.Type.ARRAY);
+                    if(linkList.size() != 0) {
+                        dataMap.put(key, dataMapList);
+                    }
                 }
             }
         }

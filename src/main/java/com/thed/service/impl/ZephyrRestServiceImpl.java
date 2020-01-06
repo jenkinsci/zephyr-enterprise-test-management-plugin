@@ -30,7 +30,9 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_TCR_CATALOG_TREE_NODES_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?type=Phase&revisionid=0&releaseid=10
     public static final String CREATE_TCR_CATALOG_TREE_NODE_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?parentid=0
 
-    public static final String GET_TESTCASES_FOR_TREE_ID = "/flex/services/rest/{restVersion}/testcase/tree/{tcrCatalogTreeId}"; //?offset=0&pagesize=50&dbsearch=true&isascorder=true&order=orderId&frozen=false&is_cfield=false
+    public static final String MAP_TESTCASE_TO_REQUIREMENTS_URL = "/flex/services/rest/v3/requirement/bulk";
+
+    public static final String GET_TESTCASES_FOR_TREE_ID_URL = "/flex/services/rest/{restVersion}/testcase/tree/{tcrCatalogTreeId}"; //?offset=0&pagesize=50&dbsearch=true&isascorder=true&order=orderId&frozen=false&is_cfield=false
     public static final String CREATE_TESTCASES_BULK_URL = "/flex/services/rest/{restVersion}/testcase/bulk";
 
     public static final String GET_CYCLE_BY_ID_URL = "/flex/services/rest/{restVersion}/cycle/{id}";
@@ -214,6 +216,14 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     @Override
+    public List<String> mapTestcaseToRequirements(List<MapTestcaseToRequirement> mapTestcaseToRequirements) throws URISyntaxException {
+        String url = buildUrl(prepareUrl(MAP_TESTCASE_TO_REQUIREMENTS_URL), null, null);
+        String res = httpClientService.postRequest(url, gson.toJson(mapTestcaseToRequirements));
+        Type stringListType = new TypeToken<List<String>>(){}.getType();
+        return gson.fromJson(res, stringListType);
+    }
+
+    @Override
     public List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("tcrCatalogTreeId", tcrCatalogTreeId.toString());
@@ -227,7 +237,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         queryParams.add(new BasicNameValuePair("frozen", "false"));
         queryParams.add(new BasicNameValuePair("is_cfield", "false"));
 
-        String url = buildUrl(prepareUrl(GET_TESTCASES_FOR_TREE_ID), pathParams, queryParams);
+        String url = buildUrl(prepareUrl(GET_TESTCASES_FOR_TREE_ID_URL), pathParams, queryParams);
         String res = httpClientService.getRequest(url);
         JSONObject resObject = new JSONObject(res);
         JSONArray jsonArray = resObject.getJSONArray("results");

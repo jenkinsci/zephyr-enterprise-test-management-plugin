@@ -88,6 +88,14 @@ public interface ZephyrRestService {
     TCRCatalogTreeDTO createTCRCatalogTreeNode(TCRCatalogTreeDTO tcrCatalogTreeDTO) throws URISyntaxException;
 
     /**
+     * Create mappings between testcase and requirements given.
+     * @param mapTestcaseToRequirements
+     * @return
+     * @throws URISyntaxException
+     */
+    List<String> mapTestcaseToRequirements(List<MapTestcaseToRequirement> mapTestcaseToRequirements) throws URISyntaxException;
+
+    /**
      * Get testcases for given tree id.
      * @param tcrCatalogTreeId
      * @return

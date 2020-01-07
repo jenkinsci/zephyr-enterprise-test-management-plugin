@@ -162,6 +162,22 @@ public interface ZephyrRestService {
      */
     List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String executionStatus) throws URISyntaxException;
 
+    /**
+     * Upload all the attachments from list given.
+     * @param attachmentDTOs
+     * @return
+     * @throws URISyntaxException
+     */
+    List<GenericAttachmentDTO> uploadAttachments(List<GenericAttachmentDTO> attachmentDTOs) throws URISyntaxException;
+
+    /**
+     * Add attachments to items(ex: testcase, requirement, etc.) with given details.
+     * @param attachments
+     * @return
+     * @throws URISyntaxException
+     */
+    List<Attachment> addAttachment(List<Attachment> attachments) throws URISyntaxException;
+
     User getCurrentUser();
 
     /**

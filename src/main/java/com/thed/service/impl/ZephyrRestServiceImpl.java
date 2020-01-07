@@ -7,6 +7,9 @@ import com.thed.service.HttpClientService;
 import com.thed.service.ZephyrRestService;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -44,6 +47,9 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String ASSIGN_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/assignmenttree/{cyclePhaseId}/assign";
     public static final String GET_RELEASE_TEST_SCHEDULES_URL = "/flex/services/rest/{restVersion}/execution"; //?cyclephaseid=11&pagesize=10000;
     public static final String EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL = "/flex/services/rest/{restVersion}/execution/bulk";//?status=1&testerid=1&allExecutions=false&includeanyoneuser=true
+
+    public static final String UPLOAD_ATTACHMENT_URL = "/flex/upload/document/genericattachment";
+    public static final String ADD_ATTACHMENT_URL = "/flex/services/rest/{restVersion}/attachment/list";
 
     private User currentUser;
     private String hostAddress;
@@ -93,7 +99,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     private String prepareUrl(String url) throws URISyntaxException {
-        url = hostAddress + url;
+        url = getHostAddress() + url;
 
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("restVersion", restVersion);
@@ -345,6 +351,30 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
         Type releaseTestScheduleListType = new TypeToken<List<ReleaseTestSchedule>>(){}.getType();
         return gson.fromJson(res, releaseTestScheduleListType);
+    }
+
+    @Override
+    public List<GenericAttachmentDTO> uploadAttachments(List<GenericAttachmentDTO> attachmentDTOs) throws URISyntaxException {
+        String url = buildUrl(prepareUrl(UPLOAD_ATTACHMENT_URL), null, null);
+
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+        for (GenericAttachmentDTO attachmentDTO : attachmentDTOs) {
+            builder.addBinaryBody(attachmentDTO.getFieldName(), attachmentDTO.getByteData(), ContentType.getByMimeType(attachmentDTO.getContentType()), attachmentDTO.getFileName());
+        }
+
+        String res = httpClientService.postRequest(url, builder.build());
+        Type type = new TypeToken<List<GenericAttachmentDTO>>(){}.getType();
+        return gson.fromJson(res, type);
+    }
+
+    @Override
+    public List<Attachment> addAttachment(List<Attachment> attachments) throws URISyntaxException {
+        String url = buildUrl(prepareUrl(ADD_ATTACHMENT_URL), null, null);
+
+        String res = httpClientService.postRequest(url, gson.toJson(attachments));
+        Type type = new TypeToken<List<Attachment>>(){}.getType();
+        return gson.fromJson(res, type);
     }
 
     @Override

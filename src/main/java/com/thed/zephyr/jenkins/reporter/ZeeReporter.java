@@ -82,6 +82,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
     private TestcaseService testcaseService = new TestcaseServiceImpl();
     private CycleService cycleService = new CycleServiceImpl();
     private ExecutionService executionService = new ExecutionServiceImpl();
+    private AttachmentService attachmentService = new AttachmentServiceImpl();
 
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
@@ -118,9 +119,12 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		logger = listener.getLogger();
 		logger.printf("%s Examining test results...%n", pInfo);
 
+        requirementService = new RequirementServiceImpl();
+        attachmentService = new AttachmentServiceImpl();
+
         parserTemplateArr = new String[] {
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}]}]",//junit
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}]}]", //cucumber
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//junit
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //cucumber
                 "[{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}]", //testng
                 "[{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}]}]"//eggplant
         };
@@ -566,7 +570,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return parserUtil.parseXmlLang(absoluteFilePath, parserTemplate);
     }
 
-    public Map<TCRCatalogTreeTestcase, Boolean> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList, ZephyrConfigModel zephyrConfigModel) throws URISyntaxException {
+    public Map<TCRCatalogTreeTestcase, Boolean> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList, ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
         Map<String, Map<String, Object>> testcaseNameStatusMap = new HashMap<>();
 
@@ -643,15 +647,52 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             mapTestcaseToRequirement.setRequirementAltId(requirementAltIds);
             mapTestcaseToRequirement.setReleaseId(zephyrConfigModel.getReleaseId());
 
+            List<String> attachments = new ArrayList<>();
+
+            if(dataMap.containsKey("attachments")) {
+                List<Map> attachmentFilePaths = (List) dataMap.get("attachments");
+                for(Map attachment : attachmentFilePaths) {
+                    String filePath = attachment.get("filePath").toString();
+                    attachments.add(filePath);
+                }
+            }
+
             Map<String, Object> valueMap = new HashMap<>();
             valueMap.put("mapTestcaseToRequirement", mapTestcaseToRequirement);
             valueMap.put("status", status);
+            valueMap.put("attachments", attachments);
+
+            if(status && dataMap.containsKey("statusPassAttachment")) {
+                String successAttachmentStr = dataMap.get("statusPassAttachment").toString();
+                if(!StringUtils.isEmpty(successAttachmentStr)) {
+                    GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
+                    genericAttachmentDTO.setFileName("success.txt");
+                    genericAttachmentDTO.setContentType("text/plain");
+                    genericAttachmentDTO.setFieldName(AttachmentService.ItemType.TESTCASE.toString().toLowerCase());
+                    genericAttachmentDTO.setByteData(successAttachmentStr.getBytes());
+                    valueMap.put("statusAttachment", genericAttachmentDTO);
+                }
+            }
+
+            if(!status && dataMap.containsKey("statusFailAttachment")) {
+                String failureAttachmentStr = dataMap.get("statusFailAttachment").toString();
+                if(!StringUtils.isEmpty(failureAttachmentStr)) {
+                    GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
+                    genericAttachmentDTO.setFileName("failure.txt");
+                    genericAttachmentDTO.setContentType("text/plain");
+                    genericAttachmentDTO.setFieldName(AttachmentService.ItemType.TESTCASE.toString().toLowerCase());
+                    genericAttachmentDTO.setByteData(failureAttachmentStr.getBytes());
+                    valueMap.put("statusAttachment", genericAttachmentDTO);
+                }
+            }
 
             testcaseNameStatusMap.put(testcase.getName(), valueMap);
         }
         List<TCRCatalogTreeTestcase> tcrList =  testcaseService.createTestcasesWithList(treeIdTestcaseMap);
         Map<TCRCatalogTreeTestcase, Boolean> tcrTestcaseStatusMap = new HashMap<>();
         List<MapTestcaseToRequirement> mapTestcaseToRequirements = new ArrayList<>();
+        Map<Long, List<String>> testcaseAttachmentsMap = new HashMap<>();
+        Map<Long, GenericAttachmentDTO> statusAttachmentMap = new HashMap<>();
         loop1 : for (Map.Entry<String, Map<String, Object>> entry : testcaseNameStatusMap.entrySet()) {
             for(TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrList) {
                 if(tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey())) {
@@ -660,11 +701,16 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                     MapTestcaseToRequirement mapTestcaseToRequirement = (MapTestcaseToRequirement)entry.getValue().get("mapTestcaseToRequirement");
                     mapTestcaseToRequirement.setTestcaseId(tcrCatalogTreeTestcase.getTestcase().getId());
                     mapTestcaseToRequirements.add(mapTestcaseToRequirement);
+                    testcaseAttachmentsMap.put(tcrCatalogTreeTestcase.getTestcase().getTestcaseId(), (List<String>) entry.getValue().get("attachments"));
+                    if(entry.getValue().containsKey("statusAttachment")) {
+                        statusAttachmentMap.put(tcrCatalogTreeTestcase.getTestcase().getTestcaseId(), (GenericAttachmentDTO) entry.getValue().get("statusAttachment"));
+                    }
                     continue loop1;
                 }
             }
         }
         List<String> msgs = requirementService.mapTestcaseToRequirements(mapTestcaseToRequirements);
+        attachmentService.addAttachments(AttachmentService.ItemType.TESTCASE, testcaseAttachmentsMap, statusAttachmentMap);
         logger.println(msgs);
         return tcrTestcaseStatusMap;
     }

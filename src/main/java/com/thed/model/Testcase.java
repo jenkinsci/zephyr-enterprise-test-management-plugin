@@ -8,6 +8,7 @@ public class Testcase extends BaseEntity {
     private Long releaseId;
     private Boolean automated;
     private String scriptName;
+    private Long testcaseId;
 
     public String getName() {
         return name;
@@ -56,5 +57,12 @@ public class Testcase extends BaseEntity {
     public void setScriptName(String scriptName) {
         this.scriptName = scriptName;
     }
-    
+
+    public Long getTestcaseId() {
+        return testcaseId;
+    }
+
+    public void setTestcaseId(Long testcaseId) {
+        this.testcaseId = testcaseId;
+    }
 }

@@ -88,6 +88,14 @@ public interface ZephyrRestService {
     TCRCatalogTreeDTO createTCRCatalogTreeNode(TCRCatalogTreeDTO tcrCatalogTreeDTO) throws URISyntaxException;
 
     /**
+     * Create mappings between testcase and requirements given.
+     * @param mapTestcaseToRequirements
+     * @return
+     * @throws URISyntaxException
+     */
+    List<String> mapTestcaseToRequirements(List<MapTestcaseToRequirement> mapTestcaseToRequirements) throws URISyntaxException;
+
+    /**
      * Get testcases for given tree id.
      * @param tcrCatalogTreeId
      * @return
@@ -153,6 +161,24 @@ public interface ZephyrRestService {
      * @throws URISyntaxException
      */
     List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String executionStatus) throws URISyntaxException;
+
+    /**
+     * Upload all the attachments from list given.
+     * @param attachmentDTOs
+     * @return
+     * @throws URISyntaxException
+     */
+    List<GenericAttachmentDTO> uploadAttachments(List<GenericAttachmentDTO> attachmentDTOs) throws URISyntaxException;
+
+    /**
+     * Add attachments to items(ex: testcase, requirement, etc.) with given details.
+     * @param attachments
+     * @return
+     * @throws URISyntaxException
+     */
+    List<Attachment> addAttachment(List<Attachment> attachments) throws URISyntaxException;
+
+    TestStep addTestStep(TestStep testStep) throws URISyntaxException;
 
     User getCurrentUser();
 

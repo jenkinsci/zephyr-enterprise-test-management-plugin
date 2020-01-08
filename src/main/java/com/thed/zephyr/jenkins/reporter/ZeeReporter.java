@@ -52,7 +52,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
 	private String projectKey;
 	private String releaseKey;
-	private String cycleKey;;
+	private String cycleKey;
 	private String cyclePrefix;
 	private String serverAddress;
 	private String cycleDuration;
@@ -60,8 +60,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
     private String resultXmlFilePath;
     private Integer parserIndex;
     private Integer eggplantParserIndex = 3;
-
-    String parseMap1 = "{\"name\": \"testsuite.testcase1:time\"}";
 
     private String[] parserTemplateArr = new String[] {
             "{ \"packageName\": \"testsuite.testcase:classname\" , \"testcase\" : {\"name\": \"testsuite.testcase:name\", \"time\" : \"testsuite.testcase:time\", \"all\": {\"time\": \"testsuite:time\"}}}"
@@ -80,9 +78,11 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
     private UserService userService = new UserServiceImpl();
     private ProjectService projectService = new ProjectServiceImpl();
     private TCRCatalogTreeService tcrCatalogTreeService = new TCRCatalogTreeServiceImpl();
+    private RequirementService requirementService = new RequirementServiceImpl();
     private TestcaseService testcaseService = new TestcaseServiceImpl();
     private CycleService cycleService = new CycleServiceImpl();
     private ExecutionService executionService = new ExecutionServiceImpl();
+    private AttachmentService attachmentService = new AttachmentServiceImpl();
 
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
@@ -119,11 +119,14 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		logger = listener.getLogger();
 		logger.printf("%s Examining test results...%n", pInfo);
 
+        requirementService = new RequirementServiceImpl();
+        attachmentService = new AttachmentServiceImpl();
+
         parserTemplateArr = new String[] {
-                "{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}",//junit
-                "{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}", //cucumber
-                "{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}", //testng
-                "{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}}"//eggplant
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//junit
+                "[{ \"status\": \"\", \"system-out\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //cucumber
+                "[{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}]", //testng
+                "[{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}]}]"//eggplant
         };
 
 		if (!validateBuildConfig()) {
@@ -196,7 +199,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
-            Map<TCRCatalogTreeTestcase, Boolean> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList);
+            Map<TCRCatalogTreeTestcase, Boolean> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList, zephyrConfigModel);
 
 //            Map<CaseResult, TCRCatalogTreeTestcase> caseMap = createTestcases(zephyrConfigModel, packagePhaseMap);
 //
@@ -567,9 +570,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return parserUtil.parseXmlLang(absoluteFilePath, parserTemplate);
     }
 
-    public Map<TCRCatalogTreeTestcase, Boolean> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList) throws URISyntaxException {
+    public Map<TCRCatalogTreeTestcase, Boolean> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList, ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
-        Map<String, Boolean> testcaseNameStatusMap = new HashMap<>();
+        Map<String, Map<String, Object>> testcaseNameStatusMap = new HashMap<>();
 
         dataMapLoop: for (Map dataMap : dataMapList) {
 
@@ -623,24 +626,145 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 testcaseList.add(testcase);
                 treeIdTestcaseMap.put(treeDTO.getId(), testcaseList);
             }
-            testcaseNameStatusMap.put(testcase.getName(), status);
+
+            Set<Long> requirementIds = new HashSet<>();
+            Set<String> requirementAltIds = new HashSet<>();
+            if(dataMap.containsKey("requirements")) {
+                List<Map> requirements = (List) dataMap.get("requirements");
+                for (Map requirement : requirements) {
+                    String id = requirement.get("id").toString();
+                    String[] splitRequirementId = id.split("_");
+                    if(id.startsWith("ID_")) {
+                        requirementIds.add(Long.parseLong(splitRequirementId[1]));
+                    } else if(id.startsWith("AltID_")) {
+                        requirementAltIds.add(splitRequirementId[1]);
+                    }
+                }
+            }
+
+            MapTestcaseToRequirement mapTestcaseToRequirement = new MapTestcaseToRequirement();
+            mapTestcaseToRequirement.setRequirementId(requirementIds);
+            mapTestcaseToRequirement.setRequirementAltId(requirementAltIds);
+            mapTestcaseToRequirement.setReleaseId(zephyrConfigModel.getReleaseId());
+
+            List<String> attachments = new ArrayList<>();
+
+            if(dataMap.containsKey("attachments")) {
+                List<Map> attachmentFilePaths = (List) dataMap.get("attachments");
+                for(Map attachment : attachmentFilePaths) {
+                    String filePath = attachment.get("filePath").toString();
+                    attachments.add(filePath);
+                }
+            }
+
+            Map<String, Object> valueMap = new HashMap<>();
+            valueMap.put("mapTestcaseToRequirement", mapTestcaseToRequirement);
+            valueMap.put("status", status);
+            valueMap.put("attachments", attachments);
+
+            if(status && dataMap.containsKey("statusPassAttachment")) {
+                String successAttachmentStr = dataMap.get("statusPassAttachment").toString();
+                if(!StringUtils.isEmpty(successAttachmentStr)) {
+                    GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
+                    genericAttachmentDTO.setFileName("success.txt");
+                    genericAttachmentDTO.setContentType("text/plain");
+                    genericAttachmentDTO.setFieldName(AttachmentService.ItemType.TESTCASE.toString().toLowerCase());
+                    genericAttachmentDTO.setByteData(successAttachmentStr.getBytes());
+                    valueMap.put("statusAttachment", genericAttachmentDTO);
+                }
+            }
+
+            if(!status && dataMap.containsKey("statusFailAttachment")) {
+                String failureAttachmentStr = dataMap.get("statusFailAttachment").toString();
+                if(!StringUtils.isEmpty(failureAttachmentStr)) {
+                    GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
+                    genericAttachmentDTO.setFileName("failure.txt");
+                    genericAttachmentDTO.setContentType("text/plain");
+                    genericAttachmentDTO.setFieldName(AttachmentService.ItemType.TESTCASE.toString().toLowerCase());
+                    genericAttachmentDTO.setByteData(failureAttachmentStr.getBytes());
+                    valueMap.put("statusAttachment", genericAttachmentDTO);
+                }
+            }
+
+            if(dataMap.containsKey("system-out")) {
+                String stepStr = dataMap.get("system-out").toString();
+                if(!StringUtils.isEmpty(stepStr)) {
+                    TestStep testStep = stepMaker(stepStr);
+                    valueMap.put("testStep", testStep);
+                }
+            }
+
+            testcaseNameStatusMap.put(testcase.getName(), valueMap);
         }
         List<TCRCatalogTreeTestcase> tcrList =  testcaseService.createTestcasesWithList(treeIdTestcaseMap);
         Map<TCRCatalogTreeTestcase, Boolean> tcrTestcaseStatusMap = new HashMap<>();
-        loop1 : for (Map.Entry<String, Boolean> entry : testcaseNameStatusMap.entrySet()) {
+        List<MapTestcaseToRequirement> mapTestcaseToRequirements = new ArrayList<>();
+        Map<Long, List<String>> testcaseAttachmentsMap = new HashMap<>();
+        Map<Long, GenericAttachmentDTO> statusAttachmentMap = new HashMap<>();
+        loop1 : for (Map.Entry<String, Map<String, Object>> entry : testcaseNameStatusMap.entrySet()) {
             for(TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrList) {
                 if(tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey())) {
                     //same testcase, add id and status to map
-                    tcrTestcaseStatusMap.put(tcrCatalogTreeTestcase, entry.getValue());
+                    tcrTestcaseStatusMap.put(tcrCatalogTreeTestcase, (boolean)entry.getValue().get("status"));
+                    MapTestcaseToRequirement mapTestcaseToRequirement = (MapTestcaseToRequirement)entry.getValue().get("mapTestcaseToRequirement");
+                    mapTestcaseToRequirement.setTestcaseId(tcrCatalogTreeTestcase.getTestcase().getId());
+                    mapTestcaseToRequirements.add(mapTestcaseToRequirement);
+                    testcaseAttachmentsMap.put(tcrCatalogTreeTestcase.getTestcase().getTestcaseId(), (List<String>) entry.getValue().get("attachments"));
+                    if(entry.getValue().containsKey("statusAttachment")) {
+                        statusAttachmentMap.put(tcrCatalogTreeTestcase.getTestcase().getTestcaseId(), (GenericAttachmentDTO) entry.getValue().get("statusAttachment"));
+                    }
+                    if(entry.getValue().containsKey("testStep")) {
+                        TestStep testStep = (TestStep) entry.getValue().get("testStep");
+                        testStep.setTcId(tcrCatalogTreeTestcase.getTestcase().getId());
+                        testStep.setTctId(tcrCatalogTreeTestcase.getId());
+                        testcaseService.addTestStep(testStep);
+                    }
                     continue loop1;
                 }
             }
         }
+        List<String> msgs = requirementService.mapTestcaseToRequirements(mapTestcaseToRequirements);
+        attachmentService.addAttachments(AttachmentService.ItemType.TESTCASE, testcaseAttachmentsMap, statusAttachmentMap);
+        logger.println(msgs);
         return tcrTestcaseStatusMap;
     }
 
+    TestStep stepMaker(String testSteps) {
+        String[] keyWords={"And","Or","Given","When","Then"};
+        List<String> keywordsList= Arrays.asList(keyWords);
+        String steps[] = testSteps.split("\\r?\\n");
+        String status="";
+        TestStep testStep = new TestStep();
+        Integer i=1;
+        List<Map> stepsList = new ArrayList<Map>();
+        for(String step : steps) {
+            if(keywordsList.contains(step.split(" ", 2)[0])) {
+                TestStepDetail testStepDetail = new TestStepDetail();
+                Map<String, String> stepMap = new HashMap<String, String>();
+                testStepDetail.setOrderId((long)i);
+                testStepDetail.setStep(step.substring(0,step.indexOf(".")));
+                stepMap.put("orderId", i.toString());
+                stepMap.put("step", step.substring(0,step.indexOf(".")));
+                status=step.substring(step.lastIndexOf(".")+1, step.length());
+                if(status.equals("failed")) {
+                    stepMap.put("status", "false");
+                }else if(status.equals("skipped") || status.equals("undefined")) {
+                    stepMap.put("status", "skipped");
+                }else {
+                    stepMap.put("status", "true");
+                }
+                stepsList.add(stepMap);
+                testStep.getSteps().add(testStepDetail);
+            }
+            i++;
+        }
+        testStep.setMaxId((long)testStep.getSteps().size());
+//        System.out.println(stepsList);
+        return testStep;
+    }
+
     private List<String> getTestcasesForEggplant(List<EggPlantResult> eggPlantResults) throws ParseException, ParserConfigurationException, SAXException, IOException {
-        String scriptNameParseTemplate = "{\"scriptName\": \"$testsuite:name\"}";
+        String scriptNameParseTemplate = "[{\"scriptName\": \"$testsuite:name\"}]";
         ParserUtil parserUtil = new ParserUtil();
         Map<String, EggPlantResult> eggPlantMap = new HashMap<>();//suite name, eggPlantResult
         for (EggPlantResult eggPlantResult : eggPlantResults) {

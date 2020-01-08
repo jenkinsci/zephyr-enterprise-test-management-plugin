@@ -1,6 +1,7 @@
 package com.thed.service.impl;
 
 import com.thed.model.TCRCatalogTreeTestcase;
+import com.thed.model.TestStep;
 import com.thed.model.Testcase;
 import com.thed.service.TestcaseService;
 import hudson.tasks.junit.CaseResult;
@@ -95,5 +96,10 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
         }
 
         return createTestcases(treeTestcases);
+    }
+
+    @Override
+    public TestStep addTestStep(TestStep testStep) throws URISyntaxException {
+        return zephyrRestService.addTestStep(testStep);
     }
 }

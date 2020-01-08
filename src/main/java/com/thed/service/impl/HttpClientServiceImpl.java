@@ -2,6 +2,7 @@ package com.thed.service.impl;
 
 import com.thed.service.HttpClientService;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -99,6 +100,15 @@ public class HttpClientServiceImpl implements HttpClientService {
 
     @Override
     public String postRequest(String url, String content) {
+        StringEntity stringEntity = null;
+        if(!StringUtils.isEmpty(content)) {
+            stringEntity = new StringEntity(content, ContentType.APPLICATION_JSON);
+        }
+        return postRequest(url, stringEntity);
+    }
+
+    @Override
+    public String postRequest(String url, HttpEntity httpEntity) {
         if(StringUtils.isEmpty(url)) {
             return null;
         }
@@ -107,9 +117,13 @@ public class HttpClientServiceImpl implements HttpClientService {
             HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
             HttpPost httpPost = new HttpPost(url);
 
-            if(!StringUtils.isEmpty(content)) {
-                StringEntity stringEntity = new StringEntity(content, ContentType.APPLICATION_JSON);
-                httpPost.setEntity(stringEntity);
+//            if(!StringUtils.isEmpty(content)) {
+//                StringEntity stringEntity = new StringEntity(content, contentType);
+//                httpPost.setEntity(stringEntity);
+//            }
+
+            if(httpEntity != null) {
+                httpPost.setEntity(httpEntity);
             }
 
             HttpResponse response = httpClient.execute(httpPost);

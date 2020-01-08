@@ -1,7 +1,9 @@
 package com.thed.service;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -17,6 +19,8 @@ public interface HttpClientService {
     String getRequest(String url);
 
     String postRequest(String url, String content);
+
+    String postRequest(String url, HttpEntity httpEntity);
 
     String putRequest(String url, String content);
 

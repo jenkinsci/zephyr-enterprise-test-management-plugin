@@ -764,7 +764,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
     }
 
     private List<String> getTestcasesForEggplant(List<EggPlantResult> eggPlantResults) throws ParseException, ParserConfigurationException, SAXException, IOException {
-        String scriptNameParseTemplate = "{\"scriptName\": \"$testsuite:name\"}";
+        String scriptNameParseTemplate = "[{\"scriptName\": \"$testsuite:name\"}]";
         ParserUtil parserUtil = new ParserUtil();
         Map<String, EggPlantResult> eggPlantMap = new HashMap<>();//suite name, eggPlantResult
         for (EggPlantResult eggPlantResult : eggPlantResults) {

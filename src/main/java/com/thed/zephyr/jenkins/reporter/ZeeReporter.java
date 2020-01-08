@@ -124,7 +124,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
         parserTemplateArr = new String[] {
                 "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//junit
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //cucumber
+                "[{ \"status\": \"\", \"system-out\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //cucumber
                 "[{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}]", //testng
                 "[{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}]}]"//eggplant
         };
@@ -686,6 +686,14 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 }
             }
 
+            if(dataMap.containsKey("system-out")) {
+                String stepStr = dataMap.get("system-out").toString();
+                if(!StringUtils.isEmpty(stepStr)) {
+                    TestStep testStep = stepMaker(stepStr);
+                    valueMap.put("testStep", testStep);
+                }
+            }
+
             testcaseNameStatusMap.put(testcase.getName(), valueMap);
         }
         List<TCRCatalogTreeTestcase> tcrList =  testcaseService.createTestcasesWithList(treeIdTestcaseMap);
@@ -705,6 +713,12 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                     if(entry.getValue().containsKey("statusAttachment")) {
                         statusAttachmentMap.put(tcrCatalogTreeTestcase.getTestcase().getTestcaseId(), (GenericAttachmentDTO) entry.getValue().get("statusAttachment"));
                     }
+                    if(entry.getValue().containsKey("testStep")) {
+                        TestStep testStep = (TestStep) entry.getValue().get("testStep");
+                        testStep.setTcId(tcrCatalogTreeTestcase.getTestcase().getId());
+                        testStep.setTctId(tcrCatalogTreeTestcase.getId());
+                        testcaseService.addTestStep(testStep);
+                    }
                     continue loop1;
                 }
             }
@@ -713,6 +727,40 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         attachmentService.addAttachments(AttachmentService.ItemType.TESTCASE, testcaseAttachmentsMap, statusAttachmentMap);
         logger.println(msgs);
         return tcrTestcaseStatusMap;
+    }
+
+    TestStep stepMaker(String testSteps) {
+        String[] keyWords={"And","Or","Given","When","Then"};
+        List<String> keywordsList= Arrays.asList(keyWords);
+        String steps[] = testSteps.split("\\r?\\n");
+        String status="";
+        TestStep testStep = new TestStep();
+        Integer i=1;
+        List<Map> stepsList = new ArrayList<Map>();
+        for(String step : steps) {
+            if(keywordsList.contains(step.split(" ", 2)[0])) {
+                TestStepDetail testStepDetail = new TestStepDetail();
+                Map<String, String> stepMap = new HashMap<String, String>();
+                testStepDetail.setOrderId((long)i);
+                testStepDetail.setStep(step.substring(0,step.indexOf(".")));
+                stepMap.put("orderId", i.toString());
+                stepMap.put("step", step.substring(0,step.indexOf(".")));
+                status=step.substring(step.lastIndexOf(".")+1, step.length());
+                if(status.equals("failed")) {
+                    stepMap.put("status", "false");
+                }else if(status.equals("skipped") || status.equals("undefined")) {
+                    stepMap.put("status", "skipped");
+                }else {
+                    stepMap.put("status", "true");
+                }
+                stepsList.add(stepMap);
+                testStep.getSteps().add(testStepDetail);
+            }
+            i++;
+        }
+        testStep.setMaxId((long)testStep.getSteps().size());
+//        System.out.println(stepsList);
+        return testStep;
     }
 
     private List<String> getTestcasesForEggplant(List<EggPlantResult> eggPlantResults) throws ParseException, ParserConfigurationException, SAXException, IOException {

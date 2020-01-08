@@ -178,6 +178,8 @@ public interface ZephyrRestService {
      */
     List<Attachment> addAttachment(List<Attachment> attachments) throws URISyntaxException;
 
+    TestStep addTestStep(TestStep testStep) throws URISyntaxException;
+
     User getCurrentUser();
 
     /**

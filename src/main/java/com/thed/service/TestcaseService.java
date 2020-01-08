@@ -1,6 +1,7 @@
 package com.thed.service;
 
 import com.thed.model.TCRCatalogTreeTestcase;
+import com.thed.model.TestStep;
 import com.thed.model.Testcase;
 import hudson.tasks.junit.CaseResult;
 
@@ -38,4 +39,6 @@ public interface TestcaseService extends BaseService {
     Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(Map<Long, List<CaseResult>> treeIdCaseResultMap) throws URISyntaxException;
 
     List<TCRCatalogTreeTestcase> createTestcasesWithList(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException;
+
+    TestStep addTestStep(TestStep testStep) throws URISyntaxException;
 }

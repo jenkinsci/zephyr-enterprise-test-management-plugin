@@ -58,7 +58,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 	private String cycleDuration;
 	private boolean createPackage;
     private String resultXmlFilePath;
-    private Integer parserIndex;
+    private String parserIndex;
     private Integer eggplantParserIndex = 3;
 
     private String[] parserTemplateArr = new String[] {
@@ -96,7 +96,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		this.createPackage = createPackage;
 		this.cycleDuration = cycleDuration;
         this.resultXmlFilePath = resultXmlFilePath;
-        this.parserIndex = Integer.parseInt(parserIndex);
+        this.parserIndex = parserIndex;
 	}
 
 	@Override
@@ -158,6 +158,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             }
 
             zephyrConfigModel.setCreatePackage(isCreatePackage());
+            zephyrConfigModel.setResultXmlFilePath(getResultXmlFilePath());
+            zephyrConfigModel.setParserIndex(Long.parseLong(getParserIndex()));
+
             zephyrConfigModel.setBuilNumber(number);
 
             ZephyrInstance zephyrInstance = getZephyrInstance(getServerAddress());
@@ -194,7 +197,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             }
 
             for(String xmlFilePath : xmlFiles) {
-                dataMapList.addAll(genericParserXML(xmlFilePath, parserTemplateArr[parserIndex]));
+                dataMapList.addAll(genericParserXML(xmlFilePath, parserTemplateArr[Integer.valueOf(String.valueOf(zephyrConfigModel.getParserIndex()))]));
             }
 
             zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
@@ -851,5 +854,13 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
     public void setResultXmlFilePath(String resultXmlFilePath) {
         this.resultXmlFilePath = resultXmlFilePath;
+    }
+
+    public String getParserIndex() {
+        return parserIndex;
+    }
+
+    public void setParserIndex(String parserIndex) {
+        this.parserIndex = parserIndex;
     }
 }

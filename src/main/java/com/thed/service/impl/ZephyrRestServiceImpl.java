@@ -52,6 +52,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String ADD_ATTACHMENT_URL = "/flex/services/rest/{restVersion}/attachment/list";
 
     public static final String ADD_TESTSTEP_URL = "/flex/services/rest/{restVersion}/testcase/{testcaseVersionId}/teststep/{tctId}";
+    public static final String ADD_TESTSTEP_RESULT_URL = "/flex/services/rest/{restVersion}/execution/teststepresult/saveorupdate";
 
     private User currentUser;
     private String hostAddress;
@@ -387,6 +388,14 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         String url = buildUrl(prepareUrl(ADD_TESTSTEP_URL), pathParams, null);
         String res = httpClientService.postRequest(url, gson.toJson(testStep));
         return gson.fromJson(res, TestStep.class);
+    }
+
+    @Override
+    public List<TestStepResult> addTestStepsResults(List<TestStepResult> testStepResults) throws URISyntaxException {
+        String url = buildUrl(prepareUrl(ADD_TESTSTEP_RESULT_URL), null, null);
+        String res = httpClientService.postRequest(url, gson.toJson(testStepResults));
+        Type type = new TypeToken<List<TestStepResult>>(){}.getType();
+        return gson.fromJson(res, type);
     }
 
     @Override

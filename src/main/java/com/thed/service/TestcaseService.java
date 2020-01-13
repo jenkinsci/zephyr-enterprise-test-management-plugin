@@ -40,5 +40,4 @@ public interface TestcaseService extends BaseService {
 
     List<TCRCatalogTreeTestcase> createTestcasesWithList(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException;
 
-    TestStep addTestStep(TestStep testStep) throws URISyntaxException;
 }

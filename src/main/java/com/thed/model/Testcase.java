@@ -9,6 +9,7 @@ public class Testcase extends BaseEntity {
     private Boolean automated;
     private String scriptName;
     private Long testcaseId;
+    private TestStep testSteps;
 
     public String getName() {
         return name;
@@ -64,5 +65,13 @@ public class Testcase extends BaseEntity {
 
     public void setTestcaseId(Long testcaseId) {
         this.testcaseId = testcaseId;
+    }
+
+    public TestStep getTestSteps() {
+        return testSteps;
+    }
+
+    public void setTestSteps(TestStep testSteps) {
+        this.testSteps = testSteps;
     }
 }

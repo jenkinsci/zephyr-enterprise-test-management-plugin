@@ -202,7 +202,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
-            Map<TCRCatalogTreeTestcase, Boolean> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList, zephyrConfigModel);
+            Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList, zephyrConfigModel);
 
 //            Map<CaseResult, TCRCatalogTreeTestcase> caseMap = createTestcases(zephyrConfigModel, packagePhaseMap);
 //
@@ -267,18 +267,52 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             executionMap.put(Boolean.TRUE, new HashSet<Long>());
             executionMap.put(Boolean.FALSE, new HashSet<Long>());
 
-            loop1 : for(Map.Entry<TCRCatalogTreeTestcase, Boolean> caseEntry : tcrStatusMap.entrySet()) {
+            List<TestStepResult> testStepResultList = new ArrayList<>();
+
+            loop1 : for(Map.Entry<TCRCatalogTreeTestcase, Map<String, Object>> caseEntry : tcrStatusMap.entrySet()) {
 
                 for(ReleaseTestSchedule releaseTestSchedule : releaseTestSchedules) {
 
                     if(Objects.equals(releaseTestSchedule.getTcrTreeTestcase().getTestcase().getId(), caseEntry.getKey().getTestcase().getId())) {
                         // tcrTestcase matched, map caseResult.isPass status to rtsId
-                        executionMap.get(caseEntry.getValue()).add(releaseTestSchedule.getId());
+                        executionMap.get(caseEntry.getValue().get("status")).add(releaseTestSchedule.getId());
+
+                        TCRCatalogTreeTestcase tcrTestCase = caseEntry.getKey();
+
+                        if(tcrTestCase.getTestcase().getTestSteps() != null && tcrTestCase.getTestcase().getTestSteps().getSteps() != null) {
+                            List<Map<String, String>> stepList = (List<Map<String, String>>)caseEntry.getValue().get("stepList");
+
+                            for (TestStepDetail testStepDetail : tcrTestCase.getTestcase().getTestSteps().getSteps()) {
+                                for (Map<String, String> stepMap : stepList) {
+
+                                    if(testStepDetail.getStep().equals(stepMap.get("step"))) {
+                                        TestStepResult testStepResult = new TestStepResult();
+                                        testStepResult.setCyclePhaseId(releaseTestSchedule.getCyclePhaseId());
+                                        testStepResult.setReleaseTestScheduleId(releaseTestSchedule.getId());
+                                        testStepResult.setTestStepId(testStepDetail.getOrderId());
+
+                                        String status = "";
+
+                                        if(stepMap.get("status").equalsIgnoreCase("true")) {
+                                            status = ZephyrConstants.EXECUTION_STATUS_PASS;
+                                        } else if(stepMap.get("status").equalsIgnoreCase("false")) {
+                                            status = ZephyrConstants.EXECUTION_STATUS_FAIL;
+                                        } else {
+                                            status = ZephyrConstants.EXECUTION_STATUS_NOT_EXECUTED;
+                                        }
+                                        testStepResult.setStatus(Long.parseLong(status));
+                                        testStepResultList.add(testStepResult);
+                                    }
+                                }
+                            }
+                        }
+
                         continue loop1;
                     }
                 }
             }
 
+            executionService.addTestStepResults(testStepResultList);
             executionService.executeReleaseTestSchedules(executionMap.get(Boolean.TRUE), Boolean.TRUE);
             executionService.executeReleaseTestSchedules(executionMap.get(Boolean.FALSE), Boolean.FALSE);
         }
@@ -573,7 +607,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return parserUtil.parseXmlLang(absoluteFilePath, parserTemplate);
     }
 
-    public Map<TCRCatalogTreeTestcase, Boolean> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList, ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
+    public Map<TCRCatalogTreeTestcase, Map<String, Object>> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList, ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
         Map<String, Map<String, Object>> testcaseNameStatusMap = new HashMap<>();
 
@@ -692,15 +726,17 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             if(dataMap.containsKey("system-out")) {
                 String stepStr = dataMap.get("system-out").toString();
                 if(!StringUtils.isEmpty(stepStr)) {
-                    TestStep testStep = stepMaker(stepStr);
-                    valueMap.put("testStep", testStep);
+                    List<Map<String, String>> stepList = new ArrayList<>();
+                    TestStep testStep = stepMaker(stepStr, stepList);
+                    valueMap.put("stepList", stepList);
+                    testcase.setTestSteps(testStep);
                 }
             }
 
             testcaseNameStatusMap.put(testcase.getName(), valueMap);
         }
         List<TCRCatalogTreeTestcase> tcrList =  testcaseService.createTestcasesWithList(treeIdTestcaseMap);
-        Map<TCRCatalogTreeTestcase, Boolean> tcrTestcaseStatusMap = new HashMap<>();
+        Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrTestcaseStatusMap = new HashMap<>();
         List<MapTestcaseToRequirement> mapTestcaseToRequirements = new ArrayList<>();
         Map<Long, List<String>> testcaseAttachmentsMap = new HashMap<>();
         Map<Long, GenericAttachmentDTO> statusAttachmentMap = new HashMap<>();
@@ -708,7 +744,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             for(TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrList) {
                 if(tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey())) {
                     //same testcase, add id and status to map
-                    tcrTestcaseStatusMap.put(tcrCatalogTreeTestcase, (boolean)entry.getValue().get("status"));
+                    Map<String, Object> statusMap = new HashMap<>();
+                    statusMap.put("status", entry.getValue().get("status"));
+
                     MapTestcaseToRequirement mapTestcaseToRequirement = (MapTestcaseToRequirement)entry.getValue().get("mapTestcaseToRequirement");
                     mapTestcaseToRequirement.setTestcaseId(tcrCatalogTreeTestcase.getTestcase().getId());
                     mapTestcaseToRequirements.add(mapTestcaseToRequirement);
@@ -716,12 +754,11 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                     if(entry.getValue().containsKey("statusAttachment")) {
                         statusAttachmentMap.put(tcrCatalogTreeTestcase.getTestcase().getTestcaseId(), (GenericAttachmentDTO) entry.getValue().get("statusAttachment"));
                     }
-                    if(entry.getValue().containsKey("testStep")) {
-                        TestStep testStep = (TestStep) entry.getValue().get("testStep");
-                        testStep.setTcId(tcrCatalogTreeTestcase.getTestcase().getId());
-                        testStep.setTctId(tcrCatalogTreeTestcase.getId());
-                        testcaseService.addTestStep(testStep);
+
+                    if(entry.getValue().containsKey("stepList")) {
+                        statusMap.put("stepList", entry.getValue().get("stepList"));
                     }
+                    tcrTestcaseStatusMap.put(tcrCatalogTreeTestcase, statusMap);
                     continue loop1;
                 }
             }
@@ -732,14 +769,13 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return tcrTestcaseStatusMap;
     }
 
-    TestStep stepMaker(String testSteps) {
+    TestStep stepMaker(String testSteps, List<Map<String, String>> stepsList) {
         String[] keyWords={"And","Or","Given","When","Then"};
         List<String> keywordsList= Arrays.asList(keyWords);
         String steps[] = testSteps.split("\\r?\\n");
         String status="";
         TestStep testStep = new TestStep();
         Integer i=1;
-        List<Map> stepsList = new ArrayList<Map>();
         for(String step : steps) {
             if(keywordsList.contains(step.split(" ", 2)[0])) {
                 TestStepDetail testStepDetail = new TestStepDetail();

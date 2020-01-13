@@ -1,6 +1,7 @@
 package com.thed.service;
 
 import com.thed.model.ReleaseTestSchedule;
+import com.thed.model.TestStepResult;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -27,5 +28,13 @@ public interface ExecutionService extends BaseService {
      * @throws URISyntaxException
      */
     List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, boolean pass) throws URISyntaxException;
+
+    /**
+     * Add testStep results.
+     * @param testStepResults
+     * @return
+     * @throws URISyntaxException
+     */
+    List<TestStepResult> addTestStepResults(List<TestStepResult> testStepResults) throws URISyntaxException;
 
 }

@@ -15,6 +15,7 @@ public class ZephyrConstants {
 
     public static final String EXECUTION_STATUS_PASS = "1";
     public static final String EXECUTION_STATUS_FAIL = "2";
+    public static final String EXECUTION_STATUS_NOT_EXECUTED = "10";
 
 
 }

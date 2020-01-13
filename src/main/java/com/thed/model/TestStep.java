@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Created by prashant on 8/1/20.
  */
-public class TestStep {
+public class TestStep extends BaseEntity {
 
     private Long maxId;
     private List<TestStepDetail> steps;

@@ -98,8 +98,4 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
         return createTestcases(treeTestcases);
     }
 
-    @Override
-    public TestStep addTestStep(TestStep testStep) throws URISyntaxException {
-        return zephyrRestService.addTestStep(testStep);
-    }
 }

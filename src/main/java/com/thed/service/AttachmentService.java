@@ -14,8 +14,9 @@ import java.util.Map;
 public interface AttachmentService extends BaseService {
 
     public enum ItemType {
-        REQUIREMENT,
-        TESTCASE
+        requirement,
+        testcase,
+        releaseTestSchedule
     }
 
     void addAttachments(ItemType itemType, Map<Long, List<String>> itemIdFilePathMap, Map<Long, GenericAttachmentDTO> failureAttachmentMap) throws IOException, URISyntaxException;

@@ -37,7 +37,7 @@ public class AttachmentServiceImpl extends BaseServiceImpl implements Attachment
                 byte[] bytes = Files.readAllBytes(Paths.get(filePath));
 
                 GenericAttachmentDTO attachmentDTO = new GenericAttachmentDTO();
-                attachmentDTO.setFieldName(itemType.toString().toLowerCase());
+                attachmentDTO.setFieldName(itemType.toString());
                 attachmentDTO.setFileName(fileName);
                 attachmentDTO.setContentType(mimeType);
                 attachmentDTO.setByteData(bytes);
@@ -59,7 +59,7 @@ public class AttachmentServiceImpl extends BaseServiceImpl implements Attachment
 
                 attachment.setFileSize(oldAttachment != null ? (long)oldAttachment.getByteData().length : 0);
                 attachment.setItemId(itemId);
-                attachment.setItemType(itemType.toString().toLowerCase());
+                attachment.setItemType(itemType.toString());
                 attachment.setName(genericAttachmentDTO.getFileName());
                 attachment.setTempPath(genericAttachmentDTO.getTempFilePath());
                 attachment.setCreatedBy(zephyrRestService.getCurrentUser().getId());

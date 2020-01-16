@@ -459,8 +459,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 caseResults.addAll(tmpList);
             }
 
-
-
             caseResultLoop : for (CaseResult caseResult : caseResults) {
                 for (TCRCatalogTreeTestcase tcrTestcase : tcrTestcases) {
                     if(caseResult.getFullName().equals(tcrTestcase.getTestcase().getName())) {
@@ -482,6 +480,59 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
         Map<CaseResult, TCRCatalogTreeTestcase> map = testcaseService.createTestcases(testcasesToBeCreated);
         existingTestcases.putAll(map);
+
+        return existingTestcases;
+    }
+
+    private List<TCRCatalogTreeTestcase> createTestcasesWithoutDuplicate(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException {
+
+        List<TCRCatalogTreeTestcase> existingTestcases = new ArrayList<>();
+        Map<Long, List<Testcase>> toBeCreatedTestcases = new HashMap<>();
+
+        for(Map.Entry<Long, List<Testcase>> entry : treeIdTestcaseMap.entrySet()) {
+            Long treeId = entry.getKey();
+            List<Testcase> testcaseList = entry.getValue();
+
+            List<TCRCatalogTreeTestcase> tcrTestcases = testcaseService.getTestcasesForTreeId(treeId);
+
+            if(tcrTestcases == null || tcrTestcases.isEmpty()) {
+                //no testcases exist for this tree, add need to be created
+                List<Testcase> addToList = toBeCreatedTestcases.get(treeId);
+                if(addToList == null) {
+                    addToList = new ArrayList<>();
+                    addToList.addAll(testcaseList);
+                    toBeCreatedTestcases.put(treeId, addToList);
+                } else {
+                    addToList.addAll(testcaseList);
+                }
+                continue;
+            }
+
+            testcaseLoop : for(Testcase testcase : testcaseList) {
+                for (TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrTestcases) {
+                    if(tcrCatalogTreeTestcase.getTestcase().getName().equals(testcase.getName())) {
+                        //this testcase already exists in this tree, no need to create
+                        existingTestcases.add(tcrCatalogTreeTestcase);
+                        continue testcaseLoop;
+                    }
+                }
+
+                //on previous testcase, need to create
+                List<Testcase> addToList = toBeCreatedTestcases.get(treeId);
+                if(addToList == null) {
+                    addToList = new ArrayList<>();
+                    addToList.add(testcase);
+                    toBeCreatedTestcases.put(treeId, addToList);
+                } else {
+                    addToList.add(testcase);
+                }
+            }
+        }
+
+        if(!toBeCreatedTestcases.isEmpty()) {
+            List<TCRCatalogTreeTestcase> tcrList = testcaseService.createTestcasesWithList(toBeCreatedTestcases);
+            existingTestcases.addAll(tcrList);
+        }
 
         return existingTestcases;
     }
@@ -619,7 +670,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
     public Map<TCRCatalogTreeTestcase, Map<String, Object>> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList, ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
-        Map<String, Map<String, Object>> testcaseNameStatusMap = new HashMap<>();
+        Map<String, Map<String, Object>> testcaseNameValueMap = new HashMap<>();
 
         dataMapLoop: for (Map dataMap : dataMapList) {
 
@@ -743,12 +794,12 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 }
             }
 
-            testcaseNameStatusMap.put(testcase.getName(), valueMap);
+            testcaseNameValueMap.put(testcase.getName(), valueMap);
         }
-        List<TCRCatalogTreeTestcase> tcrList =  testcaseService.createTestcasesWithList(treeIdTestcaseMap);
+        List<TCRCatalogTreeTestcase> tcrList =  createTestcasesWithoutDuplicate(treeIdTestcaseMap);
         Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrTestcaseStatusMap = new HashMap<>();
         List<MapTestcaseToRequirement> mapTestcaseToRequirements = new ArrayList<>();
-        loop1 : for (Map.Entry<String, Map<String, Object>> entry : testcaseNameStatusMap.entrySet()) {
+        loop1 : for (Map.Entry<String, Map<String, Object>> entry : testcaseNameValueMap.entrySet()) {
             for(TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrList) {
                 if(tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey())) {
                     //same testcase, add id and status to map

@@ -80,6 +80,14 @@ public interface ZephyrRestService {
     List<TCRCatalogTreeDTO> getTCRCatalogTreeNodes(String type, Long revisionId, Long releaseId) throws URISyntaxException;
 
     /**
+     * Get tcrCatalogTree node for given id.
+     * @param tcrCatalogTreeId
+     * @return
+     * @throws URISyntaxException
+     */
+    TCRCatalogTreeDTO getTCRCatalogTreeNode(Long tcrCatalogTreeId) throws URISyntaxException;
+
+    /**
      * Create a tree node such as phase.
      * @param tcrCatalogTreeDTO
      * @return

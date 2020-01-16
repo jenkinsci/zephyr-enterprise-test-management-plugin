@@ -31,6 +31,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_ALL_RELEASES_FOR_PROJECT_ID_URL = "/flex/services/rest/{restVersion}/release/paged/project/{projectId}"; //?order=id&isascorder=true&isVisible=false
 
     public static final String GET_TCR_CATALOG_TREE_NODES_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?type=Phase&revisionid=0&releaseid=10
+    public static final String GET_TCR_CATALOG_TREE_NODE_URL = "/flex/services/rest/{restVersion}/testcasetree/{tcrCatalogTreeId}";
     public static final String CREATE_TCR_CATALOG_TREE_NODE_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?parentid=0
 
     public static final String MAP_TESTCASE_TO_REQUIREMENTS_URL = "/flex/services/rest/v3/requirement/bulk";
@@ -200,6 +201,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         return gson.fromJson(res, releaseListType);
     }
 
+    @Override
     public List<TCRCatalogTreeDTO> getTCRCatalogTreeNodes(String type, Long revisionId, Long releaseId) throws URISyntaxException {
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("type", type));
@@ -211,6 +213,17 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
         Type tcrCatalogTreeListType = new TypeToken<List<TCRCatalogTreeDTO>>(){}.getType();
         return gson.fromJson(res, tcrCatalogTreeListType);
+    }
+
+    @Override
+    public TCRCatalogTreeDTO getTCRCatalogTreeNode(Long tcrCatalogTreeId) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("tcrCatalogTreeId", tcrCatalogTreeId.toString());
+
+        String url = buildUrl(prepareUrl(GET_TCR_CATALOG_TREE_NODE_URL), pathParams, null);
+        String res = httpClientService.getRequest(url);
+
+        return gson.fromJson(res, TCRCatalogTreeDTO.class);
     }
 
     @Override

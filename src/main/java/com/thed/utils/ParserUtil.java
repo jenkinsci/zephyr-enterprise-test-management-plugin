@@ -116,12 +116,45 @@ public class ParserUtil {
                 if(objectChildLinks.isEmpty() && changed) {
                     //no more kids to traverse, add the newDataMap to list
                     dataMapList.add(newDataMap);
+                    continue;
                 }
 
+                List<Map> newDataMapList = new ArrayList<Map>();
+                newDataMapList.add(newDataMap);
+
                 for (XMLLink link : objectChildLinks) {
-                    boolean aChange = startParsing(link, childNode, baseTemplateMap, newDataMap, dataMapList, changed);
-                    changed = aChange || changed;
+
+                    List<Map> iterationList = deepyCopy(newDataMapList);
+
+                    Map<Map, List<Map>> changeTrackMap = new HashMap<Map, List<Map>>();
+
+                    for(Map currentDataMap : iterationList) {
+                        List<Map> carryList = new ArrayList<Map>();
+                        boolean aChange = startParsing(link, childNode, baseTemplateMap, currentDataMap, carryList, changed);
+                        changed = aChange || changed;
+
+                        if(!carryList.isEmpty()) {
+                            changeTrackMap.put(currentDataMap, deepyCopy(carryList));
+                        } else if(changed) {
+                            changeTrackMap.put(currentDataMap, null);
+                        }
+                    }
+
+                    newDataMapList = new ArrayList<Map>();
+
+                    for (Map.Entry<Map, List<Map>> entry : changeTrackMap.entrySet()) {
+                        if(entry.getValue() == null) {
+                            newDataMapList.add(entry.getKey());
+                        } else {
+                            newDataMapList.addAll(entry.getValue());
+                        }
+                    }
                 }
+
+                if(changed) {
+                    dataMapList.addAll(newDataMapList);
+                }
+
             }
         }
         return changed;
@@ -202,7 +235,7 @@ public class ParserUtil {
     }
 
     /**
-     * For xmlPath like 'testsuite.testcase:name', returns 'testsuite.testcase'
+     * For xmlPath like '$testsuite.testcase:name', returns 'testsuite.testcase'
      * @param xmlPath
      * @return
      */
@@ -225,6 +258,13 @@ public class ParserUtil {
         String json = gson.toJson(originalMap);
         Map cloneMap = gson.fromJson(json, Map.class);
         return cloneMap;
+    }
+
+    List deepyCopy(List originalList) {
+        Gson gson = new Gson();
+        String json = gson.toJson(originalList);
+        List cloneList = gson.fromJson(json, List.class);
+        return cloneList;
     }
 
     List<String> getVariablesFromString(String value) {

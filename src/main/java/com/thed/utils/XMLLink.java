@@ -59,6 +59,9 @@ public class XMLLink {
                 }
                 xmlLink.attachLink(Arrays.copyOfRange(linkArray, 1, linkArray.length), type);
             } else {
+                if(linkArray.length == 2) {
+                    type = Type.OBJECT; //set last link always as object
+                }
                 xmlLink = new XMLLink(linkArray[1], type);
                 addChildXMLLink(xmlLink);
                 xmlLink.setParentXMLLink(this);

@@ -55,6 +55,9 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String ADD_TESTSTEP_URL = "/flex/services/rest/{restVersion}/testcase/{testcaseVersionId}/teststep/{tctId}";
     public static final String ADD_TESTSTEP_RESULT_URL = "/flex/services/rest/{restVersion}/execution/teststepresult/saveorupdate";
 
+    public static final String GET_ALL_PARSER_TEMPLATES_URL = "/flex/services/rest/{restVersion}/parsertemplate/";
+    public static final String GET_PARSER_TEMPLATE_BY_ID_URL = "/flex/services/rest/{restVersion}/parsertemplate/{id}";
+
     private User currentUser;
     private String hostAddress;
     private String restVersion = "v3";
@@ -441,5 +444,24 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         setCurrentUser(null);
         setHostAddress("");
         httpClientService.clear();
+    }
+
+    @Override
+    public List<ParserTemplate> getAllParserTemplates() throws URISyntaxException {
+        String url = buildUrl(prepareUrl(GET_ALL_PARSER_TEMPLATES_URL), null, null);
+        String res = httpClientService.getRequest(url);
+
+        Type parserTemplateListType = new TypeToken<List<ParserTemplate>>(){}.getType();
+        return gson.fromJson(res, parserTemplateListType);
+    }
+
+    @Override
+    public ParserTemplate getParserTemplateById(Long templateId) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("id", templateId.toString());
+
+        String url = buildUrl(prepareUrl(GET_PARSER_TEMPLATE_BY_ID_URL), pathParams, null);
+        String res = httpClientService.getRequest(url);
+        return gson.fromJson(res, ParserTemplate.class);
     }
 }

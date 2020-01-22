@@ -31,7 +31,7 @@
       <f:textbox field="resultXmlFilePath"/>
   </f:entry>
 
-  <f:entry title="Parser" field="parserIndex">
+  <f:entry title="Parser" field="parserTemplateKey">
       <f:select />
     </f:entry>
   

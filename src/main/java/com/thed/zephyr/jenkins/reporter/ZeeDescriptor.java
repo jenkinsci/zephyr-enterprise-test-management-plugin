@@ -7,6 +7,7 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_DURATION_7_DAY
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NAME_POST_BUILD_ACTION;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
 
+import com.thed.model.ParserTemplate;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import hudson.Extension;
@@ -16,6 +17,7 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.*;
 
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,6 +45,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
     private ProjectService projectService = new ProjectServiceImpl();
     private ReleaseService releaseService = new ReleaseServiceImpl();
     private CycleService cycleService = new CycleServiceImpl();
+    private ParserTemplateService parserTemplateService = new ParserTemplateServiceImpl();
 
 	private List<ZephyrInstance> zephyrInstances;
 
@@ -390,17 +393,12 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		return listBoxModel;
 	}
 
-    public ListBoxModel doFillParserIndexItems() {
+    public ListBoxModel doFillParserTemplateKeyItems(@QueryParameter String parserTemplateKey) throws URISyntaxException {
         ListBoxModel listBoxModel = new ListBoxModel();
-        listBoxModel.add("JUnit", "0");
-        listBoxModel.add("Cucumber", "1");
-        listBoxModel.add("TestNG", "2");
-        listBoxModel.add("Eggplant", "3");
-        listBoxModel.add("Selenium", "4");
-        listBoxModel.add("TestComplete", "5");
-        listBoxModel.add("SoapUI", "6");
-        listBoxModel.add("Tosca", "7");
-        listBoxModel.add("UFT", "8");
+        List<ParserTemplate> templates = parserTemplateService.getAllParserTemplates();
+        for (ParserTemplate template : templates) {
+            listBoxModel.add(template.getName(), template.getId().toString());
+        }
         return listBoxModel;
     }
 

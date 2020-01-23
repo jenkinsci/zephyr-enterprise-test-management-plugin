@@ -12,6 +12,14 @@ import java.util.List;
 public interface TestStepService extends BaseService {
 
     /**
+     * Get testStep for for given testcaseVersionId.
+     * @param testcaseVersionId
+     * @return
+     * @throws URISyntaxException
+     */
+    TestStep getTestStep(Long testcaseVersionId) throws URISyntaxException;
+
+    /**
      * Add testStep to single testcase.
      * @param testStep
      * @return

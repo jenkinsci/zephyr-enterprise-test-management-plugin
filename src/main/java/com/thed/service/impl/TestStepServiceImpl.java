@@ -17,6 +17,11 @@ public class TestStepServiceImpl extends BaseServiceImpl implements TestStepServ
     }
 
     @Override
+    public TestStep getTestStep(Long testcaseVersionId) throws URISyntaxException {
+        return zephyrRestService.getTestStep(testcaseVersionId);
+    }
+
+    @Override
     public TestStep addTestStep(TestStep testStep) throws URISyntaxException {
         return zephyrRestService.addTestStep(testStep);
     }

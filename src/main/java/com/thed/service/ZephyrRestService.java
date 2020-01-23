@@ -208,4 +208,17 @@ public interface ZephyrRestService {
      * Clears all data saved in this instance and related to this.
      */
     void clear();
+
+    /**
+     * Get all parser-templates.
+     * @return
+     */
+    List<ParserTemplate> getAllParserTemplates() throws URISyntaxException;
+
+    /**
+     * Get parser-template by templateId.
+     * @param templateId
+     * @return
+     */
+    ParserTemplate getParserTemplateById(Long templateId) throws URISyntaxException;
 }

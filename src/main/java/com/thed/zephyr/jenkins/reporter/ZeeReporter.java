@@ -53,12 +53,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 	private String cycleDuration;
 	private boolean createPackage;
     private String resultXmlFilePath;
-    private String parserIndex;
-    private Integer eggplantParserIndex = 3;
-
-    private String[] parserTemplateArr = new String[] {
-            "{ \"packageName\": \"testsuite.testcase:classname\" , \"testcase\" : {\"name\": \"testsuite.testcase:name\", \"time\" : \"testsuite.testcase:time\", \"all\": {\"time\": \"testsuite:time\"}}}"
-    };
+    private Long eggplantParserIndex = 3l;
+    private String parserTemplateKey;
 
 
 	public static PrintStream logger;
@@ -78,11 +74,12 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
     private CycleService cycleService = new CycleServiceImpl();
     private ExecutionService executionService = new ExecutionServiceImpl();
     private AttachmentService attachmentService = new AttachmentServiceImpl();
+    private ParserTemplateService parserTemplateService = new ParserTemplateServiceImpl();
 
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
 			String releaseKey, String cycleKey, String cyclePrefix,
-			String cycleDuration, boolean createPackage, String resultXmlFilePath, String parserIndex) {
+			String cycleDuration, boolean createPackage, String resultXmlFilePath, String parserTemplateKey) {
 		this.serverAddress = serverAddress;
 		this.projectKey = projectKey;
 		this.releaseKey = releaseKey;
@@ -91,7 +88,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		this.createPackage = createPackage;
 		this.cycleDuration = cycleDuration;
         this.resultXmlFilePath = resultXmlFilePath;
-        this.parserIndex = parserIndex;
+        this.parserTemplateKey = parserTemplateKey;
 	}
 
 	@Override
@@ -117,18 +114,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         requirementService = new RequirementServiceImpl();
         attachmentService = new AttachmentServiceImpl();
 
-        parserTemplateArr = new String[] {
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//junit
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"system-out\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //cucumber
-                "[{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}]", //testng
-                "[{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}]}]", //eggplant
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//selenium
-                "[{ \"status\": \"$testsuite.testcase.failure:message\", \"system-out\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure:message\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //testcomplete
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite:name.$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//soapui
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \ntime: $testsuite.testcase:time \ntimestamp: $testsuite.testcase:timestamp \nlog: $testsuite.testcase:log \", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//tosca
-                "[{ \"status\": \"$testsuite.testcase.failure:message\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure:message\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \nreport: $testsuite.testcase:report \ntime: $testsuite.testcase:time \nclassname: $testsuite.testcase:classname \nstatus: $testsuite.testcase:status \", \"packageName\": \"$testsuite:package\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]"//uft
-        };
-
 		if (!validateBuildConfig()) {
 			logger.println("Cannot Proceed. Please verify the job configuration");
 			return false;
@@ -141,6 +126,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             ZephyrConfigModel zephyrConfigModel = new ZephyrConfigModel();
             zephyrConfigModel.setZephyrProjectId(Long.parseLong(getProjectKey()));
             zephyrConfigModel.setReleaseId(Long.parseLong(getReleaseKey()));
+            zephyrConfigModel.setParserTemplateId(Long.parseLong(getParserTemplateKey()));
+            zephyrConfigModel.setJsonParserTemplate(parserTemplateService.getParserTemplateById(zephyrConfigModel.getParserTemplateId()).getJsonTemplate());
 
             if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
                 zephyrConfigModel.setCycleId(NEW_CYCLE_KEY_IDENTIFIER);
@@ -159,7 +146,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             zephyrConfigModel.setCreatePackage(isCreatePackage());
             zephyrConfigModel.setResultXmlFilePath(getResultXmlFilePath());
-            zephyrConfigModel.setParserIndex(Long.parseLong(getParserIndex()));
 
             zephyrConfigModel.setBuilNumber(number);
 
@@ -187,7 +173,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             List<String> xmlFiles = new ArrayList<>();
 
-            if(Objects.equals(parserIndex, eggplantParserIndex)) {
+            if(Objects.equals(zephyrConfigModel.getParserTemplateId(), eggplantParserIndex)) {
                 //use eggplant parser to find all related xml files
                 EggplantParser eggplantParser = new EggplantParser("unknownSUT", "url");
                 List<EggPlantResult> eggPlantResults = eggplantParser.invoke(new File(resolveRelativeFilePath(resultXmlFilePath)));
@@ -197,9 +183,10 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             }
 
             for(String xmlFilePath : xmlFiles) {
-                dataMapList.addAll(genericParserXML(xmlFilePath, parserTemplateArr[Integer.valueOf(String.valueOf(zephyrConfigModel.getParserIndex()))]));
+                dataMapList.addAll(genericParserXML(xmlFilePath, zephyrConfigModel.getJsonParserTemplate()));
             }
 
+            //zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
             Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList, zephyrConfigModel);
@@ -961,11 +948,11 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         this.resultXmlFilePath = resultXmlFilePath;
     }
 
-    public String getParserIndex() {
-        return parserIndex;
+    public String getParserTemplateKey() {
+        return parserTemplateKey;
     }
 
-    public void setParserIndex(String parserIndex) {
-        this.parserIndex = parserIndex;
+    public void setParserTemplateKey(String parserTemplateKey) {
+        this.parserTemplateKey = parserTemplateKey;
     }
 }

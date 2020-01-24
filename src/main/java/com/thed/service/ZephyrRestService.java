@@ -187,6 +187,14 @@ public interface ZephyrRestService {
     List<Attachment> addAttachment(List<Attachment> attachments) throws URISyntaxException;
 
     /**
+     * Get testStep for for given testcaseVersionId.
+     * @param testcaseVersionId
+     * @return
+     * @throws URISyntaxException
+     */
+    TestStep getTestStep(Long testcaseVersionId) throws URISyntaxException;
+
+    /**
      * Add testStep to single testcase.
      * @param testStep
      * @return

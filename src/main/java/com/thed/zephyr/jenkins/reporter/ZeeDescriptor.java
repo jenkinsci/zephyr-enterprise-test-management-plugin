@@ -395,10 +395,23 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
     public ListBoxModel doFillParserTemplateKeyItems(@QueryParameter String parserTemplateKey) throws URISyntaxException {
         ListBoxModel listBoxModel = new ListBoxModel();
-        List<ParserTemplate> templates = parserTemplateService.getAllParserTemplates();
-        for (ParserTemplate template : templates) {
-            listBoxModel.add(template.getName(), template.getId().toString());
-        }
+
+        //todo: uncomment these changes before release
+//        List<ParserTemplate> templates = parserTemplateService.getAllParserTemplates();
+//        for (ParserTemplate template : templates) {
+//            listBoxModel.add(template.getName(), template.getId().toString());
+//        }
+
+        listBoxModel.add("JUnit", "0");
+        listBoxModel.add("Cucumber", "1");
+        listBoxModel.add("TestNG", "2");
+        listBoxModel.add("Eggplant", "3");
+        listBoxModel.add("Selenium", "4");
+        listBoxModel.add("TestComplete", "5");
+        listBoxModel.add("SoapUI", "6");
+        listBoxModel.add("Tosca", "7");
+        listBoxModel.add("UFT", "8");
+
         return listBoxModel;
     }
 

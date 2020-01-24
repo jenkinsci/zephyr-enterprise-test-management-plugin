@@ -52,8 +52,9 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String UPLOAD_ATTACHMENT_URL = "/flex/upload/document/genericattachment";
     public static final String ADD_ATTACHMENT_URL = "/flex/services/rest/{restVersion}/attachment/list";
 
-    public static final String ADD_TESTSTEP_URL = "/flex/services/rest/{restVersion}/testcase/{testcaseVersionId}/teststep/{tctId}";
-    public static final String ADD_TESTSTEP_RESULT_URL = "/flex/services/rest/{restVersion}/execution/teststepresult/saveorupdate";
+    public static final String GET_TEST_STEP_URL = "/flex/services/rest/{restVersion}/testcase/{testcaseVersionId}/teststep";
+    public static final String ADD_TEST_STEP_URL = "/flex/services/rest/{restVersion}/testcase/{testcaseVersionId}/teststep/{tctId}";
+    public static final String ADD_TEST_STEP_RESULT_URL = "/flex/services/rest/{restVersion}/execution/teststepresult/saveorupdate";
 
     public static final String GET_ALL_PARSER_TEMPLATES_URL = "/flex/services/rest/{restVersion}/parsertemplate/";
     public static final String GET_PARSER_TEMPLATE_BY_ID_URL = "/flex/services/rest/{restVersion}/parsertemplate/{id}";
@@ -397,18 +398,27 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     @Override
+    public TestStep getTestStep(Long testcaseVersionId) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("testcaseVersionId", testcaseVersionId.toString());
+        String url = buildUrl(prepareUrl(GET_TEST_STEP_URL), pathParams, null);
+        String res = httpClientService.getRequest(url);
+        return gson.fromJson(res, TestStep.class);
+    }
+
+    @Override
     public TestStep addTestStep(TestStep testStep) throws URISyntaxException {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("testcaseVersionId", testStep.getTcId().toString());
         pathParams.put("tctId", testStep.getTctId().toString());
-        String url = buildUrl(prepareUrl(ADD_TESTSTEP_URL), pathParams, null);
+        String url = buildUrl(prepareUrl(ADD_TEST_STEP_URL), pathParams, null);
         String res = httpClientService.postRequest(url, gson.toJson(testStep));
         return gson.fromJson(res, TestStep.class);
     }
 
     @Override
     public List<TestStepResult> addTestStepsResults(List<TestStepResult> testStepResults) throws URISyntaxException {
-        String url = buildUrl(prepareUrl(ADD_TESTSTEP_RESULT_URL), null, null);
+        String url = buildUrl(prepareUrl(ADD_TEST_STEP_RESULT_URL), null, null);
         String res = httpClientService.postRequest(url, gson.toJson(testStepResults));
         Type type = new TypeToken<List<TestStepResult>>(){}.getType();
         return gson.fromJson(res, type);

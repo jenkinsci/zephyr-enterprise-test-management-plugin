@@ -75,6 +75,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
     private ExecutionService executionService = new ExecutionServiceImpl();
     private AttachmentService attachmentService = new AttachmentServiceImpl();
     private ParserTemplateService parserTemplateService = new ParserTemplateServiceImpl();
+    private TestStepService testStepService = new TestStepServiceImpl();
 
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
@@ -114,6 +115,18 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         requirementService = new RequirementServiceImpl();
         attachmentService = new AttachmentServiceImpl();
 
+        String[] parserTemplateArr = new String[] {
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//junit
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"system-out\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //cucumber
+                "[{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}]", //testng
+                "[{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \nassertions: $testsuite.testcase:assertions \nsuccesses: $testsuite.testcase:successes \nerrors: $testsuite.testcase:errors \ntime: $testsuite.testcase:time \", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}]}]", //eggplant
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//selenium
+                "[{ \"status\": \"$testsuite.testcase.failure:message\", \"system-out\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure:message\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //testcomplete
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite:name.$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//soapui
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \ntime: $testsuite.testcase:time \ntimestamp: $testsuite.testcase:timestamp \nlog: $testsuite.testcase:log \", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//tosca
+                "[{ \"status\": \"$testsuite.testcase.failure:message\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure:message\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \nreport: $testsuite.testcase:report \ntime: $testsuite.testcase:time \nclassname: $testsuite.testcase:classname \nstatus: $testsuite.testcase:status \", \"packageName\": \"$testsuite:package\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]"//uft
+        };
+
 		if (!validateBuildConfig()) {
 			logger.println("Cannot Proceed. Please verify the job configuration");
 			return false;
@@ -127,7 +140,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             zephyrConfigModel.setZephyrProjectId(Long.parseLong(getProjectKey()));
             zephyrConfigModel.setReleaseId(Long.parseLong(getReleaseKey()));
             zephyrConfigModel.setParserTemplateId(Long.parseLong(getParserTemplateKey()));
-            zephyrConfigModel.setJsonParserTemplate(parserTemplateService.getParserTemplateById(zephyrConfigModel.getParserTemplateId()).getJsonTemplate());
+            String jsonTemplate = parserTemplateArr[(int)zephyrConfigModel.getParserTemplateId()];
+//            zephyrConfigModel.setJsonParserTemplate(parserTemplateService.getParserTemplateById(zephyrConfigModel.getParserTemplateId()).getJsonTemplate());
+            zephyrConfigModel.setJsonParserTemplate(jsonTemplate);
 
             if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
                 zephyrConfigModel.setCycleId(NEW_CYCLE_KEY_IDENTIFIER);
@@ -280,6 +295,11 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                         TCRCatalogTreeTestcase tcrTestCase = caseEntry.getKey();
 
                         //testStepResult handled here
+                        if(tcrTestCase.getTestcase().getTestSteps() == null && testcaseValueMap.containsKey("stepList")) {
+                            //testcase contains no teststeps but we have parsed from xml, this testcase existed before and the teststeps weren't fetched, fetching now
+                            tcrTestCase.getTestcase().setTestSteps(testStepService.getTestStep(tcrTestCase.getTestcase().getId()));
+                        }
+
                         if(tcrTestCase.getTestcase().getTestSteps() != null && tcrTestCase.getTestcase().getTestSteps().getSteps() != null) {
                             List<Map<String, String>> stepList = (List<Map<String, String>>)testcaseValueMap.get("stepList");
 
@@ -322,6 +342,10 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             //todo:handle exceptions gracefully
             e.printStackTrace();
             logger.printf("Error uploading test results to Zephyr");
+            logger.printf(e.getMessage()+"\n");
+            for(StackTraceElement stackTraceElement : e.getStackTrace()) {
+                logger.printf(stackTraceElement.toString()+"\n");
+            }
             return false;
         }
 

@@ -35,6 +35,8 @@ import java.util.*;
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.types.FileSet;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
@@ -116,15 +118,15 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         attachmentService = new AttachmentServiceImpl();
 
         String[] parserTemplateArr = new String[] {
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//junit
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"system-out\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //cucumber
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure\", \"statusPassAttachmentText\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//junit
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"system-out\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure\", \"statusPassAttachmentText\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //cucumber
                 "[{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}]", //testng
-                "[{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \nassertions: $testsuite.testcase:assertions \nsuccesses: $testsuite.testcase:successes \nerrors: $testsuite.testcase:errors \ntime: $testsuite.testcase:time \", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}]}]", //eggplant
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//selenium
-                "[{ \"status\": \"$testsuite.testcase.failure:message\", \"system-out\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure:message\", \"statusPassAttachment\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //testcomplete
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite:name.$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//soapui
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \ntime: $testsuite.testcase:time \ntimestamp: $testsuite.testcase:timestamp \nlog: $testsuite.testcase:log \", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//tosca
-                "[{ \"status\": \"$testsuite.testcase.failure:message\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachment\": \"$testsuite.testcase.failure:message\", \"statusPassAttachment\": \"name: $testsuite.testcase:name \nreport: $testsuite.testcase:report \ntime: $testsuite.testcase:time \nclassname: $testsuite.testcase:classname \nstatus: $testsuite.testcase:status \", \"packageName\": \"$testsuite:package\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]"//uft
+                "[{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"statusFailAttachmentFileIncludes\": \"*.txt, *.png\", \"statusPassAttachmentFileIncludes\": \"*.txt\", \"statusPassAttachmentText\": \"name: $testsuite.testcase:name \nassertions: $testsuite.testcase:assertions \nsuccesses: $testsuite.testcase:successes \nerrors: $testsuite.testcase:errors \ntime: $testsuite.testcase:time \", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}]}]", //eggplant
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure\", \"statusPassAttachmentText\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//selenium
+                "[{ \"status\": \"$testsuite.testcase.failure:message\", \"system-out\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure:message\", \"statusPassAttachmentText\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //testcomplete
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure\", \"statusPassAttachmentText\": \"name: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite:name.$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//soapui
+                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure\", \"statusPassAttachmentText\": \"name: $testsuite.testcase:name \ntime: $testsuite.testcase:time \ntimestamp: $testsuite.testcase:timestamp \nlog: $testsuite.testcase:log \", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//tosca
+                "[{ \"status\": \"$testsuite.testcase.failure:message\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure:message\", \"statusPassAttachmentText\": \"name: $testsuite.testcase:name \nreport: $testsuite.testcase:report \ntime: $testsuite.testcase:time \nclassname: $testsuite.testcase:classname \nstatus: $testsuite.testcase:status \", \"packageName\": \"$testsuite:package\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]"//uft
         };
 
 		if (!validateBuildConfig()) {
@@ -186,19 +188,30 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             List<Map> dataMapList = new ArrayList<>();
 
-            List<String> xmlFiles = new ArrayList<>();
+            Set<String> xmlFiles = new HashSet<>();
 
-            if(Objects.equals(zephyrConfigModel.getParserTemplateId(), eggplantParserIndex)) {
-                //use eggplant parser to find all related xml files
-                EggplantParser eggplantParser = new EggplantParser("unknownSUT", "url");
-                List<EggPlantResult> eggPlantResults = eggplantParser.invoke(new File(resolveRelativeFilePath(resultXmlFilePath)));
-                xmlFiles.addAll(getTestcasesForEggplant(eggPlantResults));
-            } else {
-                xmlFiles.add(resolveRelativeFilePath(resultXmlFilePath));
+            List<String> resultFilePathList = getAllIncludedFilePathList(getWorkspacePath(), resultXmlFilePath);
+
+            for(String resultFilePath : resultFilePathList) {
+                if(Objects.equals(zephyrConfigModel.getParserTemplateId(), eggplantParserIndex)) {
+                    //use eggplant parser to find all related xml files
+                    EggplantParser eggplantParser = new EggplantParser("unknownSUT", "url");
+                    List<EggPlantResult> eggPlantResults = eggplantParser.invoke(new File(resultFilePath));
+                    xmlFiles.addAll(getTestcasesForEggplant(eggPlantResults));
+                } else {
+                    xmlFiles.add(resultFilePath);
+                }
             }
 
             for(String xmlFilePath : xmlFiles) {
-                dataMapList.addAll(genericParserXML(xmlFilePath, zephyrConfigModel.getJsonParserTemplate()));
+
+                List<Map> currentDataMapList = genericParserXML(xmlFilePath, zephyrConfigModel.getJsonParserTemplate());
+                File file = new File(xmlFilePath);
+
+                for(Map dataMap : currentDataMapList) {
+                    dataMap.put("basePath", file.getParent());
+                }
+                dataMapList.addAll(currentDataMapList);
             }
 
             //zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
@@ -773,13 +786,26 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 }
             }
 
+            if(dataMap.containsKey("basePath")) {
+                String basePath = dataMap.get("basePath").toString();
+                if(status && dataMap.containsKey("statusPassAttachmentFileIncludes")) {
+                    String includesStr = dataMap.get("statusPassAttachmentFileIncludes").toString();
+                    attachments.addAll(getAllIncludedFilePathList(basePath, includesStr));
+                }
+
+                if(!status && dataMap.containsKey("statusFailAttachmentFileIncludes")) {
+                    String includesStr = dataMap.get("statusFailAttachmentFileIncludes").toString();
+                    attachments.addAll(getAllIncludedFilePathList(basePath, includesStr));
+                }
+            }
+
             Map<String, Object> valueMap = new HashMap<>();
             valueMap.put("mapTestcaseToRequirement", mapTestcaseToRequirement);
             valueMap.put("status", status);
             valueMap.put("attachments", attachments);
 
-            if(status && dataMap.containsKey("statusPassAttachment")) {
-                String successAttachmentStr = dataMap.get("statusPassAttachment").toString();
+            if(status && dataMap.containsKey("statusPassAttachmentText")) {
+                String successAttachmentStr = dataMap.get("statusPassAttachmentText").toString();
                 if(!StringUtils.isEmpty(successAttachmentStr)) {
                     GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
                     genericAttachmentDTO.setFileName("success.txt");
@@ -790,8 +816,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 }
             }
 
-            if(!status && dataMap.containsKey("statusFailAttachment")) {
-                String failureAttachmentStr = dataMap.get("statusFailAttachment").toString();
+            if(!status && dataMap.containsKey("statusFailAttachmentText")) {
+                String failureAttachmentStr = dataMap.get("statusFailAttachmentText").toString();
                 if(!StringUtils.isEmpty(failureAttachmentStr)) {
                     GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
                     genericAttachmentDTO.setFileName("failure.txt");
@@ -901,6 +927,23 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
     private String resolveRelativeFilePath(String resultXmlFilePath) {
         return Jenkins.get().getWorkspaceFor(Jenkins.get().getItem(jenkinsProjectName)) + File.separator + resultXmlFilePath;
+    }
+
+    private String getWorkspacePath() {
+        return Jenkins.get().getWorkspaceFor(Jenkins.get().getItem(jenkinsProjectName)).toString();
+    }
+
+    private List<String> getAllIncludedFilePathList(String basePath, String includes) {
+        FileSet fileSet = new FileSet();
+        fileSet.setIncludes(includes);
+        fileSet.setDir(new File(basePath));
+        fileSet.setProject(new Project());
+
+        List<String> filePathList = new ArrayList<>();
+        for(String path : fileSet.getDirectoryScanner().getIncludedFiles()) {
+            filePathList.add(basePath + File.separator + path);
+        }
+        return filePathList;
     }
 
 	@Override

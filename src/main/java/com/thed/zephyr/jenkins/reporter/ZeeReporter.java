@@ -147,6 +147,17 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		int number = build.getNumber();
 
         try {
+
+            ZephyrInstance zephyrInstance = getZephyrInstance(getServerAddress());
+
+            //login to zephyr server
+            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
+            boolean loggedIn = userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
+            if(!loggedIn) {
+                logger.println("Authorization for zephyr server failed.");
+                return false;
+            }
+
             ZephyrConfigModel zephyrConfigModel = new ZephyrConfigModel();
             zephyrConfigModel.setZephyrProjectId(Long.parseLong(getProjectKey()));
             zephyrConfigModel.setReleaseId(Long.parseLong(getReleaseKey()));
@@ -174,17 +185,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             zephyrConfigModel.setResultXmlFilePath(getResultXmlFilePath());
 
             zephyrConfigModel.setBuilNumber(number);
-
-            ZephyrInstance zephyrInstance = getZephyrInstance(getServerAddress());
             zephyrConfigModel.setSelectedZephyrServer(zephyrInstance);
-
-            //login to zephyr server
-            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
-            boolean loggedIn = userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
-            if(!loggedIn) {
-                logger.println("Authorization for zephyr server failed.");
-                return false;
-            }
 
             //creating Map<testcaseName, passed>, Set<packageName> and set to zephyrConfigModel
             boolean prepareZephyrTests = prepareZephyrTests(build, zephyrConfigModel);
@@ -317,8 +318,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                         TCRCatalogTreeTestcase tcrTestCase = caseEntry.getKey();
 
                         //testStepResult handled here
-                        if(tcrTestCase.getTestcase().getTestSteps() == null && testcaseValueMap.containsKey("stepList")) {
-                            //testcase contains no teststeps but we have parsed from xml, this testcase existed before and the teststeps weren't fetched, fetching now
+                        if(testcaseValueMap.containsKey("stepList")) {
+                            //we have parsed steps from xml, this testcase existed before and the teststeps weren't fetched, fetching now
                             tcrTestCase.getTestcase().setTestSteps(testStepService.getTestStep(tcrTestCase.getTestcase().getId()));
                         }
 
@@ -345,6 +346,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                                         }
                                         testStepResult.setStatus(Long.parseLong(status));
                                         testStepResultList.add(testStepResult);
+                                        stepList.remove(stepMap);
+                                        break;
                                     }
                                 }
                             }

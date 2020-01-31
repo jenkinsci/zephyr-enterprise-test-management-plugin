@@ -11,6 +11,14 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY_IDENTI
 
 import com.google.gson.Gson;
 import com.thed.model.*;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.thed.model.CyclePhase;
+import com.thed.model.ReleaseTestSchedule;
+import com.thed.model.TCRCatalogTreeDTO;
+import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import com.thed.utils.EggplantParser;
@@ -19,6 +27,7 @@ import com.thed.utils.ZephyrConstants;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.*;
+import hudson.security.ACL;
 import hudson.tasks.*;
 import hudson.tasks.junit.*;
 import hudson.tasks.test.AggregatedTestResultAction;
@@ -138,13 +147,24 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		int number = build.getNumber();
 
         try {
+
+            ZephyrInstance zephyrInstance = getZephyrInstance(getServerAddress());
+
+            //login to zephyr server
+            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
+            boolean loggedIn = userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
+            if(!loggedIn) {
+                logger.println("Authorization for zephyr server failed.");
+                return false;
+            }
+
             ZephyrConfigModel zephyrConfigModel = new ZephyrConfigModel();
             zephyrConfigModel.setZephyrProjectId(Long.parseLong(getProjectKey()));
             zephyrConfigModel.setReleaseId(Long.parseLong(getReleaseKey()));
             zephyrConfigModel.setParserTemplateId(Long.parseLong(getParserTemplateKey()));
-            String jsonTemplate = parserTemplateArr[(int)zephyrConfigModel.getParserTemplateId()];
-//            zephyrConfigModel.setJsonParserTemplate(parserTemplateService.getParserTemplateById(zephyrConfigModel.getParserTemplateId()).getJsonTemplate());
-            zephyrConfigModel.setJsonParserTemplate(jsonTemplate);
+//            String jsonTemplate = parserTemplateArr[(int)zephyrConfigModel.getParserTemplateId()];
+            zephyrConfigModel.setJsonParserTemplate(parserTemplateService.getParserTemplateById(zephyrConfigModel.getParserTemplateId()).getJsonTemplate());
+//            zephyrConfigModel.setJsonParserTemplate(jsonTemplate);
 
             if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
                 zephyrConfigModel.setCycleId(NEW_CYCLE_KEY_IDENTIFIER);
@@ -165,17 +185,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             zephyrConfigModel.setResultXmlFilePath(getResultXmlFilePath());
 
             zephyrConfigModel.setBuilNumber(number);
-
-            ZephyrInstance zephyrInstance = getZephyrInstance(getServerAddress());
             zephyrConfigModel.setSelectedZephyrServer(zephyrInstance);
-
-            //login to zephyr server
-
-            boolean loggedIn = userService.login(zephyrInstance.getServerAddress(), zephyrInstance.getUsername(), zephyrInstance.getPassword());
-            if(!loggedIn) {
-                logger.println("Authorization for zephyr server failed.");
-                return false;
-            }
 
             //creating Map<testcaseName, passed>, Set<packageName> and set to zephyrConfigModel
             boolean prepareZephyrTests = prepareZephyrTests(build, zephyrConfigModel);
@@ -308,8 +318,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                         TCRCatalogTreeTestcase tcrTestCase = caseEntry.getKey();
 
                         //testStepResult handled here
-                        if(tcrTestCase.getTestcase().getTestSteps() == null && testcaseValueMap.containsKey("stepList")) {
-                            //testcase contains no teststeps but we have parsed from xml, this testcase existed before and the teststeps weren't fetched, fetching now
+                        if(testcaseValueMap.containsKey("stepList")) {
+                            //we have parsed steps from xml, this testcase existed before and the teststeps weren't fetched, fetching now
                             tcrTestCase.getTestcase().setTestSteps(testStepService.getTestStep(tcrTestCase.getTestcase().getId()));
                         }
 
@@ -336,6 +346,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                                         }
                                         testStepResult.setStatus(Long.parseLong(status));
                                         testStepResultList.add(testStepResult);
+                                        stepList.remove(stepMap);
+                                        break;
                                     }
                                 }
                             }
@@ -355,7 +367,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             //todo:handle exceptions gracefully
             e.printStackTrace();
             logger.printf("Error uploading test results to Zephyr");
-            logger.printf(e.getMessage()+"\n");
+            logger.printf("\n"+e.getMessage()+"\n");
             for(StackTraceElement stackTraceElement : e.getStackTrace()) {
                 logger.printf(stackTraceElement.toString()+"\n");
             }
@@ -685,6 +697,17 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		}
 		return noOfCases;
 	}
+
+    private StandardUsernamePasswordCredentials getCredentialsFromId(String credentialsId) {
+        Iterable<StandardUsernamePasswordCredentials> credentials = CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class,
+                Jenkins.getInstance(),
+                ACL.SYSTEM,
+                Collections.<DomainRequirement>emptyList());
+
+        return CredentialsMatchers.firstOrNull(
+                credentials,
+                CredentialsMatchers.withId(credentialsId));
+    }
 
     public Set<String> getPackageNamesFromXML(List<Map> dataMapList) throws ParserConfigurationException, SAXException, IOException {
         Set<String> packageNames = new HashSet<>();

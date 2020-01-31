@@ -55,16 +55,23 @@ connection with Zephyr Server(s). Follow the below steps
 
 ![](docs/images/worddav13d2d1b859c6cd1c72c17270dfe84a8b.png)
 
--   Enter Zephyr Server URL and user credentials. Note that the user
+-   Enter Zephyr Server URL and add credentials by clicking on add. Note that the user
     credentials must be that of Zephyr "Test Manager" or "Test Lead".
-    Click on "Test Configuration" to validate connection to Zephyr
+
+![](docs/images/global_config_add_credentials.png)
+
+-   Select credentials to be used from the drop-down.
+
+![](docs/images/global_config_select.png)
+
+-   Click on "Test Configuration" to validate connection to Zephyr
     Server.
 
-![](docs/images/worddav2b368b865651a19e5fd65b93a278a6b9.png)
+![](docs/images/global_config_test.png)
 
 -   Click on "Save" button to save the configuration changes.
 
-![](docs/images/worddava93e3befecbf4a5ffd2b07e58fc40423.png)
+![](docs/images/global_config_save.png)
 
 # **Configuring a standard Jenkins job**
 

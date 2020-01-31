@@ -188,11 +188,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		}
 
         try {
-
-            ZephyrInstance zephyrInstance = fetchZephyrInstance(serverAddress);
-            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
-            userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
-
+            loginUser(serverAddress);
             List<com.thed.model.Project> projects = projectService.getAllProjectsForCurrentUser();
             for (com.thed.model.Project project : projects) {
                 if(project.getGlobalProject() == Boolean.FALSE) {
@@ -372,14 +368,31 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		return listBoxModel;
 	}
 
-    public ListBoxModel doFillParserTemplateKeyItems(@QueryParameter String parserTemplateKey) throws URISyntaxException {
+    public ListBoxModel doFillParserTemplateKeyItems(@QueryParameter String serverAddress) throws URISyntaxException {
         ListBoxModel listBoxModel = new ListBoxModel();
 
-        //todo: uncomment these changes before release
-        List<ParserTemplate> templates = parserTemplateService.getAllParserTemplates();
-        for (ParserTemplate template : templates) {
-            listBoxModel.add(template.getName(), template.getId().toString());
+        if (StringUtils.isBlank(serverAddress)) {
+            ListBoxModel mi = fetchServerList(serverAddress);
+            serverAddress = mi.get(0).value;
         }
+        if (serverAddress.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
+                || (this.zephyrInstances.size() == 0)) {
+            listBoxModel.add(ADD_ZEPHYR_GLOBAL_CONFIG);
+            return listBoxModel;
+        }
+
+        //todo: uncomment these changes before release
+        try {
+            loginUser(serverAddress);
+            List<ParserTemplate> templates = parserTemplateService.getAllParserTemplates();
+            for (ParserTemplate template : templates) {
+                listBoxModel.add(template.getName(), template.getId().toString());
+            }
+        } catch (Exception e) {
+            //Todo: handle exceptions gracefully
+            e.printStackTrace();
+        }
+
 
 //        listBoxModel.add("JUnit", "0");
 //        listBoxModel.add("Cucumber", "1");
@@ -392,6 +405,12 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 //        listBoxModel.add("UFT", "8");
 
         return listBoxModel;
+    }
+
+    private void loginUser(String serverAddress) throws URISyntaxException {
+        ZephyrInstance zephyrInstance = fetchZephyrInstance(serverAddress);
+        StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
+        userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
     }
 
 }

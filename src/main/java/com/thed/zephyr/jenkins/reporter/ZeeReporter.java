@@ -556,6 +556,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                     if(tcrCatalogTreeTestcase.getTestcase().getName().equals(testcase.getName())) {
                         //this testcase already exists in this tree, no need to create
                         existingTestcases.add(tcrCatalogTreeTestcase);
+                        tcrTestcases.remove(tcrCatalogTreeTestcase);
                         continue testcaseLoop;
                     }
                 }
@@ -724,7 +725,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
     public Map<TCRCatalogTreeTestcase, Map<String, Object>> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList, ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
-        Map<String, Map<String, Object>> testcaseNameValueMap = new HashMap<>();
+        List<Map<String, Map<String, Object>>> testcaseNameValueMapList = new ArrayList<>();
 
         dataMapLoop: for (Map dataMap : dataMapList) {
 
@@ -823,6 +824,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             }
 
             Map<String, Object> valueMap = new HashMap<>();
+            valueMap.put("treeId", treeDTO.getId());
             valueMap.put("mapTestcaseToRequirement", mapTestcaseToRequirement);
             valueMap.put("status", status);
             valueMap.put("attachments", attachments);
@@ -861,35 +863,41 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 }
             }
 
+            Map<String, Map<String, Object>> testcaseNameValueMap = new HashMap<>();
             testcaseNameValueMap.put(testcase.getName(), valueMap);
+            testcaseNameValueMapList.add(testcaseNameValueMap);
         }
         List<TCRCatalogTreeTestcase> tcrList =  createTestcasesWithoutDuplicate(treeIdTestcaseMap);
         Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrTestcaseStatusMap = new HashMap<>();
         List<MapTestcaseToRequirement> mapTestcaseToRequirements = new ArrayList<>();
-        loop1 : for (Map.Entry<String, Map<String, Object>> entry : testcaseNameValueMap.entrySet()) {
-            for(TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrList) {
-                if(tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey())) {
-                    //same testcase, add id and status to map
-                    Map<String, Object> statusMap = new HashMap<>();
-                    statusMap.put("status", entry.getValue().get("status"));
+        loop1 : for (Map<String, Map<String, Object>> map : testcaseNameValueMapList) {
+            for(Map.Entry<String, Map<String, Object>> entry : map.entrySet()) {
+                for(TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrList) {
+                    Long treeId = (Long) entry.getValue().get("treeId");
+                    if (tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey()) && tcrCatalogTreeTestcase.getTcrCatalogTreeId().equals(treeId)) {
+                        //same testcase, add id and status to map
+                        Map<String, Object> statusMap = new HashMap<>();
+                        statusMap.put("status", entry.getValue().get("status"));
 
-                    MapTestcaseToRequirement mapTestcaseToRequirement = (MapTestcaseToRequirement)entry.getValue().get("mapTestcaseToRequirement");
-                    mapTestcaseToRequirement.setTestcaseId(tcrCatalogTreeTestcase.getTestcase().getId());
-                    mapTestcaseToRequirements.add(mapTestcaseToRequirement);
+                        MapTestcaseToRequirement mapTestcaseToRequirement = (MapTestcaseToRequirement) entry.getValue().get("mapTestcaseToRequirement");
+                        mapTestcaseToRequirement.setTestcaseId(tcrCatalogTreeTestcase.getTestcase().getId());
+                        mapTestcaseToRequirements.add(mapTestcaseToRequirement);
 
-                    if(entry.getValue().containsKey("attachments")) {
-                        statusMap.put("attachments", entry.getValue().get("attachments"));
+                        if (entry.getValue().containsKey("attachments")) {
+                            statusMap.put("attachments", entry.getValue().get("attachments"));
+                        }
+
+                        if (entry.getValue().containsKey("statusAttachment")) {
+                            statusMap.put("statusAttachment", entry.getValue().get("statusAttachment"));
+                        }
+
+                        if (entry.getValue().containsKey("stepList")) {
+                            statusMap.put("stepList", entry.getValue().get("stepList"));
+                        }
+                        tcrTestcaseStatusMap.put(tcrCatalogTreeTestcase, statusMap);
+                        tcrList.remove(tcrCatalogTreeTestcase);
+                        continue loop1;
                     }
-
-                    if(entry.getValue().containsKey("statusAttachment")) {
-                        statusMap.put("statusAttachment", entry.getValue().get("statusAttachment"));
-                    }
-
-                    if(entry.getValue().containsKey("stepList")) {
-                        statusMap.put("stepList", entry.getValue().get("stepList"));
-                    }
-                    tcrTestcaseStatusMap.put(tcrCatalogTreeTestcase, statusMap);
-                    continue loop1;
                 }
             }
         }

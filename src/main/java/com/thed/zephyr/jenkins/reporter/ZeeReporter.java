@@ -151,9 +151,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             zephyrConfigModel.setZephyrProjectId(Long.parseLong(getProjectKey()));
             zephyrConfigModel.setReleaseId(Long.parseLong(getReleaseKey()));
             zephyrConfigModel.setParserTemplateId(Long.parseLong(getParserTemplateKey()));
-            String jsonTemplate = parserTemplateArr[(int)zephyrConfigModel.getParserTemplateId()];
-//            zephyrConfigModel.setJsonParserTemplate(parserTemplateService.getParserTemplateById(zephyrConfigModel.getParserTemplateId()).getJsonTemplate());
-            zephyrConfigModel.setJsonParserTemplate(jsonTemplate);
+//            String jsonTemplate = parserTemplateArr[(int)zephyrConfigModel.getParserTemplateId()];
+            zephyrConfigModel.setJsonParserTemplate(parserTemplateService.getParserTemplateById(zephyrConfigModel.getParserTemplateId()).getJsonTemplate());
+//            zephyrConfigModel.setJsonParserTemplate(jsonTemplate);
 
             if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
                 zephyrConfigModel.setCycleId(NEW_CYCLE_KEY_IDENTIFIER);
@@ -364,7 +364,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             //todo:handle exceptions gracefully
             e.printStackTrace();
             logger.printf("Error uploading test results to Zephyr");
-            logger.printf(e.getMessage()+"\n");
+            logger.printf("\n"+e.getMessage()+"\n");
             for(StackTraceElement stackTraceElement : e.getStackTrace()) {
                 logger.printf(stackTraceElement.toString()+"\n");
             }

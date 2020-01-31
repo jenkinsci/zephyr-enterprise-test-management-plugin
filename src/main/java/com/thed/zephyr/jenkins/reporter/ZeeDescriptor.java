@@ -8,10 +8,16 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NAME_POST_BUILD_ACTI
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
 
 import com.thed.model.ParserTemplate;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import hudson.Extension;
-import hudson.model.AbstractProject;
+import hudson.model.*;
+import hudson.security.ACL;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
@@ -28,6 +34,7 @@ import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -106,12 +113,13 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
         try {
             String server = URLValidator.validateURL(jObj.getString("serverAddress").trim());
-            String user = jObj.getString("username").trim();
-            String pass = jObj.getString("password").trim();
+            String credentialsId = jObj.getString("credentialsId").trim();
+            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(credentialsId);
+            String user = upCredentials.getUsername();
+            String pass = upCredentials.getPassword().getPlainText();
 
             zephyrInstance.setServerAddress(server);
-            zephyrInstance.setUsername(user);
-            zephyrInstance.setPassword(pass);
+            zephyrInstance.setCredentialsId(credentialsId);
 
             boolean zephyrServerValidation = userService.verifyCredentials(server, user, pass);
             if (zephyrServerValidation) {
@@ -128,43 +136,16 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		return NAME_POST_BUILD_ACTION;
 	}
 
-    @POST
-	public FormValidation doTestConnection(
-			@QueryParameter String serverAddress,
-			@QueryParameter String username, @QueryParameter String password) {
+    private StandardUsernamePasswordCredentials getCredentialsFromId(String credentialsId) {
+        Iterable<StandardUsernamePasswordCredentials> credentials = CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class,
+                Jenkins.getInstance(),
+                ACL.SYSTEM,
+                Collections.<DomainRequirement>emptyList());
 
-        Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
-
-		if (StringUtils.isBlank(serverAddress)) {
-			return FormValidation.error("Please enter the server name");
-		}
-
-		if (StringUtils.isBlank(username)) {
-			return FormValidation.error("Please enter the username");
-		}
-
-		if (StringUtils.isBlank(password)) {
-			return FormValidation.error("Please enter the password");
-		}
-
-		if (!(serverAddress.trim().startsWith("https://") || serverAddress
-				.trim().startsWith("http://"))) {
-			return FormValidation.error("Incorrect server address format");
-		}
-
-		String zephyrURL = URLValidator.validateURL(serverAddress);
-
-        try {
-            Boolean verifyCredentials = userService.verifyCredentials(serverAddress, username, password);
-            if(!verifyCredentials) {
-                return FormValidation.error("Username or password is incorrect.");
-            }
-        } catch (Exception e) {
-            return FormValidation.error("Error occurred while verifying credentials. Please try again later.");
-        }
-
-		return FormValidation.ok("Connection to Zephyr has been validated");
-	}
+        return CredentialsMatchers.firstOrNull(
+                credentials,
+                CredentialsMatchers.withId(credentialsId));
+    }
 
 	public ListBoxModel doFillServerAddressItems(
 			@QueryParameter String serverAddress) {
@@ -209,7 +190,8 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
         try {
 
             ZephyrInstance zephyrInstance = fetchZephyrInstance(serverAddress);
-            userService.login(zephyrInstance.getServerAddress(), zephyrInstance.getUsername(), zephyrInstance.getPassword());
+            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
+            userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
 
             List<com.thed.model.Project> projects = projectService.getAllProjectsForCurrentUser();
             for (com.thed.model.Project project : projects) {
@@ -233,17 +215,14 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		
 		ZephyrInstance zephyrInstance = new ZephyrInstance();
 		zephyrInstance.setServerAddress(serverAddress);
-		String tempUserName = null;
-		String tempPassword = null;
+        String tempCredentialsId = null;
 
 		for (ZephyrInstance z : zephyrInstances) {
 			if (z.getServerAddress().trim().equals(serverAddress)) {
-				tempUserName = z.getUsername();
-				tempPassword = z.getPassword();
+                tempCredentialsId = z.getCredentialsId();
 			}
 		}
-		zephyrInstance.setUsername(tempUserName);
-		zephyrInstance.setPassword(tempPassword);
+        zephyrInstance.setCredentialsId(tempCredentialsId);
 		return zephyrInstance;
 		
 		

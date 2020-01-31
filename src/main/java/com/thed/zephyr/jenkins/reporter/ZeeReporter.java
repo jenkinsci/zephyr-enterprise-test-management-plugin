@@ -11,6 +11,14 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY_IDENTI
 
 import com.google.gson.Gson;
 import com.thed.model.*;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.thed.model.CyclePhase;
+import com.thed.model.ReleaseTestSchedule;
+import com.thed.model.TCRCatalogTreeDTO;
+import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import com.thed.utils.EggplantParser;
@@ -19,6 +27,7 @@ import com.thed.utils.ZephyrConstants;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.*;
+import hudson.security.ACL;
 import hudson.tasks.*;
 import hudson.tasks.junit.*;
 import hudson.tasks.test.AggregatedTestResultAction;
@@ -170,8 +179,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             zephyrConfigModel.setSelectedZephyrServer(zephyrInstance);
 
             //login to zephyr server
-
-            boolean loggedIn = userService.login(zephyrInstance.getServerAddress(), zephyrInstance.getUsername(), zephyrInstance.getPassword());
+            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
+            boolean loggedIn = userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
             if(!loggedIn) {
                 logger.println("Authorization for zephyr server failed.");
                 return false;
@@ -685,6 +694,17 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		}
 		return noOfCases;
 	}
+
+    private StandardUsernamePasswordCredentials getCredentialsFromId(String credentialsId) {
+        Iterable<StandardUsernamePasswordCredentials> credentials = CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class,
+                Jenkins.getInstance(),
+                ACL.SYSTEM,
+                Collections.<DomainRequirement>emptyList());
+
+        return CredentialsMatchers.firstOrNull(
+                credentials,
+                CredentialsMatchers.withId(credentialsId));
+    }
 
     public Set<String> getPackageNamesFromXML(List<Map> dataMapList) throws ParserConfigurationException, SAXException, IOException {
         Set<String> packageNames = new HashSet<>();

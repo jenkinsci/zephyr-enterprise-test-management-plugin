@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  */
 public class ParserUtil {
 
-    public static final String parserVariablePattern = "\\$[-.:\\w]*[^.:$\\s]";
+    public static final String parserVariablePattern = "\\$\\{[^${}]*}";
 
     public Document getXMLDoc(String filePath) throws ParserConfigurationException, IOException, SAXException {
         File xmlFile = new File(filePath);
@@ -173,7 +173,7 @@ public class ParserUtil {
                 List<String> xmlPathVarList = getVariablesFromString(value.toString());
                 String resultValue = value.toString();
                 for (String xmlPathVar : xmlPathVarList) {
-                    if(xmlPathVar.equals("$"+xmlLink.getXMLPath())) {
+                    if(xmlPathVar.equals("${"+xmlLink.getXMLPath()+"}")) {
                         if(element == null) {
                             resultValue = resultValue.replace(xmlPathVar, "");
                         } else {
@@ -181,7 +181,7 @@ public class ParserUtil {
                             changed = true;
                         }
 
-                    } else if(xmlPathVar.startsWith("$" + xmlLink.getXMLPath() + ":")) {
+                    } else if(xmlPathVar.startsWith("${" + xmlLink.getXMLPath() + ":") && xmlPathVar.endsWith("}")) {
                         if(element == null) {
                             resultValue = resultValue.replace(xmlPathVar, "");
                         } else {
@@ -222,7 +222,7 @@ public class ParserUtil {
     }
 
     /**
-     * For xmlPath like 'testsuite.testcase:name', returns 'name'
+     * For xmlPath like '${testsuite.testcase:name}', returns 'name'
      * @param xmlPath
      * @return
      */
@@ -231,17 +231,18 @@ public class ParserUtil {
         if(values.length == 1) {
             return null;
         }
-        return values[values.length - 1];
+        String value = values[values.length - 1];
+        return value.substring(0, value.length()-1);
     }
 
     /**
-     * For xmlPath like '$testsuite.testcase:name', returns 'testsuite.testcase'
+     * For xmlPath like '${testsuite.testcase:name}', returns 'testsuite.testcase'
      * @param xmlPath
      * @return
      */
     String getXmlPathVar(String xmlPath) {
         String values[] = xmlPath.split(":");
-        return values[0].replace("$", "");
+        return values[0].replace("$", "").replace("{", "").replace("}", "");
     }
 
 

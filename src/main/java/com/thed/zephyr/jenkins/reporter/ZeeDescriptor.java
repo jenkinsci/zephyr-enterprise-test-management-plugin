@@ -393,17 +393,6 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
             e.printStackTrace();
         }
 
-
-//        listBoxModel.add("JUnit", "0");
-//        listBoxModel.add("Cucumber", "1");
-//        listBoxModel.add("TestNG", "2");
-//        listBoxModel.add("Eggplant", "3");
-//        listBoxModel.add("Selenium", "4");
-//        listBoxModel.add("TestComplete", "5");
-//        listBoxModel.add("SoapUI", "6");
-//        listBoxModel.add("Tosca", "7");
-//        listBoxModel.add("UFT", "8");
-
         return listBoxModel;
     }
 

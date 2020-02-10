@@ -181,6 +181,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         queryParams.add(new BasicNameValuePair("order", "id"));
         queryParams.add(new BasicNameValuePair("isascorder", "true"));
         queryParams.add(new BasicNameValuePair("isVisible", "false"));
+        queryParams.add(new BasicNameValuePair("pagesize", "0"));
 
         String url = buildUrl(prepareUrl(GET_ALL_RELEASES_FOR_PROJECT_ID_URL), pathParams, queryParams);
 

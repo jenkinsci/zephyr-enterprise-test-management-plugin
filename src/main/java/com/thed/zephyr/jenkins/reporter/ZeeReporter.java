@@ -126,18 +126,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         requirementService = new RequirementServiceImpl();
         attachmentService = new AttachmentServiceImpl();
 
-        String[] parserTemplateArr = new String[] {
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure\", \"statusPassAttachmentText\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//junit
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"stepText\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure\", \"statusPassAttachmentText\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //cucumber
-                "[{ \"status\": \"$testng-results.suite.test.class.test-method:status\", \"statusExistPass\": true, \"statusString\": \"PASS\", \"statusFailAttachmentText\": \"$testng-results.suite.test.class.test-method.exception\", \"statusPassAttachmentText\": \"status: $testng-results.suite.test.class.test-method:status \nsignature: $testng-results.suite.test.class.test-method:signature \nname: $testng-results.suite.test.class.test-method:name \nis-config: $testng-results.suite.test.class.test-method:is-config \nduration-ms: $testng-results.suite.test.class.test-method:duration-ms \nstarted-at: $testng-results.suite.test.class.test-method:started-at \nfinished-at: $testng-results.suite.test.class.test-method:finished-at\", \"packageName\": \"$testng-results.suite.test.class:name\", \"skipTestcaseNames\": \"afterMethod,beforeMethod,afterClass,beforeClass,afterSuite,beforeSuite\", \"testcase\" : {\"name\": \"$testng-results.suite.test.class.test-method:name\"}}]", //testng
-                "[{ \"status\": \"$testsuite.testcase:successes\", \"statusExistPass\": true, \"statusString\": \"1\", \"statusFailAttachmentFileIncludes\": \"*.txt, *.png\", \"statusPassAttachmentFileIncludes\": \"*.txt\", \"statusPassAttachmentText\": \"name: $testsuite.testcase:name \nassertions: $testsuite.testcase:assertions \nsuccesses: $testsuite.testcase:successes \nerrors: $testsuite.testcase:errors \ntime: $testsuite.testcase:time \", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}]}]", //eggplant
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure\", \"statusPassAttachmentText\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//selenium
-                "[{ \"status\": \"$testsuite.testcase.failure:message\", \"stepText\": \"$testsuite.testcase.system-out\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure:message\", \"statusPassAttachmentText\": \"classname: $testsuite.testcase:classname \nname: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite.testcase:classname\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]", //testcomplete
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure\", \"statusPassAttachmentText\": \"name: $testsuite.testcase:name \ntime: $testsuite.testcase:time\", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite:name.$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//soapui
-                "[{ \"status\": \"$testsuite.testcase.failure\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure\", \"statusPassAttachmentText\": \"name: $testsuite.testcase:name \ntime: $testsuite.testcase:time \ntimestamp: $testsuite.testcase:timestamp \nlog: $testsuite.testcase:log \", \"packageName\": \"$testsuite:name\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]",//tosca
-                "[{ \"status\": \"$testsuite.testcase.failure:message\", \"statusExistPass\": false, \"statusString\": null, \"statusFailAttachmentText\": \"$testsuite.testcase.failure:message\", \"statusPassAttachmentText\": \"name: $testsuite.testcase:name \nreport: $testsuite.testcase:report \ntime: $testsuite.testcase:time \nclassname: $testsuite.testcase:classname \nstatus: $testsuite.testcase:status \", \"packageName\": \"$testsuite:package\" , \"skipTestcaseNames\": \"\", \"testcase\" : {\"name\": \"$testsuite.testcase:name\"}, \"requirements\": [{\"id\": \"$testsuite.testcase.requirements.requirement\"}], \"attachments\": [{\"filePath\": \"$testsuite.testcase.attachments.attachment\"}]}]"//uft
-        };
-
 		if (!validateBuildConfig()) {
 			logger.println("Cannot Proceed. Please verify the job configuration");
 			return false;
@@ -162,9 +150,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             zephyrConfigModel.setZephyrProjectId(Long.parseLong(getProjectKey()));
             zephyrConfigModel.setReleaseId(Long.parseLong(getReleaseKey()));
             zephyrConfigModel.setParserTemplateId(Long.parseLong(getParserTemplateKey()));
-//            String jsonTemplate = parserTemplateArr[(int)zephyrConfigModel.getParserTemplateId()];
             zephyrConfigModel.setJsonParserTemplate(parserTemplateService.getParserTemplateById(zephyrConfigModel.getParserTemplateId()).getJsonTemplate());
-//            zephyrConfigModel.setJsonParserTemplate(jsonTemplate);
 
             if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
                 zephyrConfigModel.setCycleId(NEW_CYCLE_KEY_IDENTIFIER);
@@ -189,12 +175,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             //creating Map<testcaseName, passed>, Set<packageName> and set to zephyrConfigModel
             boolean prepareZephyrTests = prepareZephyrTests(build, zephyrConfigModel);
-            //not checking for junit publisher
-//            if(!prepareZephyrTests) {
-//                logger.println("Error parsing surefire reports.");
-//                logger.println("Please ensure \"Publish JUnit test result report is added\" as a post build action");
-//                return false;
-//            }
 
             List<Map> dataMapList = new ArrayList<>();
 
@@ -229,8 +209,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
             Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList, zephyrConfigModel);
 
-//            Map<CaseResult, TCRCatalogTreeTestcase> caseMap = createTestcases(zephyrConfigModel, packagePhaseMap);
-//
             com.thed.model.Project project = projectService.getProjectById(zephyrConfigModel.getZephyrProjectId());
 
             com.thed.model.Cycle cycle;

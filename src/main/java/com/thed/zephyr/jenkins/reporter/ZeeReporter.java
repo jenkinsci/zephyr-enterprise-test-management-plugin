@@ -9,6 +9,10 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_PREFIX_DEFAULT
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY_IDENTIFIER;
 
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.thed.model.CyclePhase;
 import com.thed.model.ReleaseTestSchedule;
 import com.thed.model.TCRCatalogTreeDTO;
@@ -19,6 +23,7 @@ import com.thed.utils.ZephyrConstants;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.*;
+import hudson.security.ACL;
 import hudson.tasks.*;
 import hudson.tasks.junit.*;
 import hudson.tasks.test.AggregatedTestResultAction;
@@ -30,6 +35,7 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -130,8 +136,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             zephyrConfigModel.setSelectedZephyrServer(zephyrInstance);
 
             //login to zephyr server
-
-            boolean loggedIn = userService.login(zephyrInstance.getServerAddress(), zephyrInstance.getUsername(), zephyrInstance.getPassword());
+            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
+            boolean loggedIn = userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
             if(!loggedIn) {
                 logger.println("Authorization for zephyr server failed.");
                 return false;
@@ -504,6 +510,17 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		}
 		return noOfCases;
 	}
+
+    private StandardUsernamePasswordCredentials getCredentialsFromId(String credentialsId) {
+        Iterable<StandardUsernamePasswordCredentials> credentials = CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class,
+                Jenkins.getInstance(),
+                ACL.SYSTEM,
+                Collections.<DomainRequirement>emptyList());
+
+        return CredentialsMatchers.firstOrNull(
+                credentials,
+                CredentialsMatchers.withId(credentialsId));
+    }
 
 	@Override
 	public ZeeDescriptor getDescriptor() {

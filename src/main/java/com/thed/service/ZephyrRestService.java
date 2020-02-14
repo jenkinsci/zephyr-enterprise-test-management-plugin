@@ -80,12 +80,28 @@ public interface ZephyrRestService {
     List<TCRCatalogTreeDTO> getTCRCatalogTreeNodes(String type, Long revisionId, Long releaseId) throws URISyntaxException;
 
     /**
+     * Get tcrCatalogTree node for given id.
+     * @param tcrCatalogTreeId
+     * @return
+     * @throws URISyntaxException
+     */
+    TCRCatalogTreeDTO getTCRCatalogTreeNode(Long tcrCatalogTreeId) throws URISyntaxException;
+
+    /**
      * Create a tree node such as phase.
      * @param tcrCatalogTreeDTO
      * @return
      * @throws URISyntaxException
      */
     TCRCatalogTreeDTO createTCRCatalogTreeNode(TCRCatalogTreeDTO tcrCatalogTreeDTO) throws URISyntaxException;
+
+    /**
+     * Create mappings between testcase and requirements given.
+     * @param mapTestcaseToRequirements
+     * @return
+     * @throws URISyntaxException
+     */
+    List<String> mapTestcaseToRequirements(List<MapTestcaseToRequirement> mapTestcaseToRequirements) throws URISyntaxException;
 
     /**
      * Get testcases for given tree id.
@@ -154,10 +170,63 @@ public interface ZephyrRestService {
      */
     List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String executionStatus) throws URISyntaxException;
 
+    /**
+     * Upload all the attachments from list given.
+     * @param attachmentDTOs
+     * @return
+     * @throws URISyntaxException
+     */
+    List<GenericAttachmentDTO> uploadAttachments(List<GenericAttachmentDTO> attachmentDTOs) throws URISyntaxException;
+
+    /**
+     * Add attachments to items(ex: testcase, requirement, etc.) with given details.
+     * @param attachments
+     * @return
+     * @throws URISyntaxException
+     */
+    List<Attachment> addAttachment(List<Attachment> attachments) throws URISyntaxException;
+
+    /**
+     * Get testStep for for given testcaseVersionId.
+     * @param testcaseVersionId
+     * @return
+     * @throws URISyntaxException
+     */
+    TestStep getTestStep(Long testcaseVersionId) throws URISyntaxException;
+
+    /**
+     * Add testStep to single testcase.
+     * @param testStep
+     * @return
+     * @throws URISyntaxException
+     */
+    TestStep addTestStep(TestStep testStep) throws URISyntaxException;
+
+    /**
+     * Add testStep results.
+     * @param testStepResults
+     * @return
+     * @throws URISyntaxException
+     */
+    List<TestStepResult> addTestStepsResults(List<TestStepResult> testStepResults) throws URISyntaxException;
+
     User getCurrentUser();
 
     /**
      * Clears all data saved in this instance and related to this.
      */
     void clear();
+
+    /**
+     * Get all parser-templates.
+     * @return
+     */
+    List<ParserTemplate> getAllParserTemplates() throws URISyntaxException;
+
+    /**
+     * Get parser-template by templateId.
+     * @param templateId
+     * @return
+     */
+    ParserTemplate getParserTemplateById(Long templateId) throws URISyntaxException;
 }

@@ -121,22 +121,10 @@ top-level maven targets" from the "Add build step" dropdown.
 
 ![](docs/images/worddav118b96747a7fbd86cc477dbb91c4944c.png)
 
-**9. The plugin requires JUnit test result**. Locate the "Post-build
-Actions" section and select "Publish JUnit test result report" from "Add
-post-build Actions" dropdown.
-
-![](docs/images/worddav09a0b1e31d6b7089435a28fb09d9277c.png)
-
-10\. Enter the path to the test report. In the example below the location
-is "Proj1\\target\\surefire-reports/\*.xml" where Proj1 is the target
-project.
-
-![](docs/images/worddavb923d948a25329959cbf9d000444ca35.png)
-
 # **Configuring Zephyr Enterprise Test Management plugin as a post-build action**
 
 
-In order to publish results in Zephyr, define another post-build action.
+In order to publish results in Zephyr, define post-build action.
 
 1\. Select "Publish test result to Zephyr Enterprise" from "Add
 post-build Actions" dropdown.
@@ -146,7 +134,7 @@ post-build Actions" dropdown.
 
 2\. Configure Zephyr plugin job.
 
-![](docs/images/worddav37b24965660fe9359bb036d154d1da50.png)
+![](docs/images/config.png)
 
 1.  1.  1.  Select the Zephyr URL from the dropdown. (Servers configured
             in the Jenkins global configuration are available here to
@@ -167,7 +155,9 @@ post-build Actions" dropdown.
             "Automation" is used for new cycles.
         7.  To create a package structure while creating and organizing
             the test cases, check the box "Create Package Structure".
-        8.  Click "Save".
+        8.  Add path for result files to parse.
+        9.  Select parser template from drop down to parse the XML files.
+        10.  Click "Save".
 
 
 **Triggering the job and publishing results in Zephyr**
@@ -199,20 +189,12 @@ all the tests in Zephyr.
 4. Click on pipeline syntax.
 ![](docs/images/3_click_pipeline_syntax.png)
 
-5. Select Junit: Archive-JUnit Formatted test results and add tartget XML file → Click on Generate Pipeline Script.
-![](docs/images/4_1_junit_pipeline_script.png)
-![](docs/images/4_2_junit_pipeline_script.png)
+5. Select zeeReporter: Publish test result to Zephyr Enterprise → Enter all details → Click on Generate Pipeline Script → Copy generated pipeline script.
+![](docs/images/pipeline-config.png)
 
-6. Select zeeReporter: Publish test result to Zephyr Enterprise → Enter all details.
-![](docs/images/5_1_zee_pipeline_script.png)
-
-7. Click on Generate Pipeline Script → Copy generated pipeline script.
-![](docs/images/5_2_zee_pipeline_script.png)
-
-8. Paste copied pipeline script to script section in configure.
+6. Paste copied pipeline script to script section in configure.
 Changes in pipeline script
     -   Add path of project in this line checkout filesystem(clearWorkspace: false, copyHidden: false, path: 'D://jenkins//Proj1-10')
-    -   Add copied script of junit target file under post  junit 'target/surefire-reports/*.xml'
     -   Add copied script from zee reporter
     -   Use bat if we configured with windows or sh if we configured with Linux
 
@@ -228,8 +210,7 @@ pipeline {
             }
             stage('proj1 - Build') {
                 steps{
-                    withMaven(options: [
-                    junitPublisher(disabled: true)]) {
+                    withMaven() {
                         bat "mvn clean test"
                     }
                 }
@@ -238,14 +219,11 @@ pipeline {
         
     post {
         always{
-            junit 'target/surefire-reports/*.xml'
-            zeeReporter createPackage: false, cycleDuration: '1 day', cycleKey: '1', cyclePrefix: 'zxcvbnm<12#%^>', projectKey: '4', releaseKey: '7', serverAddress: 'http://10.16.2.25'
+            zeeReporter createPackage: false, cycleDuration: '30 days', cycleKey: 'CreateNewCycle', cyclePrefix: '', parserTemplateKey: '5', projectKey: '1', releaseKey: '1', resultXmlFilePath: 'target/surefire-reports/*.xml', serverAddress: 'http://demo.yourzephyr.com'
         }
     }
 }
 ```
-
-![](docs/images/6_paste_copied_scripts.png)
 
 9. Trigger the build.
 

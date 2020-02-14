@@ -7,6 +7,9 @@ import com.thed.service.HttpClientService;
 import com.thed.service.ZephyrRestService;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,9 +31,12 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_ALL_RELEASES_FOR_PROJECT_ID_URL = "/flex/services/rest/{restVersion}/release/paged/project/{projectId}"; //?order=id&isascorder=true&isVisible=false
 
     public static final String GET_TCR_CATALOG_TREE_NODES_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?type=Phase&revisionid=0&releaseid=10
+    public static final String GET_TCR_CATALOG_TREE_NODE_URL = "/flex/services/rest/{restVersion}/testcasetree/{tcrCatalogTreeId}";
     public static final String CREATE_TCR_CATALOG_TREE_NODE_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?parentid=0
 
-    public static final String GET_TESTCASES_FOR_TREE_ID = "/flex/services/rest/{restVersion}/testcase/tree/{tcrCatalogTreeId}"; //?offset=0&pagesize=50&dbsearch=true&isascorder=true&order=orderId&frozen=false&is_cfield=false
+    public static final String MAP_TESTCASE_TO_REQUIREMENTS_URL = "/flex/services/rest/v3/requirement/bulk";
+
+    public static final String GET_TESTCASES_FOR_TREE_ID_URL = "/flex/services/rest/{restVersion}/testcase/tree/{tcrCatalogTreeId}"; //?offset=0&pagesize=50&dbsearch=true&isascorder=true&order=orderId&frozen=false&is_cfield=false
     public static final String CREATE_TESTCASES_BULK_URL = "/flex/services/rest/{restVersion}/testcase/bulk";
 
     public static final String GET_CYCLE_BY_ID_URL = "/flex/services/rest/{restVersion}/cycle/{id}";
@@ -42,6 +48,16 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String ASSIGN_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/assignmenttree/{cyclePhaseId}/assign";
     public static final String GET_RELEASE_TEST_SCHEDULES_URL = "/flex/services/rest/{restVersion}/execution"; //?cyclephaseid=11&pagesize=10000;
     public static final String EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL = "/flex/services/rest/{restVersion}/execution/bulk";//?status=1&testerid=1&allExecutions=false&includeanyoneuser=true
+
+    public static final String UPLOAD_ATTACHMENT_URL = "/flex/upload/document/genericattachment";
+    public static final String ADD_ATTACHMENT_URL = "/flex/services/rest/{restVersion}/attachment/list";
+
+    public static final String GET_TEST_STEP_URL = "/flex/services/rest/{restVersion}/testcase/{testcaseVersionId}/teststep";
+    public static final String ADD_TEST_STEP_URL = "/flex/services/rest/{restVersion}/testcase/{testcaseVersionId}/teststep/{tctId}";
+    public static final String ADD_TEST_STEP_RESULT_URL = "/flex/services/rest/{restVersion}/execution/teststepresult/saveorupdate";
+
+    public static final String GET_ALL_PARSER_TEMPLATES_URL = "/flex/services/rest/{restVersion}/parsertemplate/";
+    public static final String GET_PARSER_TEMPLATE_BY_ID_URL = "/flex/services/rest/{restVersion}/parsertemplate/{id}";
 
     private User currentUser;
     private String hostAddress;
@@ -91,7 +107,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     private String prepareUrl(String url) throws URISyntaxException {
-        url = hostAddress + url;
+        url = getHostAddress() + url;
 
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("restVersion", restVersion);
@@ -165,6 +181,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         queryParams.add(new BasicNameValuePair("order", "id"));
         queryParams.add(new BasicNameValuePair("isascorder", "true"));
         queryParams.add(new BasicNameValuePair("isVisible", "false"));
+        queryParams.add(new BasicNameValuePair("pagesize", "0"));
 
         String url = buildUrl(prepareUrl(GET_ALL_RELEASES_FOR_PROJECT_ID_URL), pathParams, queryParams);
 
@@ -189,6 +206,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         return gson.fromJson(res, releaseListType);
     }
 
+    @Override
     public List<TCRCatalogTreeDTO> getTCRCatalogTreeNodes(String type, Long revisionId, Long releaseId) throws URISyntaxException {
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("type", type));
@@ -203,6 +221,17 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     @Override
+    public TCRCatalogTreeDTO getTCRCatalogTreeNode(Long tcrCatalogTreeId) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("tcrCatalogTreeId", tcrCatalogTreeId.toString());
+
+        String url = buildUrl(prepareUrl(GET_TCR_CATALOG_TREE_NODE_URL), pathParams, null);
+        String res = httpClientService.getRequest(url);
+
+        return gson.fromJson(res, TCRCatalogTreeDTO.class);
+    }
+
+    @Override
     public TCRCatalogTreeDTO createTCRCatalogTreeNode(TCRCatalogTreeDTO tcrCatalogTreeDTO) throws URISyntaxException {
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("parentid", tcrCatalogTreeDTO.getParentId().toString()));
@@ -211,6 +240,14 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         String url = buildUrl(prepareUrl(CREATE_TCR_CATALOG_TREE_NODE_URL), null, queryParams);
         String res = httpClientService.postRequest(url, gson.toJson(tcrCatalogTreeDTO));
         return gson.fromJson(res, TCRCatalogTreeDTO.class);
+    }
+
+    @Override
+    public List<String> mapTestcaseToRequirements(List<MapTestcaseToRequirement> mapTestcaseToRequirements) throws URISyntaxException {
+        String url = buildUrl(prepareUrl(MAP_TESTCASE_TO_REQUIREMENTS_URL), null, null);
+        String res = httpClientService.postRequest(url, gson.toJson(mapTestcaseToRequirements));
+        Type stringListType = new TypeToken<List<String>>(){}.getType();
+        return gson.fromJson(res, stringListType);
     }
 
     @Override
@@ -227,7 +264,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         queryParams.add(new BasicNameValuePair("frozen", "false"));
         queryParams.add(new BasicNameValuePair("is_cfield", "false"));
 
-        String url = buildUrl(prepareUrl(GET_TESTCASES_FOR_TREE_ID), pathParams, queryParams);
+        String url = buildUrl(prepareUrl(GET_TESTCASES_FOR_TREE_ID_URL), pathParams, queryParams);
         String res = httpClientService.getRequest(url);
         JSONObject resObject = new JSONObject(res);
         JSONArray jsonArray = resObject.getJSONArray("results");
@@ -338,6 +375,57 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     @Override
+    public List<GenericAttachmentDTO> uploadAttachments(List<GenericAttachmentDTO> attachmentDTOs) throws URISyntaxException {
+        String url = buildUrl(prepareUrl(UPLOAD_ATTACHMENT_URL), null, null);
+
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+        for (GenericAttachmentDTO attachmentDTO : attachmentDTOs) {
+            builder.addBinaryBody(attachmentDTO.getFieldName(), attachmentDTO.getByteData(), ContentType.getByMimeType(attachmentDTO.getContentType()), attachmentDTO.getFileName());
+        }
+
+        String res = httpClientService.postRequest(url, builder.build());
+        Type type = new TypeToken<List<GenericAttachmentDTO>>(){}.getType();
+        return gson.fromJson(res, type);
+    }
+
+    @Override
+    public List<Attachment> addAttachment(List<Attachment> attachments) throws URISyntaxException {
+        String url = buildUrl(prepareUrl(ADD_ATTACHMENT_URL), null, null);
+
+        String res = httpClientService.postRequest(url, gson.toJson(attachments));
+        Type type = new TypeToken<List<Attachment>>(){}.getType();
+        return gson.fromJson(res, type);
+    }
+
+    @Override
+    public TestStep getTestStep(Long testcaseVersionId) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("testcaseVersionId", testcaseVersionId.toString());
+        String url = buildUrl(prepareUrl(GET_TEST_STEP_URL), pathParams, null);
+        String res = httpClientService.getRequest(url);
+        return gson.fromJson(res, TestStep.class);
+    }
+
+    @Override
+    public TestStep addTestStep(TestStep testStep) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("testcaseVersionId", testStep.getTcId().toString());
+        pathParams.put("tctId", testStep.getTctId().toString());
+        String url = buildUrl(prepareUrl(ADD_TEST_STEP_URL), pathParams, null);
+        String res = httpClientService.postRequest(url, gson.toJson(testStep));
+        return gson.fromJson(res, TestStep.class);
+    }
+
+    @Override
+    public List<TestStepResult> addTestStepsResults(List<TestStepResult> testStepResults) throws URISyntaxException {
+        String url = buildUrl(prepareUrl(ADD_TEST_STEP_RESULT_URL), null, null);
+        String res = httpClientService.postRequest(url, gson.toJson(testStepResults));
+        Type type = new TypeToken<List<TestStepResult>>(){}.getType();
+        return gson.fromJson(res, type);
+    }
+
+    @Override
     public User getCurrentUser() {
         return currentUser;
     }
@@ -367,5 +455,24 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         setCurrentUser(null);
         setHostAddress("");
         httpClientService.clear();
+    }
+
+    @Override
+    public List<ParserTemplate> getAllParserTemplates() throws URISyntaxException {
+        String url = buildUrl(prepareUrl(GET_ALL_PARSER_TEMPLATES_URL), null, null);
+        String res = httpClientService.getRequest(url);
+
+        Type parserTemplateListType = new TypeToken<List<ParserTemplate>>(){}.getType();
+        return gson.fromJson(res, parserTemplateListType);
+    }
+
+    @Override
+    public ParserTemplate getParserTemplateById(Long templateId) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("id", templateId.toString());
+
+        String url = buildUrl(prepareUrl(GET_PARSER_TEMPLATE_BY_ID_URL), pathParams, null);
+        String res = httpClientService.getRequest(url);
+        return gson.fromJson(res, ParserTemplate.class);
     }
 }

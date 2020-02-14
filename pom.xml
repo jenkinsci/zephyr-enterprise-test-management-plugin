@@ -10,7 +10,7 @@
 
   <groupId>org.jenkins-ci.plugins</groupId>
   <artifactId>zephyr-enterprise-test-management</artifactId>
-  <version>1.9.2-SNAPSHOT</version>
+  <version>1.10</version>
   <packaging>hpi</packaging>
   <name>Zephyr Enterprise Test Management plugin</name>
   <description>Creates Test Cases and update their statues for unit tests.</description>
@@ -127,7 +127,7 @@
     <connection>scm:git:git://github.com/jenkinsci/zephyr-enterprise-test-management-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/zephyr-enterprise-test-management-plugin.git</developerConnection>
       <url>https://github.com/jenkinsci/zephyr-enterprise-test-management-plugin</url>
-    <tag>HEAD</tag>
+    <tag>zephyr-enterprise-test-management-1.10</tag>
   </scm>
   <!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->
   <repositories>

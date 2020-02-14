@@ -1,24 +1,20 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
    <f:section title="Zephyr Server Configuration">
  
  <f:entry title="Zephyr Server(s)">
- <f:repeatable var="zephyrInstancesList" name="zephyrInstances" items="${instance.zephyrInstances}" noAddButton="false" minimum="0">
+ <f:repeatable field="zephyrInstances" noAddButton="false" minimum="0">
     <table>
         <f:entry title="Zephyr URL" description="Zephyr Server IP address or hostname" 
                                 field="serverAddress">
-            <f:textbox value="${zephyrInstancesList.serverAddress}" default="" />
+            <f:textbox default="" />
         </f:entry>
-            <f:entry title="User Name" description="Zephyr User Name" 
-                                field="username">
-            <f:textbox value="${zephyrInstancesList.username}" default="" />
-        </f:entry>
-        
-                <f:entry title="Password" description="Zephyr User Password" 
-                                field="password">
-            <f:password value="${zephyrInstancesList.password}" default="" />
-        </f:entry>
-    <f:validateButton title="Test Configuration&#160;" progress="Please wait .. We are validating the connection and credentials" method="testConnection" with="serverAddress,username,password" />                        
+
+        <f:entry field="credentialsId" title="${%Credentials}">
+            <c:select />
+          </f:entry>
+
+    <f:validateButton title="Test Configuration&#160;" progress="Please wait .. We are validating the connection and credentials" method="testConnection" with="serverAddress,credentialsId" />
         <tr>
         	<td></td>
         	<td></td>

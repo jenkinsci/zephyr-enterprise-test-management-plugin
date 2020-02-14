@@ -125,10 +125,6 @@ public class ZephyrInstance extends AbstractDescribableImpl<ZephyrInstance> {
                 return FormValidation.error("Error occurred while verifying credentials. Please try again later.");
             }
 
-//        logger.info("username:"+upCredentials.getUsername());
-//        logger.info("password:"+upCredentials.getPassword().getPlainText());
-//        logger.info("id:"+upCredentials.getId());
-
             return FormValidation.ok("Connection to Zephyr has been validated");
         }
 

@@ -110,12 +110,14 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
+        jenkinsProjectName = workspace.getName();
         perform(run, listener);
     }
 
     @Override
     public boolean perform(final AbstractBuild build, final Launcher launcher,
                            final BuildListener listener) throws IOException, InterruptedException {
+        jenkinsProjectName = ((FreeStyleBuild) build).getProject().getName();
         return perform(build, listener);
     }
 
@@ -123,15 +125,11 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		logger = listener.getLogger();
 		logger.printf("%s Examining test results...%n", pInfo);
 
-        requirementService = new RequirementServiceImpl();
-        attachmentService = new AttachmentServiceImpl();
-
 		if (!validateBuildConfig()) {
 			logger.println("Cannot Proceed. Please verify the job configuration");
 			return false;
 		}
 
-        jenkinsProjectName = ((FreeStyleBuild) build).getProject().getName();
 		int number = build.getNumber();
 
         try {
@@ -208,6 +206,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
             Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList, zephyrConfigModel);
+
+            logger.println("Total Test Cases : " + tcrStatusMap.keySet().size());
 
             com.thed.model.Project project = projectService.getProjectById(zephyrConfigModel.getZephyrProjectId());
 
@@ -622,8 +622,6 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         Map<String, List<CaseResult>> packageCaseMap = new HashMap<>();
 		Integer noOfCases = prepareTestResults(suites, packageNames, packageCaseMap);
 
-		logger.print("Total Test Cases : " + noOfCases);
-
         zephyrConfig.setPackageCaseResultMap(packageCaseMap);
 //		zephyrConfig.setPackageNames(packageNames);
 		
@@ -711,6 +709,10 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             String testcaseJson = new Gson().toJson(testcaseMap);
             Testcase testcase = new Gson().fromJson(testcaseJson, Testcase.class);
+            if(testcase.getAutomated() == null) {
+                testcase.setAutomated(true);
+                testcase.setScriptName("Created By Jenkins");
+            }
 
             if(testcase.getName().isEmpty()) {
                 continue;

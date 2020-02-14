@@ -1,6 +1,7 @@
 package com.thed.service.impl;
 
 import com.thed.model.ReleaseTestSchedule;
+import com.thed.model.TestStepResult;
 import com.thed.service.ExecutionService;
 import com.thed.utils.ZephyrConstants;
 
@@ -29,6 +30,11 @@ public class ExecutionServiceImpl extends BaseServiceImpl implements ExecutionSe
             return new ArrayList<>();
         }
         return zephyrRestService.executeReleaseTestSchedules(rtsIds, pass ? ZephyrConstants.EXECUTION_STATUS_PASS : ZephyrConstants.EXECUTION_STATUS_FAIL);
+    }
+
+    @Override
+    public List<TestStepResult> addTestStepResults(List<TestStepResult> testStepResults) throws URISyntaxException {
+        return zephyrRestService.addTestStepsResults(testStepResults);
     }
 
 }

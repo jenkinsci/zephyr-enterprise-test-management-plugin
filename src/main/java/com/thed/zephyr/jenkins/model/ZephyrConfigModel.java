@@ -19,6 +19,9 @@ public class ZephyrConfigModel {
 	private ZephyrInstance selectedZephyrServer;
 	private int builNumber;
     private Map<String, List<CaseResult>> packageCaseResultMap;
+    private String resultXmlFilePath;
+    private long parserTemplateId;
+    private String jsonParserTemplate;
 
 
 	public boolean isCreatePackage() {
@@ -107,5 +110,29 @@ public class ZephyrConfigModel {
 
     public void setPackageCaseResultMap(Map<String, List<CaseResult>> packageCaseResultMap) {
         this.packageCaseResultMap = packageCaseResultMap;
+    }
+
+    public String getResultXmlFilePath() {
+        return resultXmlFilePath;
+    }
+
+    public void setResultXmlFilePath(String resultXmlFilePath) {
+        this.resultXmlFilePath = resultXmlFilePath;
+    }
+
+    public long getParserTemplateId() {
+        return parserTemplateId;
+    }
+
+    public void setParserTemplateId(long parserTemplateId) {
+        this.parserTemplateId = parserTemplateId;
+    }
+
+    public String getJsonParserTemplate() {
+        return jsonParserTemplate;
+    }
+
+    public void setJsonParserTemplate(String jsonParserTemplate) {
+        this.jsonParserTemplate = jsonParserTemplate;
     }
 }

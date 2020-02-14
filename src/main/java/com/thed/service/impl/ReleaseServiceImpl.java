@@ -15,6 +15,7 @@ public class ReleaseServiceImpl extends BaseServiceImpl implements ReleaseServic
         super();
     }
 
+    @Override
     public List<Release> getAllReleasesForProjectId(Long projectId) throws URISyntaxException {
         return zephyrRestService.getAllReleasesForProjectId(projectId);
     }

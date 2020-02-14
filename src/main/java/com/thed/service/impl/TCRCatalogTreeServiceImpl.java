@@ -22,6 +22,11 @@ public class TCRCatalogTreeServiceImpl extends BaseServiceImpl implements TCRCat
     }
 
     @Override
+    public TCRCatalogTreeDTO getTCRCatalogTreeNode(Long tcrCatalogTreeId) throws URISyntaxException {
+        return zephyrRestService.getTCRCatalogTreeNode(tcrCatalogTreeId);
+    }
+
+    @Override
     public TCRCatalogTreeDTO createTCRCatalogTreeNode(TCRCatalogTreeDTO tcrCatalogTreeDTO) throws URISyntaxException {
         return zephyrRestService.createTCRCatalogTreeNode(tcrCatalogTreeDTO);
     }

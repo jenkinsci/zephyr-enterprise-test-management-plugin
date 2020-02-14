@@ -26,6 +26,14 @@
   <f:entry title="Create Package Structure" field="createPackage">
     <f:checkbox field="createPackage" checked="${createPackage}"/>
   </f:entry>
-  
+
+  <f:entry title="Test Result File" field="resultXmlFilePath">
+      <f:textbox field="resultXmlFilePath"/>
+      <a href="http://ant.apache.org/manual/Types/fileset.html">Fileset ‘includes’</a> setting that specifies the generated raw XML report files, such as ‘someproject/target/test-reports/*.xml’. Basedir of the fileset is the workspace root.
+  </f:entry>
+
+  <f:entry title="Parser" field="parserTemplateKey">
+      <f:select />
+    </f:entry>
   
 </j:jelly>

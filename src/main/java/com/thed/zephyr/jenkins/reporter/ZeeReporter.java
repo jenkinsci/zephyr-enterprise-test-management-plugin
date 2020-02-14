@@ -709,6 +709,10 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             String testcaseJson = new Gson().toJson(testcaseMap);
             Testcase testcase = new Gson().fromJson(testcaseJson, Testcase.class);
+            if(testcase.getAutomated() == null) {
+                testcase.setAutomated(true);
+                testcase.setScriptName("Created By Jenkins");
+            }
 
             if(testcase.getName().isEmpty()) {
                 continue;

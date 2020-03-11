@@ -9,6 +9,8 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_PREFIX_DEFAULT
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY_IDENTIFIER;
 
+import com.cloudbees.plugins.credentials.common.StandardCredentials;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.google.gson.Gson;
 import com.thed.model.*;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
@@ -46,6 +48,7 @@ import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.FileSet;
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
@@ -137,8 +140,16 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             ZephyrInstance zephyrInstance = getZephyrInstance(getServerAddress());
 
             //login to zephyr server
-            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
-            boolean loggedIn = userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
+            StandardCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
+            Boolean loggedIn = Boolean.FALSE;
+            if(upCredentials instanceof UsernamePasswordCredentialsImpl){
+                String user = ((UsernamePasswordCredentialsImpl) upCredentials).getUsername();
+                String pass = ((UsernamePasswordCredentialsImpl) upCredentials).getPassword().getPlainText();
+                loggedIn = userService.login(zephyrInstance.getServerAddress(),user,pass);
+            }else if(upCredentials instanceof StringCredentialsImpl){
+                String secretText = ((StringCredentialsImpl) upCredentials).getSecret().getPlainText();
+                loggedIn = userService.login(zephyrInstance.getServerAddress(), secretText);
+            }
             if(!loggedIn) {
                 logger.println("Authorization for zephyr server failed.");
                 return false;
@@ -675,8 +686,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		return noOfCases;
 	}
 
-    private StandardUsernamePasswordCredentials getCredentialsFromId(String credentialsId) {
-        Iterable<StandardUsernamePasswordCredentials> credentials = CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class,
+    private StandardCredentials getCredentialsFromId(String credentialsId) {
+        Iterable<StandardCredentials> credentials = CredentialsProvider.lookupCredentials(StandardCredentials.class,
                 Jenkins.getInstance(),
                 ACL.SYSTEM,
                 Collections.<DomainRequirement>emptyList());

@@ -23,6 +23,15 @@ public interface ZephyrRestService {
     public Boolean verifyCredentials(String hostUrl, String username, String password) throws URISyntaxException;
 
     /**
+     * Verifies given credentials
+     * @param hostUrl
+     * @param secretText
+     * @return
+     * @throws URISyntaxException
+     */
+    public Boolean verifyCredentials(String hostUrl, String secretText) throws URISyntaxException;
+
+    /**
      * Verifies given credentials and stores hostAddress if verification succeeds
      * @param hostAddress
      * @param username
@@ -31,6 +40,15 @@ public interface ZephyrRestService {
      * @throws URISyntaxException
      */
     Boolean login(String hostAddress, String username, String password) throws URISyntaxException;
+
+    /**
+     * Verifies given credentials and stores hostAddress if verification succeeds
+     * @param hostAddress
+     * @param secretText
+     * @return
+     * @throws URISyntaxException
+     */
+    Boolean login(String hostAddress, String secretText) throws URISyntaxException;
 
     /**
      * Get project using project id.

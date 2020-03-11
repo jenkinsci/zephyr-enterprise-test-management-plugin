@@ -123,6 +123,23 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         return res;
     }
 
+    /**
+     * Verifies given credentials
+     *
+     * @param hostUrl
+     * @param secretText
+     * @return
+     * @throws URISyntaxException
+     */
+    @Override
+    public Boolean verifyCredentials(String hostUrl, String secretText) throws URISyntaxException {
+        Boolean res = login(hostUrl, secretText);
+        if(res == Boolean.TRUE) {
+            clear();
+        }
+        return res;
+    }
+
     @Override
     public Boolean login(String hostAddress, String username, String password) throws URISyntaxException {
         String url = hostAddress + GET_CURRENT_USER_URL;
@@ -137,6 +154,30 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         }
         return Boolean.FALSE;
     }
+
+    /**
+     * Verifies given credentials and stores hostAddress if verification succeeds
+     *
+     * @param hostAddress
+     * @param secretText
+     * @return
+     * @throws URISyntaxException
+     */
+    @Override
+    public Boolean login(String hostAddress, String secretText) throws URISyntaxException {
+        String url = hostAddress + GET_CURRENT_USER_URL;
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("restVersion", restVersion);
+        url = buildUrl(url, pathParams, null);
+        String res = httpClientService.authenticationGetRequest(url, secretText);
+        if(res != null) {
+            setCurrentUser(gson.fromJson(res, User.class));
+            setHostAddress(hostAddress);
+            return Boolean.TRUE;
+        }
+        return Boolean.FALSE;
+    }
+
 
     @Override
     public Project getProjectById(Long projectId) throws URISyntaxException {

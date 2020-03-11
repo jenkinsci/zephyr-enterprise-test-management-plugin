@@ -16,6 +16,8 @@ public interface HttpClientService {
 
     String authenticationGetRequest(String url, String username, String password);
 
+    String authenticationGetRequest(String url, String secretText);
+
     String getRequest(String url);
 
     String postRequest(String url, String content);

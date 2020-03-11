@@ -29,6 +29,7 @@ import java.util.List;
 public class HttpClientServiceImpl implements HttpClientService {
 
     private BasicCookieStore cookieStore; // This stores cookies for created by client or set by server side.
+    private String secretText; //This stores Api token
 
     public HttpClientServiceImpl() {
         cookieStore = new BasicCookieStore();
@@ -76,6 +77,32 @@ public class HttpClientServiceImpl implements HttpClientService {
     }
 
     @Override
+    public String authenticationGetRequest(String url, String secretText) {
+        if(StringUtils.isEmpty(url)) {
+            return null;
+        }
+
+        try{
+            HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore)
+                    .build();
+            HttpGet httpGet = new HttpGet(url);
+
+            this.secretText = secretText;
+            httpGet.addHeader("Authorization", "Bearer "+ secretText);
+            HttpResponse response = httpClient.execute(httpGet);
+
+            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
+                return convertInputStreamToString(response.getEntity().getContent());
+            }
+
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    @Override
     public String getRequest(String url) {
         if(StringUtils.isEmpty(url)) {
             return null;
@@ -85,6 +112,9 @@ public class HttpClientServiceImpl implements HttpClientService {
             HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
             HttpGet httpGet = new HttpGet(url);
 
+            if(secretText != null && !secretText.isEmpty()){
+                httpGet.addHeader("Authorization", "Bearer " + secretText);
+            }
             HttpResponse response = httpClient.execute(httpGet);
             if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
                 return convertInputStreamToString(response.getEntity().getContent());
@@ -116,6 +146,9 @@ public class HttpClientServiceImpl implements HttpClientService {
         try{
             HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
             HttpPost httpPost = new HttpPost(url);
+            if(secretText != null && !secretText.isEmpty()){
+                httpPost.addHeader("Authorization", "Bearer " + secretText);
+            }
 
 //            if(!StringUtils.isEmpty(content)) {
 //                StringEntity stringEntity = new StringEntity(content, contentType);
@@ -147,6 +180,9 @@ public class HttpClientServiceImpl implements HttpClientService {
         try{
             HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
             HttpPut httpPut = new HttpPut(url);
+            if(secretText != null && !secretText.isEmpty()){
+                httpPut.addHeader("Authorization", "Bearer " + secretText);
+            }
 
             if(!StringUtils.isEmpty(content)) {
                 StringEntity stringEntity = new StringEntity(content, ContentType.APPLICATION_JSON);
@@ -168,5 +204,6 @@ public class HttpClientServiceImpl implements HttpClientService {
     @Override
     public void clear() {
         cookieStore.clear();
+        secretText = "";
     }
 }

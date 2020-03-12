@@ -19,6 +19,7 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -74,7 +75,8 @@ public class ZephyrInstance extends AbstractDescribableImpl<ZephyrInstance> {
                 return result.includeCurrentValue(credentialsId);
             }
             return result
-                    .includeAs(ACL.SYSTEM, Jenkins.getInstance(), StandardCredentials.class)
+                    .includeAs(ACL.SYSTEM, Jenkins.getInstance(), StringCredentials.class)
+                    .includeAs(ACL.SYSTEM, Jenkins.getInstance(), StandardUsernamePasswordCredentials.class)
                     .includeCurrentValue(credentialsId); // (5)
         }
 

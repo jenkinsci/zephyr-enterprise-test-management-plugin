@@ -135,9 +135,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     @Override
     public Boolean verifyCredentials(String hostUrl, String secretText) throws URISyntaxException {
         Boolean res = login(hostUrl, secretText);
-        if(res == Boolean.TRUE) {
-            clear();
-        }
+        clear();
         return res;
     }
 

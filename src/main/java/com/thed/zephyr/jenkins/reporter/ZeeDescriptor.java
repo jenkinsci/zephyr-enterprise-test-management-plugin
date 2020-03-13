@@ -250,26 +250,26 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		}
 		if (StringUtils.isBlank(projectKey)) {
 	        ListBoxModel mi = fetchProjectList(serverAddress);
-	        projectKey = mi.get(0).value;
+	        projectKey = mi.size() != 0?mi.get(0).value:"";
 		}
+        if(StringUtils.isNotBlank(projectKey)) {
+			if (projectKey.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
+					|| (this.zephyrInstances.size() == 0)) {
+				listBoxModel.add(ADD_ZEPHYR_GLOBAL_CONFIG);
+				return listBoxModel;
+			}
 
-		if (projectKey.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
-				|| (this.zephyrInstances.size() == 0)) {
-			listBoxModel.add(ADD_ZEPHYR_GLOBAL_CONFIG);
-			return listBoxModel;
+			try {
+				Long projectId = Long.parseLong(projectKey);
+				List<com.thed.model.Release> releases = releaseService.getAllReleasesForProjectId(projectId);
+				for (com.thed.model.Release release : releases) {
+					listBoxModel.add(release.getName(), release.getId().toString());
+				}
+			} catch (Exception e) {
+				//todo: handle exception gracefully
+				e.printStackTrace();
+			}
 		}
-
-        try {
-            Long projectId = Long.parseLong(projectKey);
-            List<com.thed.model.Release> releases = releaseService.getAllReleasesForProjectId(projectId);
-            for (com.thed.model.Release release : releases) {
-                listBoxModel.add(release.getName(), release.getId().toString());
-            }
-        }
-        catch(Exception e) {
-            //todo: handle exception gracefully
-            e.printStackTrace();
-        }
 
 		return listBoxModel;
 	}

@@ -10,6 +10,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -146,7 +147,10 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("restVersion", restVersion);
         url = buildUrl(url, pathParams, null);
-        String res = httpClientService.authenticationGetRequest(url, username, password);
+        String encoding = Base64.getEncoder().encodeToString((username+":"+password).getBytes());
+        httpClientService.getHeader().add(new BasicHeader("Authorization", "Basic "+encoding));
+        String res = httpClientService.getRequest(url);
+        httpClientService.getHeader().clear();
         if(res != null) {
             setCurrentUser(gson.fromJson(res, User.class));
             setHostAddress(hostAddress);
@@ -169,7 +173,8 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("restVersion", restVersion);
         url = buildUrl(url, pathParams, null);
-        String res = httpClientService.authenticationGetRequest(url, secretText);
+        httpClientService.getHeader().add(new BasicHeader("Authorization", "Bearer "+ secretText));
+        String res = httpClientService.getRequest(url);
         if(res != null) {
             setCurrentUser(gson.fromJson(res, User.class));
             setHostAddress(hostAddress);

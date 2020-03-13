@@ -23,7 +23,7 @@ public interface HttpClientService {
 
     void setCookieStore(BasicCookieStore cookieStore);
 
-    List<Header> getHeader();
+    List<Header> getHeaders();
 
     void addHeader(Header header);
 

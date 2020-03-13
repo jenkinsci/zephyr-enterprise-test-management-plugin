@@ -35,7 +35,7 @@ public class HttpClientServiceImpl implements HttpClientService {
     }
 
     @Override
-    public List<Header> getHeader() {
+    public List<Header> getHeaders() {
         return headers;
     }
 

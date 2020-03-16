@@ -2,9 +2,11 @@ package com.thed.zephyr.jenkins.model;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.thed.service.UserService;
 import com.thed.service.impl.UserServiceImpl;
 import com.thed.zephyr.jenkins.utils.URLValidator;
@@ -17,6 +19,8 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -71,12 +75,13 @@ public class ZephyrInstance extends AbstractDescribableImpl<ZephyrInstance> {
                 return result.includeCurrentValue(credentialsId);
             }
             return result
+                    .includeAs(ACL.SYSTEM, Jenkins.getInstance(), StringCredentials.class)
                     .includeAs(ACL.SYSTEM, Jenkins.getInstance(), StandardUsernamePasswordCredentials.class)
                     .includeCurrentValue(credentialsId); // (5)
         }
 
-        private StandardUsernamePasswordCredentials getCredentialsFromId(String credentialsId) {
-            Iterable<StandardUsernamePasswordCredentials> credentials = CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class,
+        private StandardCredentials getCredentialsFromId(String credentialsId) {
+            Iterable<StandardCredentials> credentials = CredentialsProvider.lookupCredentials(StandardCredentials.class,
                     Jenkins.getInstance(),
                     ACL.SYSTEM,
                     Collections.<DomainRequirement>emptyList());
@@ -100,14 +105,11 @@ public class ZephyrInstance extends AbstractDescribableImpl<ZephyrInstance> {
                 return FormValidation.error("Please select credentials.");
             }
 
-            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(credentialsId);
+            StandardCredentials upCredentials = getCredentialsFromId(credentialsId);
 
             if(upCredentials == null) {
                 return FormValidation.error("Please select valid credentials.");
             }
-
-            String username = upCredentials.getUsername();
-            String password = upCredentials.getPassword().getPlainText();
 
             if (!(serverAddress.trim().startsWith("https://") || serverAddress
                     .trim().startsWith("http://"))) {
@@ -117,9 +119,17 @@ public class ZephyrInstance extends AbstractDescribableImpl<ZephyrInstance> {
             String zephyrURL = URLValidator.validateURL(serverAddress);
 
             try {
-                Boolean verifyCredentials = userService.verifyCredentials(serverAddress, username, password);
-                if(!verifyCredentials) {
-                    return FormValidation.error("Username or password is incorrect.");
+                if(upCredentials instanceof UsernamePasswordCredentialsImpl) {
+                    Boolean verifyCredentials = userService.verifyCredentials(serverAddress, ((UsernamePasswordCredentialsImpl) upCredentials).getUsername(),
+                            ((UsernamePasswordCredentialsImpl) upCredentials).getPassword().getPlainText());
+                    if (!verifyCredentials) {
+                        return FormValidation.error("Username or password is incorrect.");
+                    }
+                }else if(upCredentials instanceof StringCredentialsImpl){
+                    Boolean verifyCredentials = userService.verifyCredentials(serverAddress, ((StringCredentialsImpl) upCredentials).getSecret().getPlainText());
+                    if (!verifyCredentials) {
+                        return FormValidation.error("Api token is incorrect.");
+                    }
                 }
             } catch (Exception e) {
                 return FormValidation.error("Error occurred while verifying credentials. Please try again later.");

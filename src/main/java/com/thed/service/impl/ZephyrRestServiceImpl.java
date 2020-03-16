@@ -10,6 +10,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -123,13 +124,31 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         return res;
     }
 
+    /**
+     * Verifies given credentials
+     *
+     * @param hostUrl
+     * @param secretText
+     * @return
+     * @throws URISyntaxException
+     */
+    @Override
+    public Boolean verifyCredentials(String hostUrl, String secretText) throws URISyntaxException {
+        Boolean res = login(hostUrl, secretText);
+        clear();
+        return res;
+    }
+
     @Override
     public Boolean login(String hostAddress, String username, String password) throws URISyntaxException {
         String url = hostAddress + GET_CURRENT_USER_URL;
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("restVersion", restVersion);
         url = buildUrl(url, pathParams, null);
-        String res = httpClientService.authenticationGetRequest(url, username, password);
+        String encoding = Base64.getEncoder().encodeToString((username+":"+password).getBytes());
+        httpClientService.getHeaders().add(new BasicHeader("Authorization", "Basic "+encoding));
+        String res = httpClientService.getRequest(url);
+        httpClientService.getHeaders().clear();
         if(res != null) {
             setCurrentUser(gson.fromJson(res, User.class));
             setHostAddress(hostAddress);
@@ -137,6 +156,31 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         }
         return Boolean.FALSE;
     }
+
+    /**
+     * Verifies given credentials and stores hostAddress if verification succeeds
+     *
+     * @param hostAddress
+     * @param secretText
+     * @return
+     * @throws URISyntaxException
+     */
+    @Override
+    public Boolean login(String hostAddress, String secretText) throws URISyntaxException {
+        String url = hostAddress + GET_CURRENT_USER_URL;
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("restVersion", restVersion);
+        url = buildUrl(url, pathParams, null);
+        httpClientService.getHeaders().add(new BasicHeader("Authorization", "Bearer "+ secretText));
+        String res = httpClientService.getRequest(url);
+        if(res != null) {
+            setCurrentUser(gson.fromJson(res, User.class));
+            setHostAddress(hostAddress);
+            return Boolean.TRUE;
+        }
+        return Boolean.FALSE;
+    }
+
 
     @Override
     public Project getProjectById(Long projectId) throws URISyntaxException {

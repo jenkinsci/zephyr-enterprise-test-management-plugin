@@ -34,7 +34,8 @@ public class AttachmentServiceImpl extends BaseServiceImpl implements Attachment
                 Path path = Paths.get(filePath);
                 // remove special character from filename
                 String fileName = path.getFileName().toString().replaceAll("[\\\\/:*?\"<>|]", "");
-                if(fileName.length() > 240) {
+                int length = fileName.substring(0,fileName.lastIndexOf(".")).length();
+                if(length > 240) {
                     String extension = fileName.substring(fileName.lastIndexOf("."));
                     fileName = fileName.substring(0, 240);
                     fileName += extension;

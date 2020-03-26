@@ -145,6 +145,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("restVersion", restVersion);
         url = buildUrl(url, pathParams, null);
+        httpClientService.clear();
         String encoding = Base64.getEncoder().encodeToString((username+":"+password).getBytes());
         httpClientService.getHeaders().add(new BasicHeader("Authorization", "Basic "+encoding));
         String res = httpClientService.getRequest(url);
@@ -171,6 +172,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("restVersion", restVersion);
         url = buildUrl(url, pathParams, null);
+        httpClientService.clear();
         httpClientService.getHeaders().add(new BasicHeader("Authorization", "Bearer "+ secretText));
         String res = httpClientService.getRequest(url);
         if(res != null) {

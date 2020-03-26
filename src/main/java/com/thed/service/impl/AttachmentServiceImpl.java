@@ -32,7 +32,15 @@ public class AttachmentServiceImpl extends BaseServiceImpl implements Attachment
             for (String filePath : attachmentFilePaths) {
 
                 Path path = Paths.get(filePath);
-                String fileName = path.getFileName().toString();
+                // remove special character from filename
+                String fileName = path.getFileName().toString().replaceAll("[\\\\/:*?\"<>|]", "");
+                int length = fileName.substring(0,fileName.lastIndexOf(".")).length();
+                if(length > 240) {
+                    String extension = fileName.substring(fileName.lastIndexOf("."));
+                    fileName = fileName.substring(0, 240);
+                    fileName += extension;
+                }
+
                 String mimeType = Files.probeContentType(path);
                 byte[] bytes = Files.readAllBytes(Paths.get(filePath));
 

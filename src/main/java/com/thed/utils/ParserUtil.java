@@ -87,12 +87,13 @@ public class ParserUtil {
         }
 
         if(node == null || nodeList.getLength() == 0) {
+
+            if(!changed && dataMapList.size() == 0 && xmlLink.getType().equals(XMLLink.Type.ARRAY)) {
+                return true;
+            }
+
             Map<String, Object> newDataMap = deepCopy(dataMap);
             boolean aChanged = startFillingMap(xmlLink, null, baseTemplateMap, newDataMap, changed);
-//            if(changed || aChanged) {
-//                dataMapList.add(newDataMap);
-//            }
-
             List<XMLLink> objectChildLinks = xmlLink.getChildWithType(XMLLink.Type.OBJECT);
 
             if(objectChildLinks.isEmpty() && (changed || aChanged)) {
@@ -108,54 +109,58 @@ public class ParserUtil {
         } else {
             for (int i = 0; i < nodeList.getLength(); i++) {
                 Node childNode = nodeList.item(i);
-                Map<String, Object> newDataMap = deepCopy(dataMap);
-                changed = startFillingMap(xmlLink, (Element) childNode, baseTemplateMap, newDataMap, changed);
-
-                List<XMLLink> objectChildLinks = xmlLink.getChildWithType(XMLLink.Type.OBJECT);
-
-                if(objectChildLinks.isEmpty() && changed) {
-                    //no more kids to traverse, add the newDataMap to list
-                    dataMapList.add(newDataMap);
-                    continue;
-                }
-
-                List<Map> newDataMapList = new ArrayList<Map>();
-                newDataMapList.add(newDataMap);
-
-                for (XMLLink link : objectChildLinks) {
-
-                    List<Map> iterationList = deepyCopy(newDataMapList);
-
-                    Map<Map, List<Map>> changeTrackMap = new HashMap<Map, List<Map>>();
-
-                    for(Map currentDataMap : iterationList) {
-                        List<Map> carryList = new ArrayList<Map>();
-                        boolean aChange = startParsing(link, childNode, baseTemplateMap, currentDataMap, carryList, changed);
-                        changed = aChange || changed;
-
-                        if(!carryList.isEmpty()) {
-                            changeTrackMap.put(currentDataMap, deepyCopy(carryList));
-                        } else if(changed) {
-                            changeTrackMap.put(currentDataMap, null);
-                        }
-                    }
-
-                    newDataMapList = new ArrayList<Map>();
-
-                    for (Map.Entry<Map, List<Map>> entry : changeTrackMap.entrySet()) {
-                        if(entry.getValue() == null) {
-                            newDataMapList.add(entry.getKey());
-                        } else {
-                            newDataMapList.addAll(entry.getValue());
-                        }
-                    }
-                }
-
-                if(changed) {
-                    dataMapList.addAll(newDataMapList);
-                }
-
+                changed = anotherMethod(xmlLink, childNode, deepCopy(baseTemplateMap), dataMap, dataMapList, changed);
             }
+        }
+        return changed;
+    }
+
+    boolean anotherMethod(XMLLink xmlLink, Node node, Map<String, Object> baseTemplateMap, Map<String, Object> dataMap, List<Map> dataMapList, boolean changed) {
+        Map<String, Object> newDataMap = deepCopy(dataMap);
+        changed = startFillingMap(xmlLink, (Element) node, baseTemplateMap, newDataMap, changed);
+
+        List<XMLLink> objectChildLinks = xmlLink.getChildWithType(XMLLink.Type.OBJECT);
+
+        if(objectChildLinks.isEmpty() && changed) {
+            //no more kids to traverse, add the newDataMap to list
+            dataMapList.add(newDataMap);
+            return changed;
+        }
+
+        List<Map> newDataMapList = new ArrayList<Map>();
+        newDataMapList.add(newDataMap);
+
+        for (XMLLink link : objectChildLinks) {
+
+            List<Map> iterationList = deepyCopy(newDataMapList);
+
+            Map<Map, List<Map>> changeTrackMap = new HashMap<Map, List<Map>>();
+
+            for(Map currentDataMap : iterationList) {
+                List<Map> carryList = new ArrayList<Map>();
+                boolean aChange = startParsing(link, node, baseTemplateMap, currentDataMap, carryList, changed);
+                changed = aChange || changed;
+
+                if(!carryList.isEmpty()) {
+                    changeTrackMap.put(currentDataMap, deepyCopy(carryList));
+                } else if(changed) {
+                    changeTrackMap.put(currentDataMap, null);
+                }
+            }
+
+            newDataMapList = new ArrayList<Map>();
+
+            for (Map.Entry<Map, List<Map>> entry : changeTrackMap.entrySet()) {
+                if(entry.getValue() == null) {
+                    newDataMapList.add(entry.getKey());
+                } else {
+                    newDataMapList.addAll(entry.getValue());
+                }
+            }
+        }
+
+        if(changed) {
+            dataMapList.addAll(newDataMapList);
         }
         return changed;
     }
@@ -194,21 +199,37 @@ public class ParserUtil {
                 dataMap.put(key, resultValue);
             }
             else if(value instanceof List) {
-                List valueList = (List) baseTemplateMap.get(key);
+                List<Map> baseTemplateValueList = (List) baseTemplateMap.get(key);
+                List<Map> dataMapValueList = (List) dataMap.get(key);
                 List<Map> dataMapList = new ArrayList<Map>();
-                Map valueDataMap = (Map) valueList.get(0);
+                Map valueDataMap = dataMapValueList.size() > 0 ? dataMapValueList.get(0) : null;
 
-                if(element != null) {
+                if(valueDataMap != null) {
+
                     List<XMLLink> linkList = xmlLink.getChildWithType(XMLLink.Type.ARRAY);
+                    Boolean outerChange = false;
                     for (XMLLink link : linkList) {
-//                        List<Map> newDataMapList = new ArrayList<Map>();
-                        boolean aChanged = startParsing(link, element, deepCopy(valueDataMap), deepCopy(valueDataMap), dataMapList, false);
-                        if(!aChanged) {
-//                            dataMapList.add(valueDataMap);
+                        List<Map> localDataMapList = new ArrayList<Map>();
+                        XMLLink localRootLink = new XMLLink();
+                        getXmlPathDeepLinks(localRootLink, deepCopy(valueDataMap), new ArrayList<String>(), XMLLink.Type.ARRAY);
+
+                        if(localRootLink.matchLink(link)) {
+                            boolean aChanged = startParsing(link, element, deepCopy(valueDataMap), deepCopy(valueDataMap), localDataMapList, false);
+                            if(aChanged) {
+                                dataMapList.addAll(localDataMapList);
+                                outerChange = aChanged || outerChange;
+                            }
                         }
                     }
-                    if(linkList.size() != 0) {
+                    if(linkList.size() != 0 && outerChange && dataMapValueList.size() == 1) {
                         dataMap.put(key, dataMapList);
+                        changed = outerChange || changed;
+                    } else {
+                        boolean aChange = false;
+                        for(int i = 0; i < dataMapValueList.size(); i++) {
+                            Map dataMapValueMap = dataMapValueList.get(i);
+                            aChange = startFillingMap(xmlLink, element, deepCopy(dataMapValueMap), dataMapValueMap, aChange);
+                        }
                     }
                 } else {
                     List<XMLLink> linkList = xmlLink.getChildWithType(XMLLink.Type.ARRAY);
@@ -266,6 +287,13 @@ public class ParserUtil {
         String json = gson.toJson(originalList);
         List cloneList = gson.fromJson(json, List.class);
         return cloneList;
+    }
+
+    <T> T deepCopy(Object object) {
+        Class<T> c = (Class<T>) object.getClass();
+        Gson gson = new Gson();
+        String json = gson.toJson(object);
+        return gson.fromJson(json, c);
     }
 
     List<String> getVariablesFromString(String value) {

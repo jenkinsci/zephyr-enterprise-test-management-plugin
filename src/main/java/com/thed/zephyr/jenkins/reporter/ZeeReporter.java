@@ -862,7 +862,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                     if (tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey()) && tcrCatalogTreeTestcase.getTcrCatalogTreeId().equals(treeId)) {
                         //same testcase, add id and status to map
                         Map<String, Object> statusMap = new HashMap<>();
-                        statusMap.put("statusId", entry.getValue().get("statusId"));
+                        if(entry.getValue().containsKey("statusId")) {
+                            statusMap.put("statusId", entry.getValue().get("statusId"));
+                        }
 
                         MapTestcaseToRequirement mapTestcaseToRequirement = (MapTestcaseToRequirement) entry.getValue().get("mapTestcaseToRequirement");
                         mapTestcaseToRequirement.setTestcaseId(tcrCatalogTreeTestcase.getTestcase().getId());

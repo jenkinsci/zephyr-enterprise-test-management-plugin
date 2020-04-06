@@ -10,9 +10,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by prashant on 6/1/20.
@@ -24,7 +22,9 @@ public class AttachmentServiceImpl extends BaseServiceImpl implements Attachment
     }
 
     @Override
-    public void addAttachments(ItemType itemType, Map<Long, List<String>> itemIdFilePathMap, Map<Long, GenericAttachmentDTO> statusAttachmentMap) throws IOException, URISyntaxException {
+    public List<String> addAttachments(ItemType itemType, Map<Long, List<String>> itemIdFilePathMap, Map<Long, GenericAttachmentDTO> statusAttachmentMap) throws IOException, URISyntaxException {
+
+        List<String> errorLogs = new ArrayList<>();//list contains error logs for attachments that were not uploaded.
 
         for (Long itemId : itemIdFilePathMap.keySet()) {
             List<String> attachmentFilePaths = itemIdFilePathMap.get(itemId);
@@ -35,6 +35,13 @@ public class AttachmentServiceImpl extends BaseServiceImpl implements Attachment
 
                 if(path.toFile().isDirectory()) {
                     //attachment is directory, skip it
+                    errorLogs.add("Cannot upload attachment " + filePath + ", it is a directory.");
+                    continue;
+                }
+
+                if(!path.toFile().exists()) {
+                    //attachment file doesn't exist, skip it
+                    errorLogs.add("Cannot upload attachment " + filePath + ", file is missing.");
                     continue;
                 }
 
@@ -78,6 +85,7 @@ public class AttachmentServiceImpl extends BaseServiceImpl implements Attachment
 
         }
 
+        return errorLogs;
     }
 
 }

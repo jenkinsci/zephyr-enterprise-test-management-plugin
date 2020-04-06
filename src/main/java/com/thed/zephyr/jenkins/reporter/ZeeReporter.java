@@ -351,7 +351,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 }
             }
 
-            attachmentService.addAttachments(AttachmentService.ItemType.releaseTestSchedule, testcaseAttachmentsMap, statusAttachmentMap);
+            List<String> errorLogs = attachmentService.addAttachments(AttachmentService.ItemType.releaseTestSchedule, testcaseAttachmentsMap, statusAttachmentMap);
+            errorLogs.forEach(errorLog -> logger.println(errorLog));
             executionService.addTestStepResults(testStepResultList);
             for(Map.Entry<String, Set<Long>> entry : executionMap.entrySet()) {
                 executionService.executeReleaseTestSchedules(entry.getValue(), entry.getKey());

@@ -1,6 +1,7 @@
 package com.thed.utils;
 
 import com.google.gson.Gson;
+import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -213,7 +214,7 @@ public class ParserUtil {
                         XMLLink localRootLink = new XMLLink();
                         getXmlPathDeepLinks(localRootLink, deepCopy(valueDataMap), new ArrayList<String>(), XMLLink.Type.ARRAY);
 
-                        if(localRootLink.matchLink(link)) {
+                        if(StringUtils.isNotEmpty(localRootLink.getXmlTagName()) && localRootLink.matchLink(link)) {
                             boolean aChanged = startParsing(link, element, deepCopy(valueDataMap), deepCopy(valueDataMap), localDataMapList, false);
                             if(aChanged) {
                                 dataMapList.addAll(localDataMapList);

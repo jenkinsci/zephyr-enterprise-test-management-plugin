@@ -24,7 +24,8 @@ import java.util.regex.Pattern;
  */
 public class ParserUtil {
 
-    public static final String parserVariablePattern = "\\$\\{[^${}]*}";
+    public static final String PARSER_VARIABLE_PATTERN = "\\$\\{[^${}]*}";
+    public static final String PARSER_VARIABLE_PATTERN_EXISTS_FUNCTION = "\\$\\{exists\\([^${}]*\\)}";
 
     public Document getXMLDoc(String filePath) throws ParserConfigurationException, IOException, SAXException {
         File xmlFile = new File(filePath);
@@ -52,7 +53,7 @@ public class ParserUtil {
                 }
                 List<String> xmlPathVarList = getVariablesFromString(String.valueOf(value));
                 for (String xmlPathVarStr : xmlPathVarList) {
-                    String xmlPathVar = getXmlPathVar(String.valueOf(xmlPathVarStr));
+                    String xmlPathVar = getXmlPath(String.valueOf(xmlPathVarStr));
                     xmlLink.attachLink(xmlPathVar.split("\\."), type);
                     if(deepLinks.size() == 0) {
                         deepLinks.add(xmlPathVar);
@@ -179,22 +180,18 @@ public class ParserUtil {
                 List<String> xmlPathVarList = getVariablesFromString(value.toString());
                 String resultValue = value.toString();
                 for (String xmlPathVar : xmlPathVarList) {
-                    if(xmlPathVar.equals("${"+xmlLink.getXMLPath()+"}")) {
-                        if(element == null) {
-                            resultValue = resultValue.replace(xmlPathVar, "");
-                        } else {
-                            resultValue = resultValue.replace(xmlPathVar, element.getTextContent());
-                            changed = true;
-                        }
 
-                    } else if(xmlPathVar.startsWith("${" + xmlLink.getXMLPath() + ":") && xmlPathVar.endsWith("}")) {
-                        if(element == null) {
-                            resultValue = resultValue.replace(xmlPathVar, "");
-                        } else {
-                            resultValue = resultValue.replace(xmlPathVar, element.getAttribute(getAttributeName(xmlPathVar)));
-                            changed = true;
-                        }
+                    if(!xmlLink.getXMLPath().equals(getXmlPath(xmlPathVar))) {
+                        //this xmlPath doesn't belong to xmlLink, skip it
+                        continue;
+                    }
 
+                    String replaceValue = getReplaceValue(element, xmlPathVar);
+                    if(replaceValue == null) {
+                        resultValue = resultValue.replace(xmlPathVar, "");
+                    } else {
+                        resultValue = resultValue.replace(xmlPathVar, replaceValue);
+                        changed = true;
                     }
                 }
                 dataMap.put(key, resultValue);
@@ -243,30 +240,68 @@ public class ParserUtil {
         return changed;
     }
 
+    String getReplaceValue(Element element, String xmlVar) {
+        String attributeName = getAttributeName(xmlVar);
+
+        if(getPatternMatchesFromString(xmlVar, PARSER_VARIABLE_PATTERN_EXISTS_FUNCTION).size() == 1) {
+            //exists function used for this variable
+            if(element == null) {
+                //neither xmlPath or attributeName exists
+                return Boolean.FALSE.toString();
+            } else if(attributeName == null) {
+                //variable doesn't ask for attribute name, so xmlPath exists
+                return Boolean.TRUE.toString();
+            } else {
+                //variable asking for attributeName
+                return String.valueOf(element.hasAttribute(attributeName));
+            }
+        } else {
+            //no function used, get value of xmlVar
+            if(element == null) {
+                return null;
+            } else if(attributeName == null) {
+                //variable doesn't ask for attribute name, so return element content
+                return element.getTextContent();
+            } else {
+                //variable asking for attributeName
+                return element.getAttribute(attributeName);
+            }
+        }
+    }
+
     /**
-     * For xmlPath like '${testsuite.testcase:name}', returns 'name'
-     * @param xmlPath
+     * For var like '${testsuite.testcase:name}', returns 'name'
+     * @param var
      * @return
      */
-    String getAttributeName(String xmlPath) {
-        String values[] = xmlPath.split(":");
+    String getAttributeName(String var) {
+        String values[] = getValueFromVariable(var).split(":");
         if(values.length == 1) {
             return null;
         }
-        String value = values[values.length - 1];
-        return value.substring(0, value.length()-1);
+        return values[1];
     }
 
     /**
-     * For xmlPath like '${testsuite.testcase:name}', returns 'testsuite.testcase'
-     * @param xmlPath
+     * For var like '${testsuite.testcase:name}', returns 'testsuite.testcase'
+     * @param var
      * @return
      */
-    String getXmlPathVar(String xmlPath) {
-        String values[] = xmlPath.split(":");
-        return values[0].replace("$", "").replace("{", "").replace("}", "");
+    String getXmlPath(String var) {
+        String values[] = getValueFromVariable(var).split(":");
+        return values[0];
     }
 
+    /**
+     * For var like ${testsuite.testcase:name}, returns 'testsuite.testcase:name'.
+     * Ex: ${exists(testsuite.testcase:name)}, returns 'testsuite.testcase:name'.
+     * @param var
+     * @return
+     */
+    String getValueFromVariable(String var) {
+        return var.replace("$", "").replace("{", "").replace("}", "") //basic variable
+                .replace("exists(", "").replace(")", ""); //exists function removal
+    }
 
     String joinString(String joinChar, int length, String[] list) {
         String value = list[0];
@@ -298,7 +333,11 @@ public class ParserUtil {
     }
 
     List<String> getVariablesFromString(String value) {
-        Pattern pattern = Pattern.compile(parserVariablePattern);
+        return getPatternMatchesFromString(value, PARSER_VARIABLE_PATTERN);
+    }
+
+    List<String> getPatternMatchesFromString(String value, String patternStr) {
+        Pattern pattern = Pattern.compile(patternStr);
         Matcher matcher = pattern.matcher(value);
         List<String> variables = new ArrayList<String>();
         while (matcher.find()) {

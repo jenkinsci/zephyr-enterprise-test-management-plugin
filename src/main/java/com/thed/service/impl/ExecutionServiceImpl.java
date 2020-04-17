@@ -25,11 +25,11 @@ public class ExecutionServiceImpl extends BaseServiceImpl implements ExecutionSe
     }
 
     @Override
-    public List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, boolean pass) throws URISyntaxException {
+    public List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String statusId) throws URISyntaxException {
         if(rtsIds.isEmpty()) {
             return new ArrayList<>();
         }
-        return zephyrRestService.executeReleaseTestSchedules(rtsIds, pass ? ZephyrConstants.EXECUTION_STATUS_PASS : ZephyrConstants.EXECUTION_STATUS_FAIL);
+        return zephyrRestService.executeReleaseTestSchedules(rtsIds, statusId);
     }
 
     @Override

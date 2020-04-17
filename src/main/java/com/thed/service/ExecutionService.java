@@ -21,13 +21,13 @@ public interface ExecutionService extends BaseService {
     List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId) throws URISyntaxException;
 
     /**
-     * Execute given releaseTestSchedule ids for either Pass or Fail based on pass.
+     * Execute given releaseTestSchedule ids for given statusId.
      * @param rtsIds
-     * @param pass
+     * @param statusId
      * @return
      * @throws URISyntaxException
      */
-    List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, boolean pass) throws URISyntaxException;
+    List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String statusId) throws URISyntaxException;
 
     /**
      * Add testStep results.

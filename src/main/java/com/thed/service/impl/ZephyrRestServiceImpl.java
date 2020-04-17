@@ -427,7 +427,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
         for (GenericAttachmentDTO attachmentDTO : attachmentDTOs) {
-            builder.addBinaryBody(attachmentDTO.getFieldName(), attachmentDTO.getByteData(), ContentType.getByMimeType(attachmentDTO.getContentType()), attachmentDTO.getFileName());
+            builder.addBinaryBody(attachmentDTO.getFieldName(), attachmentDTO.getByteData(), ContentType.MULTIPART_FORM_DATA, attachmentDTO.getFileName());
         }
 
         String res = httpClientService.postRequest(url, builder.build());

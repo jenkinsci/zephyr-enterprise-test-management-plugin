@@ -277,9 +277,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
 
-            Map<Boolean, Set<Long>> executionMap = new HashMap<>();
-            executionMap.put(Boolean.TRUE, new HashSet<Long>());
-            executionMap.put(Boolean.FALSE, new HashSet<Long>());
+            Map<String, Set<Long>> executionMap = new HashMap<>();
 
             Map<Long, List<String>> testcaseAttachmentsMap = new HashMap<>();
             Map<Long, GenericAttachmentDTO> statusAttachmentMap = new HashMap<>();
@@ -294,7 +292,13 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                         // tcrTestcase matched, map caseResult.isPass status to rtsId
                         Map<String, Object> testcaseValueMap = caseEntry.getValue();
 
-                        executionMap.get(testcaseValueMap.get("status")).add(releaseTestSchedule.getId());
+                        if(testcaseValueMap.containsKey("statusId")) {
+                            String statusId = testcaseValueMap.get("statusId").toString();
+                            if(!executionMap.containsKey(statusId)) {
+                                executionMap.put(statusId, new HashSet<Long>());
+                            }
+                            executionMap.get(statusId).add(releaseTestSchedule.getId());
+                        }
 
                         if(testcaseValueMap.containsKey("attachments")) {
                             testcaseAttachmentsMap.put(releaseTestSchedule.getId(), (List<String>)testcaseValueMap.get("attachments"));
@@ -347,10 +351,16 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 }
             }
 
-            attachmentService.addAttachments(AttachmentService.ItemType.releaseTestSchedule, testcaseAttachmentsMap, statusAttachmentMap);
-            executionService.addTestStepResults(testStepResultList);
-            executionService.executeReleaseTestSchedules(executionMap.get(Boolean.TRUE), Boolean.TRUE);
-            executionService.executeReleaseTestSchedules(executionMap.get(Boolean.FALSE), Boolean.FALSE);
+            List<String> errorLogs = attachmentService.addAttachments(AttachmentService.ItemType.releaseTestSchedule, testcaseAttachmentsMap, statusAttachmentMap);
+            errorLogs.forEach(errorLog -> logger.println(errorLog));
+
+            if(!testStepResultList.isEmpty()) {
+                executionService.addTestStepResults(testStepResultList);
+            }
+
+            for(Map.Entry<String, Set<Long>> entry : executionMap.entrySet()) {
+                executionService.executeReleaseTestSchedules(entry.getValue(), entry.getKey());
+            }
         }
         catch(Exception e) {
             //todo:handle exceptions gracefully
@@ -744,20 +754,26 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 packageName = dataMap.get("packageName").toString();
             }
 
-            boolean status;
-
-            if(dataMap.containsKey("statusString") && dataMap.get("statusString") != null) {
-                boolean matched = dataMap.get("status").equals(dataMap.get("statusString"));
-                if(Boolean.valueOf(dataMap.get("statusExistPass").toString())) {
-                    status = matched;
-                } else {
-                    status = !matched;
+            Map<String, String> statusCondition = new HashMap<>();
+            if(dataMap.containsKey("statuses") && dataMap.get("statuses") != null) {
+                List<Map> statuses = (List) dataMap.get("statuses");
+                boolean matched = false;
+                for(Map sc : statuses) {
+                    if((sc.get("statusString") == null && sc.get("status") != null && StringUtils.isNotEmpty(sc.get("status").toString())) //status is not empty
+                            || (sc.get("statusString") != null && sc.get("statusString").equals(sc.get("status")))) { //status matches statusString
+                        statusCondition = sc;
+                        matched = true;
+                        break;
+                    }
                 }
-            } else {
-                if(Boolean.valueOf(dataMap.get("statusExistPass").toString())) {
-                    status = dataMap.get("status").toString().length() > 0;
-                } else {
-                    status = dataMap.get("status").toString().length() == 0;
+                if(!matched) {
+                    //none of the status condition satisfied, search for default
+                    for(Map sc : statuses) {
+                        if(sc.get("default") != null && Boolean.valueOf(sc.get("default").toString())) { //default status
+                            statusCondition = sc;
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -801,45 +817,28 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 }
             }
 
-            if(dataMap.containsKey("basePath")) {
+            if(dataMap.containsKey("basePath") && statusCondition.containsKey("attachmentFileIncludes")) {
                 String basePath = dataMap.get("basePath").toString();
-                if(status && dataMap.containsKey("statusPassAttachmentFileIncludes")) {
-                    String includesStr = dataMap.get("statusPassAttachmentFileIncludes").toString();
-                    attachments.addAll(getAllIncludedFilePathList(basePath, includesStr));
-                }
-
-                if(!status && dataMap.containsKey("statusFailAttachmentFileIncludes")) {
-                    String includesStr = dataMap.get("statusFailAttachmentFileIncludes").toString();
-                    attachments.addAll(getAllIncludedFilePathList(basePath, includesStr));
-                }
+                String includesStr = statusCondition.get("attachmentFileIncludes");
+                attachments.addAll(getAllIncludedFilePathList(basePath, includesStr));
             }
 
             Map<String, Object> valueMap = new HashMap<>();
             valueMap.put("treeId", treeDTO.getId());
             valueMap.put("mapTestcaseToRequirement", mapTestcaseToRequirement);
-            valueMap.put("status", status);
+            if(statusCondition.containsKey("statusId")) {
+                valueMap.put("statusId", statusCondition.get("statusId"));
+            }
             valueMap.put("attachments", attachments);
 
-            if(status && dataMap.containsKey("statusPassAttachmentText")) {
-                String successAttachmentStr = dataMap.get("statusPassAttachmentText").toString();
+            if(statusCondition.containsKey("attachmentText")) {
+                String successAttachmentStr = statusCondition.get("attachmentText");
                 if(!StringUtils.isEmpty(successAttachmentStr)) {
                     GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
-                    genericAttachmentDTO.setFileName("success.txt");
+                    genericAttachmentDTO.setFileName("status.txt");
                     genericAttachmentDTO.setContentType("text/plain");
                     genericAttachmentDTO.setFieldName(AttachmentService.ItemType.releaseTestSchedule.toString());
                     genericAttachmentDTO.setByteData(successAttachmentStr.getBytes());
-                    valueMap.put("statusAttachment", genericAttachmentDTO);
-                }
-            }
-
-            if(!status && dataMap.containsKey("statusFailAttachmentText")) {
-                String failureAttachmentStr = dataMap.get("statusFailAttachmentText").toString();
-                if(!StringUtils.isEmpty(failureAttachmentStr)) {
-                    GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
-                    genericAttachmentDTO.setFileName("failure.txt");
-                    genericAttachmentDTO.setContentType("text/plain");
-                    genericAttachmentDTO.setFieldName(AttachmentService.ItemType.releaseTestSchedule.toString());
-                    genericAttachmentDTO.setByteData(failureAttachmentStr.getBytes());
                     valueMap.put("statusAttachment", genericAttachmentDTO);
                 }
             }
@@ -868,7 +867,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                     if (tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey()) && tcrCatalogTreeTestcase.getTcrCatalogTreeId().equals(treeId)) {
                         //same testcase, add id and status to map
                         Map<String, Object> statusMap = new HashMap<>();
-                        statusMap.put("status", entry.getValue().get("status"));
+                        if(entry.getValue().containsKey("statusId")) {
+                            statusMap.put("statusId", entry.getValue().get("statusId"));
+                        }
 
                         MapTestcaseToRequirement mapTestcaseToRequirement = (MapTestcaseToRequirement) entry.getValue().get("mapTestcaseToRequirement");
                         mapTestcaseToRequirement.setTestcaseId(tcrCatalogTreeTestcase.getTestcase().getId());

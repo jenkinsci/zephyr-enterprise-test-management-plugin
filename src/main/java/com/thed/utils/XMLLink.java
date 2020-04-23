@@ -73,7 +73,7 @@ public class XMLLink {
                 xmlLink = new XMLLink(linkArray[1], type);
                 addChildXMLLink(xmlLink);
                 xmlLink.setParentXMLLink(this);
-                xmlLink.attachLink(Arrays.copyOfRange(linkArray, 1, linkArray.length), Type.OBJECT);
+                xmlLink.attachLink(Arrays.copyOfRange(linkArray, 1, linkArray.length), type);
             }
         }
     }

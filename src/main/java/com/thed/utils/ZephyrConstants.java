@@ -17,5 +17,7 @@ public class ZephyrConstants {
     public static final String EXECUTION_STATUS_FAIL = "2";
     public static final String EXECUTION_STATUS_NOT_EXECUTED = "10";
 
+    public static final Integer BATCH_SIZE = 500;
+
 
 }

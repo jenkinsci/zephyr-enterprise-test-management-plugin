@@ -41,6 +41,7 @@ import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import jenkins.model.Jenkins;
@@ -266,15 +267,18 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             cyclePhase.setEndDate(new Date(cycle.getEndDate()));
             cyclePhase.setReleaseId(zephyrConfigModel.getReleaseId());
             cyclePhase.setFreeForm(true);
-
+            logger.println("calling create phase api :"+ LocalDateTime.now());
             cyclePhase = cycleService.createCyclePhase(cyclePhase);
 
             //adding testcases to free form cycle phase
+            logger.println("calling free from phase phase api :"+ LocalDateTime.now());
             cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
 
             //assigning testcases in cycle phase to creator
+            logger.println("calling assign user api :"+ LocalDateTime.now());
             cycleService.assignCyclePhaseToCreator(cyclePhase.getId());
 
+            logger.println("calling execute testcase api :"+ LocalDateTime.now());
             List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
 
             Map<String, Set<Long>> executionMap = new HashMap<>();

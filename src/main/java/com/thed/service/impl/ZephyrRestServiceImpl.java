@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.thed.model.*;
 import com.thed.service.HttpClientService;
 import com.thed.service.ZephyrRestService;
+import com.thed.utils.ZephyrConstants;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
@@ -18,6 +19,7 @@ import org.json.JSONObject;
 import java.lang.reflect.Type;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**user
  * Created by prashant on 20/6/19.
@@ -358,20 +360,31 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("includehierarchy", includeHierarchy.toString()));
 
-        JSONArray contentJsonArray = new JSONArray();
-
-        for (Map.Entry<Long, Set<Long>> entry : treeTestcaseMap.entrySet()) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("treeid", entry.getKey());
-            jsonObject.put("tctIds", entry.getValue());
-            jsonObject.put("isExclusion", Boolean.TRUE);
-
-            contentJsonArray.put(jsonObject);
-        }
-
         String url = buildUrl(prepareUrl(ADD_TESTCASES_TO_FREE_FORM_CYCLE_PHASE_URL), pathParams, queryParams);
 
-        return httpClientService.postRequest(url, contentJsonArray.toString());
+        for (Map.Entry<Long, Set<Long>> entry : treeTestcaseMap.entrySet()) {
+
+            final List<Long> list = entry.getValue().stream().collect(Collectors.toList());
+            for(int i=0;i<entry.getValue().size(); i+= ZephyrConstants.BATCH_SIZE) {
+                JSONArray contentJsonArray = new JSONArray();
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("treeid", entry.getKey());
+                if(i + ZephyrConstants.BATCH_SIZE > entry.getValue().size()){
+                    jsonObject.put("tctIds", list.subList(i,list.size()));
+                }else{
+                    jsonObject.put("tctIds", list.subList(i,i+ZephyrConstants.BATCH_SIZE));
+                }
+                jsonObject.put("isExclusion", Boolean.TRUE);
+
+                contentJsonArray.put(jsonObject);
+
+                httpClientService.postRequest(url, contentJsonArray.toString());
+            }
+
+        }
+
+
+        return "";
     }
 
     @Override

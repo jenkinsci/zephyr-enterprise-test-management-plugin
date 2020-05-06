@@ -906,28 +906,36 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         TestStep testStep = new TestStep();
         Integer i=1;
         for(String step : steps) {
-            if(keywordsList.contains(step.split(" ", 2)[0])) {
+            step = step.trim();
+            if(keywordsList.contains(step.trim().split(" ", 2)[0])) {
                 TestStepDetail testStepDetail = new TestStepDetail();
                 Map<String, String> stepMap = new HashMap<String, String>();
                 testStepDetail.setOrderId((long)i);
                 testStepDetail.setStep(step.substring(0,step.indexOf(".")));
                 stepMap.put("orderId", i.toString());
                 stepMap.put("step", step.substring(0,step.indexOf(".")));
-                status=step.substring(step.lastIndexOf(".")+1, step.length());
-                if(status.equals("failed")) {
+
+                String[] statusStringArr = step.split("\\.");
+                status = statusStringArr[statusStringArr.length-1].trim();
+
+                if(StringUtils.isNumeric(status.substring(0,1))) {
+                    //first character is numeric, check item before this in array for status
+                    status = statusStringArr[statusStringArr.length-2].trim();
+                }
+
+                if(status.startsWith("failed")) {
                     stepMap.put("status", "false");
-                }else if(status.equals("skipped") || status.equals("undefined")) {
+                }else if(status.startsWith("skipped") || status.startsWith("undefined")) {
                     stepMap.put("status", "skipped");
                 }else {
                     stepMap.put("status", "true");
                 }
                 stepsList.add(stepMap);
                 testStep.getSteps().add(testStepDetail);
+                i++;
             }
-            i++;
         }
         testStep.setMaxId((long)testStep.getSteps().size());
-//        System.out.println(stepsList);
         return testStep;
     }
 

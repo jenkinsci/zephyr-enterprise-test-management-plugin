@@ -217,6 +217,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             //zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
+            logger.println("calling create testcase api :" + LocalDateTime.now());
             Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList, zephyrConfigModel);
 
             logger.println("Total Test Cases : " + tcrStatusMap.keySet().size());
@@ -271,14 +272,14 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             cyclePhase = cycleService.createCyclePhase(cyclePhase);
 
             //adding testcases to free form cycle phase
-            logger.println("calling free from phase phase api :"+ LocalDateTime.now());
+            logger.println("adding testcases to free form cycle phase :"+ LocalDateTime.now());
             cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
 
             //assigning testcases in cycle phase to creator
-            logger.println("calling assign user api :"+ LocalDateTime.now());
-            cycleService.assignCyclePhaseToCreator(cyclePhase.getId());
+            logger.println("assigning testcases in cycle phase to creator :"+ LocalDateTime.now());
+            cycleService.assignCyclePhaseToCreator(cyclePhase.getId() ,zephyrConfigModel.isCreatePackage());
 
-            logger.println("calling execute testcase api :"+ LocalDateTime.now());
+            logger.println("calling get release test schedule testcase api :"+ LocalDateTime.now());
             List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
 
             Map<String, Set<Long>> executionMap = new HashMap<>();
@@ -354,14 +355,15 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                     }
                 }
             }
-
+            logger.println("calling add attachment api :" + LocalDateTime.now());
             List<String> errorLogs = attachmentService.addAttachments(AttachmentService.ItemType.releaseTestSchedule, testcaseAttachmentsMap, statusAttachmentMap);
             errorLogs.forEach(errorLog -> logger.println(errorLog));
 
             if(!testStepResultList.isEmpty()) {
+                logger.println("calling add test step result api :" + LocalDateTime.now());
                 executionService.addTestStepResults(testStepResultList);
             }
-
+            logger.println("calling execute release test schedule api :" + LocalDateTime.now());
             for(Map.Entry<String, Set<Long>> entry : executionMap.entrySet()) {
                 executionService.executeReleaseTestSchedules(entry.getValue(), entry.getKey());
             }

@@ -20,7 +20,7 @@ public interface CycleService extends BaseService {
 
     CyclePhase createCyclePhase(CyclePhase cyclePhase) throws URISyntaxException;
 
-    Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException;
+    Integer assignCyclePhaseToCreator(Long cyclePhaseId, Boolean isPackageCreated) throws URISyntaxException;
 
     String addTestcasesToFreeFormCyclePhase(CyclePhase cyclePhase, List<TCRCatalogTreeTestcase> testcases, Boolean includeHierarchy) throws URISyntaxException;
 

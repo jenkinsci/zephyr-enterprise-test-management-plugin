@@ -169,7 +169,7 @@ public interface ZephyrRestService {
      * @return
      * @throws URISyntaxException
      */
-    Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException;
+    Integer assignCyclePhaseToCreator(Long cyclePhaseId, Boolean isPackageCreated) throws URISyntaxException;
 
     /**
      * Get testcases scheduled under this cycle phase.

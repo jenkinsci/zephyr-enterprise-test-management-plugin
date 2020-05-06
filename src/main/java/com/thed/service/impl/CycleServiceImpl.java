@@ -39,8 +39,8 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
     }
 
     @Override
-    public Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException {
-        return zephyrRestService.assignCyclePhaseToCreator(cyclePhaseId);
+    public Integer assignCyclePhaseToCreator(Long cyclePhaseId,Boolean isPackageCreated) throws URISyntaxException {
+        return zephyrRestService.assignCyclePhaseToCreator(cyclePhaseId , isPackageCreated);
     }
 
     @Override

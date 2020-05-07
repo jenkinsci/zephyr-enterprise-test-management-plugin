@@ -68,12 +68,13 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     private String restVersion = "v3";
     private String password;
     private Long tcrCatalogTreeId;
+    private String pageSize;
 
     private HttpClientService httpClientService = new HttpClientServiceImpl();
     private Gson gson;
 
     public ZephyrRestServiceImpl() {
-
+        this.pageSize = "1000";
         JsonSerializer<Date> ser = new JsonSerializer<Date>() {
             @Override
             public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
@@ -309,7 +310,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("offset", "0"));
-        queryParams.add(new BasicNameValuePair("pagesize", "10000"));
+        queryParams.add(new BasicNameValuePair("pagesize", this.pageSize));
         queryParams.add(new BasicNameValuePair("dbsearch", "true"));
         queryParams.add(new BasicNameValuePair("isascorder", "true"));
         queryParams.add(new BasicNameValuePair("order", "orderId"));
@@ -369,6 +370,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         for (Map.Entry<Long, Set<Long>> entry : treeTestcaseMap.entrySet()) {
 
             final List<Long> list = entry.getValue().stream().collect(Collectors.toList());
+            this.pageSize = String.valueOf(list.size());
             for(int i=0;i<entry.getValue().size(); i+= ZephyrConstants.BATCH_SIZE) {
                 JSONArray contentJsonArray = new JSONArray();
                 JSONObject jsonObject = new JSONObject();
@@ -403,7 +405,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("selectedAll",1);
             jsonObject.put("cyclePhaseId",cyclePhaseId);
-            jsonObject.put("testerId",1);
+            jsonObject.put("testerId",this.currentUser.getId());
             int loop = list.size() - i > ZephyrConstants.BATCH_SIZE ? ZephyrConstants.BATCH_SIZE : ZephyrConstants.BATCH_SIZE > list.size() ? list.size()
                     :list.size() - i;
             if(loop != list.size()) {
@@ -411,7 +413,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
                     JSONObject json = new JSONObject();
                     json.put("cyclePhaseId", cyclePhaseId);
                     json.put("tctId", list.get(k));
-                    json.put("testerId", 1);
+                    json.put("testerId", this.currentUser.getId());
                     jsonArray.put(json);
                     k++;
                 }

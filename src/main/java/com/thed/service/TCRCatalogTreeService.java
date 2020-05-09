@@ -4,6 +4,7 @@ import com.thed.model.TCRCatalogTreeDTO;
 
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by prashant on 28/6/19.
@@ -18,6 +19,14 @@ public interface TCRCatalogTreeService extends BaseService {
      * @throws URISyntaxException
      */
     List<TCRCatalogTreeDTO> getTCRCatalogTreeNodes(String type, Long releaseId) throws URISyntaxException;
+
+    /**
+     * Get treeIds of all the nodes in hierarchy in given treeId.
+     * @param tcrCatalogTreeId
+     * @return
+     * @throws URISyntaxException
+     */
+    Set<Long> getTCRCatalogTreeIdHierarchy(Long tcrCatalogTreeId) throws URISyntaxException;
 
     /**
      * Get tcrCatalogTree node for given id.

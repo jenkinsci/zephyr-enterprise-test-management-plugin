@@ -1,5 +1,7 @@
 package com.thed.service;
 
+import com.thed.model.User;
+
 import java.net.URISyntaxException;
 
 /**
@@ -40,5 +42,11 @@ public interface UserService extends BaseService {
      * @return
      */
     public Boolean login(String serverAddress, String secretText) throws URISyntaxException;
+
+    /**
+     * Returns current logged in user.
+     * @return
+     */
+    User getCurrentUser();
 
 }

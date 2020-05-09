@@ -277,10 +277,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
             //assigning testcases in cycle phase to creator
             logger.println("assigning testcases in cycle phase to creator :"+ LocalDateTime.now());
-            cycleService.assignCyclePhaseToCreator(cyclePhase.getId() ,zephyrConfigModel.isCreatePackage());
-
-            logger.println("calling get release test schedule testcase api :"+ LocalDateTime.now());
-            List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
+            List<ReleaseTestSchedule> releaseTestSchedules = cycleService.assignCyclePhaseToUser(cyclePhase, userService.getCurrentUser().getId());
 
             Map<String, Set<Long>> executionMap = new HashMap<>();
 

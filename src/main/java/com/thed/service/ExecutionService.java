@@ -21,6 +21,16 @@ public interface ExecutionService extends BaseService {
     List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId) throws URISyntaxException;
 
     /**
+     * Get releaseTestSchedules for given cyclePhaseId.
+     * @param cyclePhaseId
+     * @param offset Offset for starting results
+     * @param pageSize Number of results per page, 0 will return all
+     * @return
+     * @throws URISyntaxException
+     */
+    List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId, Integer offset, Integer pageSize) throws URISyntaxException;
+
+    /**
      * Execute given releaseTestSchedule ids for given statusId.
      * @param rtsIds
      * @param statusId

@@ -1,5 +1,6 @@
 package com.thed.service.impl;
 
+import com.thed.model.User;
 import com.thed.service.UserService;
 import com.thed.service.ZephyrRestService;
 
@@ -48,6 +49,11 @@ public class UserServiceImpl extends BaseServiceImpl implements UserService {
     @Override
     public Boolean login(String serverAddress, String secretText) throws URISyntaxException {
         return zephyrRestService.login(serverAddress, secretText);
+    }
+
+    @Override
+    public User getCurrentUser() {
+        return zephyrRestService.getCurrentUser();
     }
 
 }

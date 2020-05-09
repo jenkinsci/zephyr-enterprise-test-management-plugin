@@ -1,5 +1,6 @@
 package com.thed.service.impl;
 
+import com.thed.model.PlanningTestcase;
 import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.model.TestStep;
 import com.thed.model.Testcase;
@@ -31,6 +32,11 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
     @Override
     public List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException {
         return zephyrRestService.getTestcasesForTreeId(tcrCatalogTreeId);
+    }
+
+    @Override
+    public List<PlanningTestcase> getTestcasesForTreeIdFromPlanning(Long tcrCatalogTreeId, Integer offset, Integer pageSize) throws URISyntaxException {
+        return zephyrRestService.getTestcasesForTreeIdFromPlanning(tcrCatalogTreeId, offset, pageSize);
     }
 
     @Override

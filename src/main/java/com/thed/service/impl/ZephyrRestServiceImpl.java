@@ -5,7 +5,6 @@ import com.google.gson.reflect.TypeToken;
 import com.thed.model.*;
 import com.thed.service.HttpClientService;
 import com.thed.service.ZephyrRestService;
-import com.thed.utils.ZephyrConstants;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.cookie.Cookie;
@@ -20,7 +19,6 @@ import org.json.JSONObject;
 import java.lang.reflect.Type;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**user
  * Created by prashant on 20/6/19.
@@ -36,11 +34,13 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
     public static final String GET_TCR_CATALOG_TREE_NODES_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?type=Phase&revisionid=0&releaseid=10
     public static final String GET_TCR_CATALOG_TREE_NODE_URL = "/flex/services/rest/{restVersion}/testcasetree/{tcrCatalogTreeId}";
+    public static final String GET_TCR_CATALOG_TREE_HIERARCHY_URL = "/flex/services/rest/{restVersion}/testcasetree/hierarchy/{tcrCatalogTreeId}";
     public static final String CREATE_TCR_CATALOG_TREE_NODE_URL = "/flex/services/rest/{restVersion}/testcasetree"; //?parentid=0
 
     public static final String MAP_TESTCASE_TO_REQUIREMENTS_URL = "/flex/services/rest/v3/requirement/bulk";
 
     public static final String GET_TESTCASES_FOR_TREE_ID_URL = "/flex/services/rest/{restVersion}/testcase/tree/{tcrCatalogTreeId}"; //?offset=0&pagesize=50&dbsearch=true&isascorder=true&order=orderId&frozen=false&is_cfield=false
+    public static final String GET_TESTCASES_FOR_TREE_ID_FROM_PLANNING_URL = "/flex/services/rest/{restVersion}/testcase/planning/{tcrCatalogTreeId}"; //?offset=0&pagesize=50&dbsearch=true&isascorder=true&order=orderId
     public static final String CREATE_TESTCASES_BULK_URL = "/flex/services/rest/{restVersion}/testcase/bulk";
 
     public static final String GET_CYCLE_BY_ID_URL = "/flex/services/rest/{restVersion}/cycle/{id}";
@@ -49,7 +49,8 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
     public static final String CREATE_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/cycle/{cycleId}/phase";
     public static final String ADD_TESTCASES_TO_FREE_FORM_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/assignmenttree/{cyclePhaseId}/assign/bytree/{tcrCatalogTreeId}"; //?includehierarchy=false;
-    public static final String ASSIGN_CYCLE_PHASE_URL = "/flex/services/rest/{restVersion}/execution/modify";
+    public static final String ASSIGN_CYCLE_PHASE_TO_CREATOR_URL = "/flex/services/rest/{restVersion}/assignmenttree/{cyclePhaseId}/assign";
+    public static final String EXECUTION_MODIFY_URL = "/flex/services/rest/{restVersion}/execution/modify";
     public static final String GET_RELEASE_TEST_SCHEDULES_URL = "/flex/services/rest/{restVersion}/execution"; //?cyclephaseid=11&pagesize=10000;
     public static final String EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL = "/flex/services/rest/{restVersion}/execution/bulk";//?status=1&testerid=1&allExecutions=false&includeanyoneuser=true
 
@@ -67,14 +68,12 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     private String hostAddress;
     private String restVersion = "v3";
     private String password;
-    private Long tcrCatalogTreeId;
     private String pageSize;
 
     private HttpClientService httpClientService = new HttpClientServiceImpl();
     private Gson gson;
 
     public ZephyrRestServiceImpl() {
-        this.pageSize = "1000";
         JsonSerializer<Date> ser = new JsonSerializer<Date>() {
             @Override
             public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
@@ -285,6 +284,17 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     @Override
+    public List<Long> getTCRCatalogTreeIdHierarchy(Long tcrCatalogTreeId) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("tcrCatalogTreeId", tcrCatalogTreeId.toString());
+
+        String url = buildUrl(prepareUrl(GET_TCR_CATALOG_TREE_HIERARCHY_URL), pathParams, null);
+        String res = httpClientService.getRequest(url);
+        Type longListType = new TypeToken<List<Long>>(){}.getType();
+        return gson.fromJson(res, longListType);
+    }
+
+    @Override
     public TCRCatalogTreeDTO createTCRCatalogTreeNode(TCRCatalogTreeDTO tcrCatalogTreeDTO) throws URISyntaxException {
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("parentid", tcrCatalogTreeDTO.getParentId().toString()));
@@ -310,7 +320,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("offset", "0"));
-        queryParams.add(new BasicNameValuePair("pagesize", this.pageSize));
+        queryParams.add(new BasicNameValuePair("pagesize", "10000"));
         queryParams.add(new BasicNameValuePair("dbsearch", "true"));
         queryParams.add(new BasicNameValuePair("isascorder", "true"));
         queryParams.add(new BasicNameValuePair("order", "orderId"));
@@ -325,6 +335,30 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
         Type tcrCatalogTreeTestcaseListType = new TypeToken<List<TCRCatalogTreeTestcase>>(){}.getType();
         return gson.fromJson(resultStr, tcrCatalogTreeTestcaseListType);
+    }
+
+    @Override
+    public List<PlanningTestcase> getTestcasesForTreeIdFromPlanning(Long tcrCatalogTreeId, Integer offset, Integer pageSize) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("tcrCatalogTreeId", tcrCatalogTreeId.toString());
+
+        List<NameValuePair> queryParams = new ArrayList<>();
+        if(offset != null) {
+            queryParams.add(new BasicNameValuePair("offset", offset.toString()));
+        }
+
+        if(pageSize != null) {
+            queryParams.add(new BasicNameValuePair("pagesize", pageSize.toString()));
+        }
+
+        String url = buildUrl(prepareUrl(GET_TESTCASES_FOR_TREE_ID_FROM_PLANNING_URL), pathParams, queryParams);
+        String res = httpClientService.getRequest(url);
+        JSONObject resObject = new JSONObject(res);
+        JSONArray jsonArray = resObject.getJSONArray("results");
+        String resultStr = jsonArray.toString();
+
+        Type planningTestcaseListType = new TypeToken<List<PlanningTestcase>>(){}.getType();
+        return gson.fromJson(resultStr, planningTestcaseListType);
     }
 
     @Override
@@ -361,79 +395,67 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("cyclePhaseId", cyclePhase.getId().toString());
         pathParams.put("tcrCatalogTreeId", cyclePhase.getTcrCatalogTreeId().toString());
-        this.tcrCatalogTreeId = cyclePhase.getTcrCatalogTreeId();
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("includehierarchy", includeHierarchy.toString()));
 
-        String url = buildUrl(prepareUrl(ADD_TESTCASES_TO_FREE_FORM_CYCLE_PHASE_URL), pathParams, queryParams);
+        JSONArray contentJsonArray = new JSONArray();
 
         for (Map.Entry<Long, Set<Long>> entry : treeTestcaseMap.entrySet()) {
-
-            final List<Long> list = entry.getValue().stream().collect(Collectors.toList());
-            this.pageSize = String.valueOf(list.size());
-            for(int i=0;i<entry.getValue().size(); i+= ZephyrConstants.BATCH_SIZE) {
-                JSONArray contentJsonArray = new JSONArray();
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("treeid", entry.getKey());
-                jsonObject.put("tctIds", entry.getValue().stream().skip(i).limit(ZephyrConstants.BATCH_SIZE).collect(Collectors.toList()));
-                jsonObject.put("isExclusion", Boolean.TRUE);
-
-                contentJsonArray.put(jsonObject);
-                httpClientService.postRequest(url, contentJsonArray.toString());
-            }
-
-        }
-
-
-        return "";
-    }
-
-    @Override
-    public Integer assignCyclePhaseToCreator(Long cyclePhaseId, Boolean isPackageCreated) throws URISyntaxException {
-
-        checkCookie();
-       if(isPackageCreated){
-            this.tcrCatalogTreeId += 3;
-        }
-        List<TCRCatalogTreeTestcase> testcases = getTestcasesForTreeId(tcrCatalogTreeId);
-        List<Long> list = testcases.stream().map(TCRCatalogTreeTestcase::getId).collect(Collectors.toList());
-        String url = buildUrl(prepareUrl(ASSIGN_CYCLE_PHASE_URL),null, null);
-        int listSze = list.size();
-        int k = 0;
-        for(int i=0;i< listSze; i+= ZephyrConstants.BATCH_SIZE) {
-            JSONArray jsonArray = new JSONArray();
             JSONObject jsonObject = new JSONObject();
-            jsonObject.put("selectedAll",1);
-            jsonObject.put("cyclePhaseId",cyclePhaseId);
-            jsonObject.put("testerId",this.currentUser.getId());
-            int loop = list.size() - i > ZephyrConstants.BATCH_SIZE ? ZephyrConstants.BATCH_SIZE : ZephyrConstants.BATCH_SIZE > list.size() ? list.size()
-                    :list.size() - i;
-            if(loop != list.size()) {
-                for (int j = 0; j < loop; j++) {
-                    JSONObject json = new JSONObject();
-                    json.put("cyclePhaseId", cyclePhaseId);
-                    json.put("tctId", list.get(k));
-                    json.put("testerId", this.currentUser.getId());
-                    jsonArray.put(json);
-                    k++;
-                }
-            }
-            if(list.size() == loop){
-                jsonObject.put("selectedAll",0);
-            }
-            jsonObject.put("createRTSList", jsonArray);
-            jsonObject.put("tcrCatalogTreeId",(this.tcrCatalogTreeId));
-            httpClientService.postRequest(url, jsonObject.toString());
+            jsonObject.put("treeid", entry.getKey());
+            jsonObject.put("tctIds", entry.getValue());
+            jsonObject.put("isExclusion", Boolean.TRUE);
+
+            contentJsonArray.put(jsonObject);
         }
-        //String res = httpClientService.postRequest(url, "");
-        return Integer.parseInt("0");
+
+        String url = buildUrl(prepareUrl(ADD_TESTCASES_TO_FREE_FORM_CYCLE_PHASE_URL), pathParams, queryParams);
+        return httpClientService.postRequest(url, contentJsonArray.toString());
     }
 
     @Override
-    public List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId) throws URISyntaxException {
+    public Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException {
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("cyclePhaseId", cyclePhaseId.toString());
+
+        String url = buildUrl(prepareUrl(ASSIGN_CYCLE_PHASE_TO_CREATOR_URL), pathParams, null);
+        String res = httpClientService.postRequest(url, "");
+        return Integer.parseInt(res);
+    }
+
+    @Override
+    public List<ReleaseTestSchedule> assignTCRCatalogTreeTestcasesToUser(Long cyclePhaseId, Long tcrCatalogTreeId, List<Long> tctIdList, Long userId) throws URISyntaxException {
+        JSONArray createRTSList = new JSONArray();
+        for(Long tctId : tctIdList) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("cyclePhaseId", cyclePhaseId);
+            jsonObject.put("tctId", tctId);
+            jsonObject.put("testerId", userId);
+            createRTSList.put(jsonObject);
+        }
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("selectedAll", 1);
+        jsonObject.put("testerId", userId);
+        jsonObject.put("cyclePhaseId", cyclePhaseId);
+        jsonObject.put("createRTSList", createRTSList);
+        jsonObject.put("tcrCatalogTreeId", tcrCatalogTreeId);
+
+        String url = buildUrl(prepareUrl(EXECUTION_MODIFY_URL),null, null);
+        String res = httpClientService.postRequest(url, jsonObject.toString());
+        Type releaseTestScheduleListType = new TypeToken<List<ReleaseTestSchedule>>(){}.getType();
+        return gson.fromJson(res, releaseTestScheduleListType);
+    }
+
+    @Override
+    public List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId, Integer offset, Integer pageSize) throws URISyntaxException {
         List<NameValuePair> queryParams = new ArrayList<>();
         queryParams.add(new BasicNameValuePair("cyclephaseid", cyclePhaseId.toString()));
-        queryParams.add(new BasicNameValuePair("pagesize", "10000"));
+        if(offset != null) {
+            queryParams.add(new BasicNameValuePair("offset", offset.toString()));
+        }
+        if(pageSize != null) {
+            queryParams.add(new BasicNameValuePair("pagesize", pageSize.toString()));
+        }
 
         String url = buildUrl(prepareUrl(GET_RELEASE_TEST_SCHEDULES_URL), null, queryParams);
         String res = httpClientService.getRequest(url);
@@ -453,15 +475,13 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         queryParams.add(new BasicNameValuePair("testerid", getCurrentUser().getId().toString()));
         queryParams.add(new BasicNameValuePair("allExecutions", "false"));
         queryParams.add(new BasicNameValuePair("includeanyoneuser", "true"));
-        String res = "";
-        for(Long i=0L;i<rtsIds.size();i+=ZephyrConstants.BATCH_SIZE) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("ids", rtsIds.stream().skip(i).limit(ZephyrConstants.BATCH_SIZE).collect(Collectors.toSet()));
-            jsonObject.put("serachView", false);
-            checkCookie();
-            String url = buildUrl(prepareUrl(EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL), null, queryParams);
-            res = httpClientService.putRequest(url, jsonObject.toString());
-        }
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("ids", rtsIds);
+        jsonObject.put("serachView", false);
+
+        String url = buildUrl(prepareUrl(EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL), null, queryParams);
+        String res = httpClientService.putRequest(url, jsonObject.toString());
 
         Type releaseTestScheduleListType = new TypeToken<List<ReleaseTestSchedule>>(){}.getType();
         return gson.fromJson(res, releaseTestScheduleListType);

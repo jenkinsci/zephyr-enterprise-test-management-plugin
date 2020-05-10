@@ -303,7 +303,10 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                         }
 
                         if(testcaseValueMap.containsKey("attachments")) {
-                            testcaseAttachmentsMap.put(releaseTestSchedule.getId(), (List<String>)testcaseValueMap.get("attachments"));
+                            List<String> attachmentPathList = (List<String>)testcaseValueMap.get("attachments");
+                            if(!attachmentPathList.isEmpty()) {
+                                testcaseAttachmentsMap.put(releaseTestSchedule.getId(), attachmentPathList);
+                            }
                         }
 
                         if(testcaseValueMap.containsKey("statusAttachment")) {
@@ -727,6 +730,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
         List<Map<String, Map<String, Object>>> testcaseNameValueMapList = new ArrayList<>();
 
+        long statusAttachmentCount = 0;
+
         dataMapLoop: for (Map dataMap : dataMapList) {
 
             Map testcaseMap = (Map) dataMap.get("testcase");
@@ -838,7 +843,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 String successAttachmentStr = statusCondition.get("attachmentText");
                 if(!StringUtils.isEmpty(successAttachmentStr)) {
                     GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
-                    genericAttachmentDTO.setFileName("status.txt");
+                    genericAttachmentDTO.setFileName("status_" + ++statusAttachmentCount + "_" + System.currentTimeMillis() + ".txt");
                     genericAttachmentDTO.setContentType("text/plain");
                     genericAttachmentDTO.setFieldName(AttachmentService.ItemType.releaseTestSchedule.toString());
                     genericAttachmentDTO.setByteData(successAttachmentStr.getBytes());

@@ -7,6 +7,7 @@ import com.thed.utils.ZephyrConstants;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -21,15 +22,35 @@ public class ExecutionServiceImpl extends BaseServiceImpl implements ExecutionSe
 
     @Override
     public List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId) throws URISyntaxException {
-        return zephyrRestService.getReleaseTestSchedules(cyclePhaseId);
+        return zephyrRestService.getReleaseTestSchedules(cyclePhaseId, null, 0);
+    }
+
+    @Override
+    public List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId, Integer offset, Integer pageSize) throws URISyntaxException {
+        return zephyrRestService.getReleaseTestSchedules(cyclePhaseId, offset, pageSize);
     }
 
     @Override
     public List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String statusId) throws URISyntaxException {
+        List<ReleaseTestSchedule> rtsList = new ArrayList<>();
         if(rtsIds.isEmpty()) {
-            return new ArrayList<>();
+            return rtsList;
         }
-        return zephyrRestService.executeReleaseTestSchedules(rtsIds, statusId);
+
+        Set<Long> tempIds = new HashSet<>();
+        for(Long rtsId : rtsIds) {
+            tempIds.add(rtsId);
+            if(tempIds.size() == ZephyrConstants.BATCH_SIZE) {
+                rtsList.addAll(zephyrRestService.executeReleaseTestSchedules(tempIds, statusId));
+                tempIds.clear();
+            }
+        }
+
+        if(!tempIds.isEmpty()) {
+            rtsList.addAll(zephyrRestService.executeReleaseTestSchedules(tempIds, statusId));
+        }
+
+        return rtsList;
     }
 
     @Override

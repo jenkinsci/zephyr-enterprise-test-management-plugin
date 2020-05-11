@@ -5,7 +5,7 @@ import com.thed.service.TCRCatalogTreeService;
 import com.thed.utils.ZephyrConstants;
 
 import java.net.URISyntaxException;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by prashant on 28/6/19.
@@ -24,6 +24,21 @@ public class TCRCatalogTreeServiceImpl extends BaseServiceImpl implements TCRCat
     @Override
     public TCRCatalogTreeDTO getTCRCatalogTreeNode(Long tcrCatalogTreeId) throws URISyntaxException {
         return zephyrRestService.getTCRCatalogTreeNode(tcrCatalogTreeId);
+    }
+
+    @Override
+    public Set<Long> getTCRCatalogTreeIdHierarchy(Long tcrCatalogTreeId) throws URISyntaxException {
+        TCRCatalogTreeDTO tcrCatalogTreeDTO = zephyrRestService.getTCRCatalogTreeNode(tcrCatalogTreeId);
+        return getIdHierarchy(tcrCatalogTreeDTO);
+    }
+
+    private Set<Long> getIdHierarchy(TCRCatalogTreeDTO tcrCatalogTreeDTO) {
+        Set<Long> idSet = new HashSet<>();
+        for(TCRCatalogTreeDTO childNode : tcrCatalogTreeDTO.getCategories()) {
+            idSet.addAll(getIdHierarchy(childNode));
+        }
+        idSet.add(tcrCatalogTreeDTO.getId());
+        return idSet;
     }
 
     @Override

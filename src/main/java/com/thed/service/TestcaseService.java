@@ -1,5 +1,6 @@
 package com.thed.service;
 
+import com.thed.model.PlanningTestcase;
 import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.model.TestStep;
 import com.thed.model.Testcase;
@@ -21,6 +22,16 @@ public interface TestcaseService extends BaseService {
      * @throws URISyntaxException
      */
     List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException;
+
+    /**
+     * Get list of testcases from planning using treeId.
+     * @param tcrCatalogTreeId
+     * @param offset
+     * @param pageSize
+     * @return
+     * @throws URISyntaxException
+     */
+    List<PlanningTestcase> getTestcasesForTreeIdFromPlanning(Long tcrCatalogTreeId, Integer offset, Integer pageSize) throws URISyntaxException;
 
     /**
      * Create testcases in bulk.

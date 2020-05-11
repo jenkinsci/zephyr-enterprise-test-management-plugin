@@ -41,6 +41,7 @@ import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import jenkins.model.Jenkins;
@@ -216,6 +217,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             //zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
+            logger.println("calling create testcase api :" + LocalDateTime.now());
             Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList, zephyrConfigModel);
 
             logger.println("Total Test Cases : " + tcrStatusMap.keySet().size());
@@ -266,16 +268,16 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             cyclePhase.setEndDate(new Date(cycle.getEndDate()));
             cyclePhase.setReleaseId(zephyrConfigModel.getReleaseId());
             cyclePhase.setFreeForm(true);
-
+            logger.println("calling create phase api :"+ LocalDateTime.now());
             cyclePhase = cycleService.createCyclePhase(cyclePhase);
 
             //adding testcases to free form cycle phase
+            logger.println("adding testcases to free form cycle phase :"+ LocalDateTime.now());
             cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
 
             //assigning testcases in cycle phase to creator
-            cycleService.assignCyclePhaseToCreator(cyclePhase.getId());
-
-            List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
+            logger.println("assigning testcases in cycle phase to creator :"+ LocalDateTime.now());
+            List<ReleaseTestSchedule> releaseTestSchedules = cycleService.assignCyclePhaseToUser(cyclePhase, userService.getCurrentUser().getId());
 
             Map<String, Set<Long>> executionMap = new HashMap<>();
 
@@ -301,7 +303,10 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                         }
 
                         if(testcaseValueMap.containsKey("attachments")) {
-                            testcaseAttachmentsMap.put(releaseTestSchedule.getId(), (List<String>)testcaseValueMap.get("attachments"));
+                            List<String> attachmentPathList = (List<String>)testcaseValueMap.get("attachments");
+                            if(!attachmentPathList.isEmpty()) {
+                                testcaseAttachmentsMap.put(releaseTestSchedule.getId(), attachmentPathList);
+                            }
                         }
 
                         if(testcaseValueMap.containsKey("statusAttachment")) {
@@ -350,14 +355,15 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                     }
                 }
             }
-
+            logger.println("calling add attachment api :" + LocalDateTime.now());
             List<String> errorLogs = attachmentService.addAttachments(AttachmentService.ItemType.releaseTestSchedule, testcaseAttachmentsMap, statusAttachmentMap);
             errorLogs.forEach(errorLog -> logger.println(errorLog));
 
             if(!testStepResultList.isEmpty()) {
+                logger.println("calling add test step result api :" + LocalDateTime.now());
                 executionService.addTestStepResults(testStepResultList);
             }
-
+            logger.println("calling execute release test schedule api :" + LocalDateTime.now());
             for(Map.Entry<String, Set<Long>> entry : executionMap.entrySet()) {
                 executionService.executeReleaseTestSchedules(entry.getValue(), entry.getKey());
             }
@@ -724,6 +730,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
         List<Map<String, Map<String, Object>>> testcaseNameValueMapList = new ArrayList<>();
 
+        long statusAttachmentCount = 0;
+
         dataMapLoop: for (Map dataMap : dataMapList) {
 
             Map testcaseMap = (Map) dataMap.get("testcase");
@@ -835,7 +843,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 String successAttachmentStr = statusCondition.get("attachmentText");
                 if(!StringUtils.isEmpty(successAttachmentStr)) {
                     GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
-                    genericAttachmentDTO.setFileName("status.txt");
+                    genericAttachmentDTO.setFileName("status_" + ++statusAttachmentCount + "_" + System.currentTimeMillis() + ".txt");
                     genericAttachmentDTO.setContentType("text/plain");
                     genericAttachmentDTO.setFieldName(AttachmentService.ItemType.releaseTestSchedule.toString());
                     genericAttachmentDTO.setByteData(successAttachmentStr.getBytes());

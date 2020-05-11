@@ -106,6 +106,14 @@ public interface ZephyrRestService {
     TCRCatalogTreeDTO getTCRCatalogTreeNode(Long tcrCatalogTreeId) throws URISyntaxException;
 
     /**
+     * Get treeIds of all the nodes in hierarchy in given treeId.
+     * @param tcrCatalogTreeId
+     * @return
+     * @throws URISyntaxException
+     */
+    List<Long> getTCRCatalogTreeIdHierarchy(Long tcrCatalogTreeId) throws URISyntaxException;
+
+    /**
      * Create a tree node such as phase.
      * @param tcrCatalogTreeDTO
      * @return
@@ -128,6 +136,16 @@ public interface ZephyrRestService {
      * @throws URISyntaxException
      */
     List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException;
+
+    /**
+     * Get list of testcases from planning using treeId.
+     * @param tcrCatalogTreeId
+     * @param offset
+     * @param pageSize
+     * @return
+     * @throws URISyntaxException
+     */
+    List<PlanningTestcase> getTestcasesForTreeIdFromPlanning(Long tcrCatalogTreeId, Integer offset, Integer pageSize) throws URISyntaxException;
 
     /**
      * Create testcases in bulk
@@ -172,12 +190,25 @@ public interface ZephyrRestService {
     Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException;
 
     /**
-     * Get testcases scheduled under this cycle phase.
+     * Assign testcases to user.
      * @param cyclePhaseId
+     * @param tcrCatalogTreeId
+     * @param tctIdList
+     * @param userId
      * @return
      * @throws URISyntaxException
      */
-    List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId) throws URISyntaxException;
+    List<ReleaseTestSchedule> assignTCRCatalogTreeTestcasesToUser(Long cyclePhaseId, Long tcrCatalogTreeId, List<Long> tctIdList, Long userId) throws URISyntaxException;
+
+    /**
+     * Get testcases scheduled under this cycle phase.
+     * @param cyclePhaseId
+     * @param offset Offset for starting results
+     * @param pageSize Number of results per page, 0 will return all
+     * @return
+     * @throws URISyntaxException
+     */
+    List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId, Integer offset, Integer pageSize) throws URISyntaxException;
 
     /**
      * Execute given releaseTestSchedule ids with given status.

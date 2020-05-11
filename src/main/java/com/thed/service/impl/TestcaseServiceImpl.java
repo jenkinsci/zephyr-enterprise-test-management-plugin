@@ -1,9 +1,11 @@
 package com.thed.service.impl;
 
+import com.thed.model.PlanningTestcase;
 import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.model.TestStep;
 import com.thed.model.Testcase;
 import com.thed.service.TestcaseService;
+import com.thed.utils.ZephyrConstants;
 import hudson.tasks.junit.CaseResult;
 import org.jaxen.pantry.Test;
 
@@ -30,6 +32,11 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
     @Override
     public List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException {
         return zephyrRestService.getTestcasesForTreeId(tcrCatalogTreeId);
+    }
+
+    @Override
+    public List<PlanningTestcase> getTestcasesForTreeIdFromPlanning(Long tcrCatalogTreeId, Integer offset, Integer pageSize) throws URISyntaxException {
+        return zephyrRestService.getTestcasesForTreeIdFromPlanning(tcrCatalogTreeId, offset, pageSize);
     }
 
     @Override
@@ -94,8 +101,14 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
                 treeTestcases.add(tcrCatalogTreeTestcase);
             }
         }
-
-        return createTestcases(treeTestcases);
+        // create testcase in Batch
+        final List<TCRCatalogTreeTestcase> testcaseList = new ArrayList<>();
+        for (int i = 0; i < treeTestcases.size(); i += ZephyrConstants.BATCH_SIZE) {
+            final List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcases = i + ZephyrConstants.BATCH_SIZE > treeTestcases.size() ? treeTestcases.subList(i, treeTestcases.size()) : treeTestcases.subList(i, i + ZephyrConstants.BATCH_SIZE);
+            final List<TCRCatalogTreeTestcase> testcases = createTestcases(tcrCatalogTreeTestcases);
+            testcaseList.addAll(testcases);
+        }
+        return testcaseList;
     }
 
 }

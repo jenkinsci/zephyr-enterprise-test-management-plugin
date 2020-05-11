@@ -3,6 +3,7 @@ package com.thed.service;
 import com.thed.model.TestStep;
 import com.thed.model.TestStepResult;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public interface TestStepService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    TestStep getTestStep(Long testcaseVersionId) throws URISyntaxException;
+    TestStep getTestStep(Long testcaseVersionId) throws URISyntaxException, IOException;
 
     /**
      * Add testStep to single testcase.
@@ -25,6 +26,6 @@ public interface TestStepService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    TestStep addTestStep(TestStep testStep) throws URISyntaxException;
+    TestStep addTestStep(TestStep testStep) throws URISyntaxException, IOException;
 
 }

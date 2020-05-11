@@ -3,6 +3,7 @@ package com.thed.service.impl;
 import com.thed.model.ParserTemplate;
 import com.thed.service.ParserTemplateService;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -16,12 +17,12 @@ public class ParserTemplateServiceImpl extends BaseServiceImpl implements Parser
     }
 
     @Override
-    public List<ParserTemplate> getAllParserTemplates() throws URISyntaxException {
+    public List<ParserTemplate> getAllParserTemplates() throws URISyntaxException, IOException {
         return zephyrRestService.getAllParserTemplates();
     }
 
     @Override
-    public ParserTemplate getParserTemplateById(Long templateId) throws URISyntaxException {
+    public ParserTemplate getParserTemplateById(Long templateId) throws URISyntaxException, IOException {
         return zephyrRestService.getParserTemplateById(templateId);
     }
 }

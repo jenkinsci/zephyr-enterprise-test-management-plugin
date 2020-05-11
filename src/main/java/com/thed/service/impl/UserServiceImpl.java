@@ -4,6 +4,7 @@ import com.thed.model.User;
 import com.thed.service.UserService;
 import com.thed.service.ZephyrRestService;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 
 /**
@@ -16,7 +17,7 @@ public class UserServiceImpl extends BaseServiceImpl implements UserService {
     }
 
     @Override
-    public Boolean verifyCredentials(String serverAddress, String username, String password) throws URISyntaxException {
+    public Boolean verifyCredentials(String serverAddress, String username, String password) throws URISyntaxException, IOException {
         return zephyrRestService.verifyCredentials(serverAddress, username, password);
     }
 
@@ -28,14 +29,14 @@ public class UserServiceImpl extends BaseServiceImpl implements UserService {
      * @return
      */
     @Override
-    public Boolean verifyCredentials(String serverAddress, String secretText) throws URISyntaxException {
+    public Boolean verifyCredentials(String serverAddress, String secretText) throws URISyntaxException, IOException {
         return zephyrRestService.verifyCredentials(serverAddress, secretText);
     }
 
 
 
     @Override
-    public Boolean login(String serverAddress, String username, String password) throws URISyntaxException {
+    public Boolean login(String serverAddress, String username, String password) throws URISyntaxException, IOException {
         return zephyrRestService.login(serverAddress, username, password);
     }
 
@@ -47,7 +48,7 @@ public class UserServiceImpl extends BaseServiceImpl implements UserService {
      * @return
      */
     @Override
-    public Boolean login(String serverAddress, String secretText) throws URISyntaxException {
+    public Boolean login(String serverAddress, String secretText) throws URISyntaxException, IOException {
         return zephyrRestService.login(serverAddress, secretText);
     }
 

@@ -2,6 +2,7 @@ package com.thed.service;
 
 import com.thed.model.User;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 
 /**
@@ -16,7 +17,7 @@ public interface UserService extends BaseService {
      * @param password
      * @return
      */
-    public Boolean verifyCredentials(String serverAddress, String username, String password) throws URISyntaxException;
+    public Boolean verifyCredentials(String serverAddress, String username, String password) throws URISyntaxException, IOException;
 
     /**
      * Validates given credentials and clears token if validated.
@@ -24,7 +25,7 @@ public interface UserService extends BaseService {
      * @param secretText
      * @return
      */
-    public Boolean verifyCredentials(String serverAddress, String secretText) throws URISyntaxException;
+    public Boolean verifyCredentials(String serverAddress, String secretText) throws URISyntaxException, IOException;
 
     /**
      * Validates given credentials and keeps token and server address if verified.
@@ -33,7 +34,7 @@ public interface UserService extends BaseService {
      * @param password
      * @return
      */
-    public Boolean login(String serverAddress, String username, String password) throws URISyntaxException;
+    public Boolean login(String serverAddress, String username, String password) throws URISyntaxException, IOException;
 
     /**
      * Validates given credentials and keeps token and server address if verified.
@@ -41,7 +42,7 @@ public interface UserService extends BaseService {
      * @param secretText
      * @return
      */
-    public Boolean login(String serverAddress, String secretText) throws URISyntaxException;
+    public Boolean login(String serverAddress, String secretText) throws URISyntaxException, IOException;
 
     /**
      * Returns current logged in user.

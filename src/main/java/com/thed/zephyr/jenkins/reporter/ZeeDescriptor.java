@@ -25,6 +25,7 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.*;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.logging.Level;
@@ -405,7 +406,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
         return listBoxModel;
     }
 
-    private void loginUser(String serverAddress) throws URISyntaxException {
+    private void loginUser(String serverAddress) throws URISyntaxException, IOException {
 		ZephyrInstance zephyrInstance = fetchZephyrInstance(serverAddress);
 		StandardCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
 		if (upCredentials instanceof UsernamePasswordCredentialsImpl) {

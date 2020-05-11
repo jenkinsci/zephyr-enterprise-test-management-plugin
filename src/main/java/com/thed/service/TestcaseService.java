@@ -6,6 +6,7 @@ import com.thed.model.TestStep;
 import com.thed.model.Testcase;
 import hudson.tasks.junit.CaseResult;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,7 @@ public interface TestcaseService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException;
+    List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException, IOException;
 
     /**
      * Get list of testcases from planning using treeId.
@@ -31,7 +32,7 @@ public interface TestcaseService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    List<PlanningTestcase> getTestcasesForTreeIdFromPlanning(Long tcrCatalogTreeId, Integer offset, Integer pageSize) throws URISyntaxException;
+    List<PlanningTestcase> getTestcasesForTreeIdFromPlanning(Long tcrCatalogTreeId, Integer offset, Integer pageSize) throws URISyntaxException, IOException;
 
     /**
      * Create testcases in bulk.
@@ -39,7 +40,7 @@ public interface TestcaseService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    List<TCRCatalogTreeTestcase> createTestcases(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcases) throws URISyntaxException;
+    List<TCRCatalogTreeTestcase> createTestcases(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcases) throws URISyntaxException, IOException;
 
     /**
      * Create testcases from CaseResults and return testcases with their execution status
@@ -47,8 +48,8 @@ public interface TestcaseService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(Map<Long, List<CaseResult>> treeIdCaseResultMap) throws URISyntaxException;
+    Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(Map<Long, List<CaseResult>> treeIdCaseResultMap) throws URISyntaxException, IOException;
 
-    List<TCRCatalogTreeTestcase> createTestcasesWithList(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException;
+    List<TCRCatalogTreeTestcase> createTestcasesWithList(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException, IOException;
 
 }

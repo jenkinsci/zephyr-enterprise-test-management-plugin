@@ -6,6 +6,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -69,32 +70,27 @@ public class HttpClientServiceImpl implements HttpClientService {
     }
 
     @Override
-    public String getRequest(String url) {
+    public String getRequest(String url) throws IOException {
         if(StringUtils.isEmpty(url)) {
             return null;
         }
 
-        try{
-            HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
-            HttpGet httpGet = new HttpGet(url);
-            for (Header header:headers){
-                httpGet.addHeader(header);
-            }
-            HttpResponse response = httpClient.execute(httpGet);
-            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
-                return convertInputStreamToString(response.getEntity().getContent());
-            }
-
-        }catch(Exception e) {
-            e.printStackTrace();
+        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        HttpGet httpGet = new HttpGet(url);
+        for (Header header:headers){
+            httpGet.addHeader(header);
         }
-
-        return null;
+        HttpResponse response = httpClient.execute(httpGet);
+        if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
+            return convertInputStreamToString(response.getEntity().getContent());
+        } else {
+            throw new HttpResponseException(response.getStatusLine().getStatusCode(), "GET: " + url + "\n" + "Response:" + convertInputStreamToString(response.getEntity().getContent()));
+        }
 
     }
 
     @Override
-    public String postRequest(String url, String content) {
+    public String postRequest(String url, String content) throws IOException {
         StringEntity stringEntity = null;
         if(!StringUtils.isEmpty(content)) {
             stringEntity = new StringEntity(content, ContentType.APPLICATION_JSON);
@@ -103,69 +99,58 @@ public class HttpClientServiceImpl implements HttpClientService {
     }
 
     @Override
-    public String postRequest(String url, HttpEntity httpEntity) {
+    public String postRequest(String url, HttpEntity httpEntity) throws IOException {
         if(StringUtils.isEmpty(url)) {
             return null;
         }
 
-        try{
-            HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
-            HttpPost httpPost = new HttpPost(url);
+        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        HttpPost httpPost = new HttpPost(url);
 
-            for (Header header:headers){
-                httpPost.addHeader(header);
-            }
-
-//            if(!StringUtils.isEmpty(content)) {
-//                StringEntity stringEntity = new StringEntity(content, contentType);
-//                httpPost.setEntity(stringEntity);
-//            }
-
-            if(httpEntity != null) {
-                httpPost.setEntity(httpEntity);
-            }
-
-            HttpResponse response = httpClient.execute(httpPost);
-            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
-                return convertInputStreamToString(response.getEntity().getContent());
-            }
-
-        }catch(Exception e) {
-            e.printStackTrace();
+        for (Header header:headers){
+            httpPost.addHeader(header);
         }
 
-        return null;
+        if(httpEntity != null) {
+            httpPost.setEntity(httpEntity);
+        }
+
+        HttpResponse response = httpClient.execute(httpPost);
+        if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
+            return convertInputStreamToString(response.getEntity().getContent());
+        } else {
+            throw new HttpResponseException(response.getStatusLine().getStatusCode(), "POST: " + url
+                    + "\n" + "Payload: " + (httpEntity != null ? convertInputStreamToString(httpEntity.getContent()) : "")
+                    + "\nResponse: " + convertInputStreamToString(response.getEntity().getContent()));
+        }
     }
 
     @Override
-    public String putRequest(String url, String content) {
+    public String putRequest(String url, String content) throws IOException {
         if(StringUtils.isEmpty(url)) {
             return null;
         }
 
-        try{
-            HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
-            HttpPut httpPut = new HttpPut(url);
+        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        HttpPut httpPut = new HttpPut(url);
 
-            for (Header header:headers){
-                httpPut.addHeader(header);
-            }
-
-            if(!StringUtils.isEmpty(content)) {
-                StringEntity stringEntity = new StringEntity(content, ContentType.APPLICATION_JSON);
-                httpPut.setEntity(stringEntity);
-            }
-
-            HttpResponse response = httpClient.execute(httpPut);
-            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
-                return convertInputStreamToString(response.getEntity().getContent());
-            }
-
-        }catch(Exception e) {
-            e.printStackTrace();
+        for (Header header:headers){
+            httpPut.addHeader(header);
         }
 
-        return null;
+        if(!StringUtils.isEmpty(content)) {
+            StringEntity stringEntity = new StringEntity(content, ContentType.APPLICATION_JSON);
+            httpPut.setEntity(stringEntity);
+        }
+
+        HttpResponse response = httpClient.execute(httpPut);
+        if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
+            return convertInputStreamToString(response.getEntity().getContent());
+        } else {
+            throw new HttpResponseException(response.getStatusLine().getStatusCode(), "PUT: " + url
+                    + "\n" + "Payload: " + content
+                    + "\nResponse: " + convertInputStreamToString(response.getEntity().getContent()));
+        }
     }
 
     @Override

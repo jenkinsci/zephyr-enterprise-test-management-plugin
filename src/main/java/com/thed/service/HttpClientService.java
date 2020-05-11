@@ -4,6 +4,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -11,13 +12,13 @@ import java.util.List;
  */
 public interface HttpClientService {
 
-    String getRequest(String url);
+    String getRequest(String url) throws IOException;
 
-    String postRequest(String url, String content);
+    String postRequest(String url, String content) throws IOException;
 
-    String postRequest(String url, HttpEntity httpEntity);
+    String postRequest(String url, HttpEntity httpEntity) throws IOException;
 
-    String putRequest(String url, String content);
+    String putRequest(String url, String content) throws IOException;
 
     BasicCookieStore getCookieStore();
 

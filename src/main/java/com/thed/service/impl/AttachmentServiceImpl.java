@@ -83,7 +83,7 @@ public class AttachmentServiceImpl extends BaseServiceImpl implements Attachment
         return errorLogs;
     }
 
-    private void addAttachments(List<GenericAttachmentDTO> genericAttachmentDTOList) throws URISyntaxException {
+    private void addAttachments(List<GenericAttachmentDTO> genericAttachmentDTOList) throws URISyntaxException, IOException {
 
         List<GenericAttachmentDTO> newAttachmentDTOs = zephyrRestService.uploadAttachments(genericAttachmentDTOList);
 

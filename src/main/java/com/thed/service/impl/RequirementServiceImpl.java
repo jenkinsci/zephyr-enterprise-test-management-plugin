@@ -3,6 +3,7 @@ package com.thed.service.impl;
 import com.thed.model.MapTestcaseToRequirement;
 import com.thed.service.RequirementService;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -16,7 +17,7 @@ public class RequirementServiceImpl extends BaseServiceImpl implements Requireme
     }
 
     @Override
-    public List<String> mapTestcaseToRequirements(List<MapTestcaseToRequirement> mapTestcaseToRequirements) throws URISyntaxException {
+    public List<String> mapTestcaseToRequirements(List<MapTestcaseToRequirement> mapTestcaseToRequirements) throws URISyntaxException, IOException {
         return zephyrRestService.mapTestcaseToRequirements(mapTestcaseToRequirements);
     }
 

@@ -7,6 +7,7 @@ import com.thed.service.TCRCatalogTreeService;
 import com.thed.service.TestcaseService;
 import com.thed.utils.ZephyrConstants;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,32 +26,32 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
     }
 
     @Override
-    public List<Cycle> getAllCyclesForReleaseId(Long releaseId) throws URISyntaxException {
+    public List<Cycle> getAllCyclesForReleaseId(Long releaseId) throws URISyntaxException, IOException {
         return zephyrRestService.getAllCyclesForReleaseId(releaseId);
     }
 
     @Override
-    public Cycle createCycle(Cycle cycle) throws URISyntaxException {
+    public Cycle createCycle(Cycle cycle) throws URISyntaxException, IOException {
         return zephyrRestService.createCycle(cycle);
     }
 
     @Override
-    public Cycle getCycleById(Long cycleId) throws URISyntaxException {
+    public Cycle getCycleById(Long cycleId) throws URISyntaxException, IOException {
         return zephyrRestService.getCycleById(cycleId);
     }
 
     @Override
-    public CyclePhase createCyclePhase(CyclePhase cyclePhase) throws URISyntaxException {
+    public CyclePhase createCyclePhase(CyclePhase cyclePhase) throws URISyntaxException, IOException {
         return zephyrRestService.createCyclePhase(cyclePhase);
     }
 
     @Override
-    public Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException {
+    public Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException, IOException {
         return zephyrRestService.assignCyclePhaseToCreator(cyclePhaseId);
     }
 
     @Override
-    public List<ReleaseTestSchedule> assignCyclePhaseToUser(CyclePhase cyclePhase, Long userId) throws URISyntaxException {
+    public List<ReleaseTestSchedule> assignCyclePhaseToUser(CyclePhase cyclePhase, Long userId) throws URISyntaxException, IOException {
         List<ReleaseTestSchedule> rtsList = new ArrayList<>();
         int batchSize = ZephyrConstants.BATCH_SIZE;
 
@@ -77,7 +78,7 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
     }
 
     @Override
-    public void addTestcasesToFreeFormCyclePhase(CyclePhase cyclePhase, List<TCRCatalogTreeTestcase> testcases, Boolean includeHierarchy) throws URISyntaxException {
+    public void addTestcasesToFreeFormCyclePhase(CyclePhase cyclePhase, List<TCRCatalogTreeTestcase> testcases, Boolean includeHierarchy) throws URISyntaxException, IOException {
         //todo: this data parsing loop runs two times, once here and once in ZephyrRestService, need to fix this
         Map<Long, Set<Long>> treeTestcaseMap = new HashMap<>();
 

@@ -91,6 +91,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
     private AttachmentService attachmentService = new AttachmentServiceImpl();
     private ParserTemplateService parserTemplateService = new ParserTemplateServiceImpl();
     private TestStepService testStepService = new TestStepServiceImpl();
+    private PreferenceService preferenceService = new PreferenceServiceImpl();
 
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
@@ -268,7 +269,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             cyclePhase.setEndDate(new Date(cycle.getEndDate()));
             cyclePhase.setReleaseId(zephyrConfigModel.getReleaseId());
             cyclePhase.setFreeForm(true);
-            logger.println("calling create phase api :"+ LocalDateTime.now());
+            logger.println("calling create phase api :" + LocalDateTime.now());
             cyclePhase = cycleService.createCyclePhase(cyclePhase);
 
             //adding testcases to free form cycle phase
@@ -276,7 +277,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
 
             //assigning testcases in cycle phase to creator
-            logger.println("assigning testcases in cycle phase to creator :"+ LocalDateTime.now());
+            logger.println("assigning testcases in cycle phase to creator :" + LocalDateTime.now());
             List<ReleaseTestSchedule> releaseTestSchedules = cycleService.assignCyclePhaseToUser(cyclePhase, userService.getCurrentUser().getId());
 
             Map<String, Set<Long>> executionMap = new HashMap<>();
@@ -364,17 +365,23 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 executionService.addTestStepResults(testStepResultList);
             }
             logger.println("calling execute release test schedule api :" + LocalDateTime.now());
+            Set<String> activeStatusIdSet = preferenceService.getTestcaseExecutionStatusIds(true);
             for(Map.Entry<String, Set<Long>> entry : executionMap.entrySet()) {
-                executionService.executeReleaseTestSchedules(entry.getValue(), entry.getKey());
+                String statusId = entry.getKey();
+                if(activeStatusIdSet.contains(statusId)) {
+                    executionService.executeReleaseTestSchedules(entry.getValue(), statusId);
+                } else {
+                    logger.println("No active testcase execution status found for id: " + statusId);
+                }
             }
         }
         catch(Exception e) {
             //todo:handle exceptions gracefully
             e.printStackTrace();
-            logger.printf("Error uploading test results to Zephyr");
-            logger.printf("\n"+e.getMessage()+"\n");
+            logger.println("Error uploading test results to Zephyr");
+            logger.println(e.getMessage());
             for(StackTraceElement stackTraceElement : e.getStackTrace()) {
-                logger.printf(stackTraceElement.toString()+"\n");
+                logger.println(stackTraceElement.toString());
             }
             return false;
         }
@@ -383,7 +390,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		return true;
 	}
 
-    private Map<String, TCRCatalogTreeDTO> createPackagePhaseMap(ZephyrConfigModel zephyrConfigModel) throws URISyntaxException {
+    private Map<String, TCRCatalogTreeDTO> createPackagePhaseMap(ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
 
         List<TCRCatalogTreeDTO> tcrCatalogTreeDTOList = tcrCatalogTreeService.getTCRCatalogTreeNodes(ZephyrConstants.TCR_CATALOG_TREE_TYPE_PHASE, zephyrConfigModel.getReleaseId());
 
@@ -457,7 +464,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return packagePhaseMap;
     }
 
-    private Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(ZephyrConfigModel zephyrConfigModel, Map<String, TCRCatalogTreeDTO> packagePhaseMap) throws URISyntaxException {
+    private Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(ZephyrConfigModel zephyrConfigModel, Map<String, TCRCatalogTreeDTO> packagePhaseMap) throws URISyntaxException, IOException {
 
         Map<CaseResult, TCRCatalogTreeTestcase> existingTestcases = new HashMap<>();
         Map<Long, List<CaseResult>> testcasesToBeCreated = new HashMap<>(); // treeId -> caseResult
@@ -532,7 +539,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return existingTestcases;
     }
 
-    private List<TCRCatalogTreeTestcase> createTestcasesWithoutDuplicate(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException {
+    private List<TCRCatalogTreeTestcase> createTestcasesWithoutDuplicate(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException, IOException {
 
         List<TCRCatalogTreeTestcase> existingTestcases = new ArrayList<>();
         Map<Long, List<Testcase>> toBeCreatedTestcases = new HashMap<>();

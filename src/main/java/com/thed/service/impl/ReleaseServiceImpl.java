@@ -3,6 +3,7 @@ package com.thed.service.impl;
 import com.thed.model.Release;
 import com.thed.service.ReleaseService;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -16,7 +17,7 @@ public class ReleaseServiceImpl extends BaseServiceImpl implements ReleaseServic
     }
 
     @Override
-    public List<Release> getAllReleasesForProjectId(Long projectId) throws URISyntaxException {
+    public List<Release> getAllReleasesForProjectId(Long projectId) throws URISyntaxException, IOException {
         return zephyrRestService.getAllReleasesForProjectId(projectId);
     }
 

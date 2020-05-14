@@ -7,6 +7,7 @@ import com.thed.utils.ZephyrConstants;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -93,7 +94,8 @@ public class AttachmentServiceImpl extends BaseServiceImpl implements Attachment
             Attachment attachment = new Attachment();
             attachment.setContentType(genericAttachmentDTO.getContentType());
 
-            GenericAttachmentDTO oldAttachment = genericAttachmentDTOList.stream().filter(attachmentDTO -> genericAttachmentDTO.getFileName().equals(attachmentDTO.getFileName())).findAny().orElse(null);
+            String createdFileName = URLDecoder.decode(genericAttachmentDTO.getFileName(), "UTF-8");
+            GenericAttachmentDTO oldAttachment = genericAttachmentDTOList.stream().filter(attachmentDTO -> createdFileName.equals(attachmentDTO.getFileName())).findAny().orElse(null);
 
             if(oldAttachment != null) {
                 attachment.setFileSize((long)oldAttachment.getByteData().length);

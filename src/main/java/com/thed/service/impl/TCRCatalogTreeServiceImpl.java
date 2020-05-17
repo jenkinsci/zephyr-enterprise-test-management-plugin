@@ -29,7 +29,7 @@ public class TCRCatalogTreeServiceImpl extends BaseServiceImpl implements TCRCat
 
     @Override
     public Set<Long> getTCRCatalogTreeIdHierarchy(Long tcrCatalogTreeId) throws URISyntaxException, IOException {
-        TCRCatalogTreeDTO tcrCatalogTreeDTO = zephyrRestService.getTCRCatalogTreeNode(tcrCatalogTreeId);
+        TCRCatalogTreeDTO tcrCatalogTreeDTO = getTCRCatalogTreeNode(tcrCatalogTreeId);
         return getIdHierarchy(tcrCatalogTreeDTO);
     }
 

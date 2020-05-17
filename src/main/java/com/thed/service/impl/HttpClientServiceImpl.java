@@ -7,12 +7,14 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.ByteArrayOutputStream;
@@ -29,10 +31,12 @@ public class HttpClientServiceImpl implements HttpClientService {
 
     private BasicCookieStore cookieStore; // This stores cookies for created by client or set by server side.
     private List<Header> headers;
+    private CloseableHttpClient httpClient;
 
     public HttpClientServiceImpl() {
         cookieStore = new BasicCookieStore();
         headers = new ArrayList<>();
+        httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
     }
 
     @Override
@@ -75,18 +79,25 @@ public class HttpClientServiceImpl implements HttpClientService {
             return null;
         }
 
-        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        String result = "";
+        CloseableHttpClient httpClient = getHttpClient();
         HttpGet httpGet = new HttpGet(url);
         for (Header header:headers){
             httpGet.addHeader(header);
         }
-        HttpResponse response = httpClient.execute(httpGet);
-        if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
-            return convertInputStreamToString(response.getEntity().getContent());
-        } else {
-            throw new HttpResponseException(response.getStatusLine().getStatusCode(), "GET: " + url + "\n" + "Response:" + convertInputStreamToString(response.getEntity().getContent()));
+
+        CloseableHttpResponse response = httpClient.execute(httpGet);
+        try {
+            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
+                result = convertInputStreamToString(response.getEntity().getContent());
+            } else {
+                throw new HttpResponseException(response.getStatusLine().getStatusCode(), "GET: " + url + "\n" + "Response:" + convertInputStreamToString(response.getEntity().getContent()));
+            }
+        } finally {
+            response.close();
         }
 
+        return result;
     }
 
     @Override
@@ -104,7 +115,8 @@ public class HttpClientServiceImpl implements HttpClientService {
             return null;
         }
 
-        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        String result = "";
+        CloseableHttpClient httpClient = getHttpClient();
         HttpPost httpPost = new HttpPost(url);
 
         for (Header header:headers){
@@ -115,14 +127,19 @@ public class HttpClientServiceImpl implements HttpClientService {
             httpPost.setEntity(httpEntity);
         }
 
-        HttpResponse response = httpClient.execute(httpPost);
-        if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
-            return convertInputStreamToString(response.getEntity().getContent());
-        } else {
-            throw new HttpResponseException(response.getStatusLine().getStatusCode(), "POST: " + url
-                    + "\n" + "Payload: " + (httpEntity != null ? convertInputStreamToString(httpEntity.getContent()) : "")
-                    + "\nResponse: " + convertInputStreamToString(response.getEntity().getContent()));
+        CloseableHttpResponse response = httpClient.execute(httpPost);
+        try {
+            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
+                result = convertInputStreamToString(response.getEntity().getContent());
+            } else {
+                throw new HttpResponseException(response.getStatusLine().getStatusCode(), "POST: " + url
+                        + "\n" + "Payload: " + (httpEntity != null ? convertInputStreamToString(httpEntity.getContent()) : "")
+                        + "\nResponse: " + convertInputStreamToString(response.getEntity().getContent()));
+            }
+        } finally {
+            response.close();
         }
+        return result;
     }
 
     @Override
@@ -131,7 +148,8 @@ public class HttpClientServiceImpl implements HttpClientService {
             return null;
         }
 
-        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        String result = "";
+        CloseableHttpClient httpClient = getHttpClient();
         HttpPut httpPut = new HttpPut(url);
 
         for (Header header:headers){
@@ -143,19 +161,28 @@ public class HttpClientServiceImpl implements HttpClientService {
             httpPut.setEntity(stringEntity);
         }
 
-        HttpResponse response = httpClient.execute(httpPut);
-        if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
-            return convertInputStreamToString(response.getEntity().getContent());
-        } else {
-            throw new HttpResponseException(response.getStatusLine().getStatusCode(), "PUT: " + url
-                    + "\n" + "Payload: " + content
-                    + "\nResponse: " + convertInputStreamToString(response.getEntity().getContent()));
+        CloseableHttpResponse response = httpClient.execute(httpPut);
+        try {
+            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
+                result =  convertInputStreamToString(response.getEntity().getContent());
+            } else {
+                throw new HttpResponseException(response.getStatusLine().getStatusCode(), "PUT: " + url
+                        + "\n" + "Payload: " + content
+                        + "\nResponse: " + convertInputStreamToString(response.getEntity().getContent()));
+            }
+        } finally {
+            response.close();
         }
+        return result;
     }
 
     @Override
     public void clear() {
         cookieStore.clear();
         headers.clear();
+    }
+
+    public CloseableHttpClient getHttpClient() {
+        return httpClient;
     }
 }

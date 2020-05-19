@@ -40,6 +40,12 @@ public class HttpClientServiceImpl implements HttpClientService {
     public HttpClientServiceImpl() {
         cookieStore = new BasicCookieStore();
         headers = new ArrayList<>();
+        if(httpClient == null) {
+            initHttpClient();
+        }
+    }
+
+    private void initHttpClient() {
         HttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
         httpClient = HttpClientBuilder.create()
                 .setConnectionManager(connectionManager)
@@ -193,7 +199,15 @@ public class HttpClientServiceImpl implements HttpClientService {
         headers.clear();
     }
 
-    public CloseableHttpClient getHttpClient() {
+    private CloseableHttpClient getHttpClient() {
+        if(httpClient == null) {
+            initHttpClient();
+        }
         return httpClient;
+    }
+
+    public void closeHttpClient() throws IOException {
+        httpClient.close();
+        httpClient = null;
     }
 }

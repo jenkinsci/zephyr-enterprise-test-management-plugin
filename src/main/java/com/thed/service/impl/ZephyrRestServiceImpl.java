@@ -576,7 +576,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
     @Override
     public void closeHttpConnection() throws IOException {
-        httpClientService.getHttpClient().close();
+        httpClientService.closeHttpClient();
     }
 
     @Override

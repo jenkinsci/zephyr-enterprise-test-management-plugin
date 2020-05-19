@@ -31,6 +31,6 @@ public interface HttpClientService {
 
     void clear();
 
-    CloseableHttpClient getHttpClient();
+    void closeHttpClient() throws IOException;
 
 }

@@ -262,6 +262,8 @@ public interface ZephyrRestService {
 
     User getCurrentUser();
 
+    void closeHttpConnection() throws IOException;
+
     /**
      * Clears all data saved in this instance and related to this.
      */

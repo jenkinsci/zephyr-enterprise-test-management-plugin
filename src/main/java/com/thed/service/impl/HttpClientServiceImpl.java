@@ -1,6 +1,7 @@
 package com.thed.service.impl;
 
 import com.thed.service.HttpClientService;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -11,11 +12,14 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -36,7 +40,11 @@ public class HttpClientServiceImpl implements HttpClientService {
     public HttpClientServiceImpl() {
         cookieStore = new BasicCookieStore();
         headers = new ArrayList<>();
-        httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        HttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        httpClient = HttpClientBuilder.create()
+                .setConnectionManager(connectionManager)
+                .setDefaultCookieStore(cookieStore)
+                .build();
     }
 
     @Override
@@ -95,6 +103,7 @@ public class HttpClientServiceImpl implements HttpClientService {
             }
         } finally {
             response.close();
+            httpGet.releaseConnection();
         }
 
         return result;
@@ -138,6 +147,7 @@ public class HttpClientServiceImpl implements HttpClientService {
             }
         } finally {
             response.close();
+            httpPost.releaseConnection();
         }
         return result;
     }
@@ -172,6 +182,7 @@ public class HttpClientServiceImpl implements HttpClientService {
             }
         } finally {
             response.close();
+            httpPut.releaseConnection();
         }
         return result;
     }

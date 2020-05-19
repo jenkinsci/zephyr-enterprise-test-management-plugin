@@ -384,6 +384,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 logger.println(stackTraceElement.toString());
             }
             return false;
+        } finally {
+            userService.getZephyrRestService().closeHttpConnection();
         }
 
 		logger.printf("%s Done uploading tests to Zephyr.%n", pInfo);

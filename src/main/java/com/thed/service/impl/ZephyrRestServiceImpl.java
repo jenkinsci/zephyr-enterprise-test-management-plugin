@@ -575,6 +575,11 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     @Override
+    public void closeHttpConnection() throws IOException {
+        httpClientService.closeHttpClient();
+    }
+
+    @Override
     public void clear() {
         setCurrentUser(null);
         setHostAddress("");

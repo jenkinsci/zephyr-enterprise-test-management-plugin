@@ -3,6 +3,7 @@ package com.thed.service;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,5 +30,7 @@ public interface HttpClientService {
     void addHeader(Header header);
 
     void clear();
+
+    void closeHttpClient() throws IOException;
 
 }

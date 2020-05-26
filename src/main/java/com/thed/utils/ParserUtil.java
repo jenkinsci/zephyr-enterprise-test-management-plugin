@@ -111,13 +111,13 @@ public class ParserUtil {
         } else {
             for (int i = 0; i < nodeList.getLength(); i++) {
                 Node childNode = nodeList.item(i);
-                changed = anotherMethod(xmlLink, childNode, deepCopy(baseTemplateMap), dataMap, dataMapList, changed);
+                changed = nestedParsing(xmlLink, childNode, deepCopy(baseTemplateMap), dataMap, dataMapList, changed);
             }
         }
         return changed;
     }
 
-    boolean anotherMethod(XMLLink xmlLink, Node node, Map<String, Object> baseTemplateMap, Map<String, Object> dataMap, List<Map> dataMapList, boolean changed) {
+    boolean nestedParsing(XMLLink xmlLink, Node node, Map<String, Object> baseTemplateMap, Map<String, Object> dataMap, List<Map> dataMapList, boolean changed) {
         Map<String, Object> newDataMap = deepCopy(dataMap);
         changed = startFillingMap(xmlLink, (Element) node, baseTemplateMap, newDataMap, changed);
 

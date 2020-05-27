@@ -142,8 +142,8 @@ Subversion URL where the target project resides:
   * Select a release. Selecting a release fetches all its cycles. 
   * Select either an existing cycle or create a new one.  
     
-    **Note**: For an existing cycle, the default cycle duration will be the value it has in Zephyr, and the cycle name prefix will be in the format *Automation_<Date><Time>*.  
-      For a new cycle, you can select a cycle duration from the dropdown and edit the default cycle prefix name. In the absence of a cycle prefix name, *Automation* is used for new cycles. 
+  **Note**: For an existing cycle, the default cycle duration will be the value it has in Zephyr, and no prefix will be added to the cycle name.  
+    For a new cycle, you can select a cycle duration from the dropdown and edit the default cycle prefix name (it can be in the *<prefix>_<Date><Time>* format). In the absence of a cycle prefix name, *Automation* is used for new cycles. 
 
   * To create a package structure while creating and organizing the test cases, select the **Create Package Structure** check box. 
   * Specify the path to the test result file to parse. 

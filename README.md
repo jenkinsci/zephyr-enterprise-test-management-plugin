@@ -5,7 +5,7 @@ test cases
 Older versions of this plugin may not be safe to use. Please review the
 following warnings before using an older version:
 
--   [CSRF vulnerability and missing permission check allow
+[CSRF vulnerability and missing permission check allow
     SSRF](https://jenkins.io/security/advisory/2019-04-03/#SECURITY-993)
 
 
@@ -13,192 +13,196 @@ following warnings before using an older version:
 
 ## **About the Plugin**
 
-Zephyr Enterprise Test Management Plugin for Jenkins integrates Jenkins
-and Zephyr Enterprise Edition / Zephyr Community Edition. This plugin
-creates test cases and publishes test results in Zephyr Enterprise for
-JUnit test cases in Jenkins. It supports publishing maven surefire
-format test results (JUnit and TestNG).
-This guide will cover how to create and execute test cases automatically
-in Zephyr Enterprise using this plugin; this includes
+The Zephyr Enterprise Test Management plugin for Jenkins integrates Jenkins 
+with Zephyr Enterprise Edition and with Zephyr Community Edition. Use the 
+plugin to create test cases and to publish test results in Zephyr Enterprise
+for JUnit test cases in Jenkins. The plugin supports publishing test results
+in the Maven Surefire format (used in JUnit and TestNG).
+This guide explains how to create and execute test cases automatically in
+Zephyr Enterprise by using this plugin. You will learn how to:
 
-1.  Downloading and installing the plugin
-2.  Adding Zephyr Severs in the Jenkins global settings.
-3.  Configuring a standard Jenkins Job.
-4.  Configuring Zephyr Enterprise Test Management Plugin as a post-build
-    action.
-5.  Triggering the job and publishing results in Zephyr
+* Download and install the plugin.
+* Add Zephyr servers to the Jenkins global settings. 
+* Configure a standard Jenkins job. 
+* Configure the Zephyr Enterprise Test Management plugin to perform post-build actions. 
+* Trigger a job and publish the results in Zephyr.
 
 ## **Requirements**
 
-1.  Zephyr Enterprise 6.X
-2.  Jenkins installation (v2.62 or later)
+* Zephyr Enterprise 6.X.
+* Jenkins 2.62 or later.
 
-## **Adding Zephyr Servers in Jenkins global settings**
+## **1. Download and install the plugin**
 
-After installation configure Jenkins global settings to establish
-connection with Zephyr Server(s). Follow the below steps
+1\. In your Jenkins instance, click **Manage Jenkins** > **Manage Plugins**:
 
--   Launch Jenkins and access via a web browser.
--   Click on "Manage Jenkins" from the Menu as illustrated in the below
-    screenshot.
+![](docs/images/manage-jenkins.png)
 
+2\. On the subsequent page, switch to the **Available** tab and search for the **Zephyr Enterprise Test Management** plugin: 
 
-![](docs/images/worddav3e8272c72e5620a3b49e3dc5bbd23c84.png)
+![](docs/images/select-plugin.png)
 
--   Click on "Configure System".
+3\. Select the check box next to the plugin name and click **Install without restart**.
+   Jenkins will install the plugin and inform you that the plugin has been downloaded and installed successfully:
+   
+![](docs/images/installed-plugin.png)
 
+## **2. Add Zephyr servers to the Jenkins global settings**
 
-![](docs/images/worddav41dcb2ac489a02abb5f94c5fc35dbe9b.png)
+After you install the plugin, you can configure the Jenkins global settings to establish a connection to one or
+several Zephyr servers. You can do this in two ways:  
 
--   Locate the section "Zephyr Server Configuration" and click "Add".
-    You can add more than one Zephyr Server by clicking on "Add" button.
+**Option 1**  
 
-![](docs/images/worddav13d2d1b859c6cd1c72c17270dfe84a8b.png)
+1\. Click **Manage Jenkins** > **Configure System**: 
 
--   Enter Zephyr Server URL and add credentials by clicking on add. Note that the user
-    credentials must be that of Zephyr "Test Manager" or "Test Lead".
+![](docs/images/configure-system.png)
 
-![](docs/images/global_config_add_credentials.png)
+2\. Locate the **Zephyr Server Configuration** section and click **Add** (you can add as many servers as you want): 
 
--   Select credentials to be used from the drop-down.
+![](docs/images/add-button.png)
 
-![](docs/images/global_config_select.png)
+3\. Enter your Zephyr Server URL.
+4\. Enter your Zephyr credentials. To do that:  
+  * Click **Add** next to the **Credentials** field and select **Jenkins**:
 
--   Click on "Test Configuration" to validate connection to Zephyr
-    Server.
+    ![](docs/images/add-jenkins2.png)
 
-![](docs/images/global_config_test.png)
+  * In the subsequent window, select **Username with password** from the **Kind** drop-down menu, specify your
+    Zephyr username and password, and click **Add**.  
+    **Important**: you must specify the credentials of a Zephyr administrator.
 
--   Click on "Save" button to save the configuration changes.
+    ![](docs/images/credentials.png)
 
-![](docs/images/global_config_save.png)
+**Option 2**  
 
-# **Configuring a standard Jenkins job**
+1\. Log in to Zephyr as an administrator, create an API token, and copy it to the clipboard:
+
+![](docs/images/token-creation.png)
+
+2\. On the **Jenkins Configuration** page, click **Add** next to the **Credentials** field and select **Jenkins**:
+
+![](docs/images/add-jenkins2.png)
+
+3\. In the subsequent window, select **Secret text** form the **Kind** drop-down menu, paste your API token to the **Secret**
+   field, specify a short description in the **Description** field, and click **Add**:
+
+![](docs/images/secret.png)
+
+After adding your credentials in any of the ways described above, choose them from the **Credentials** drop-down menu, click
+**Test Configuration** to validate the connection to your Zephyr server, and then, if the validation was successful, click **Save**
+to apply the changes:
+
+![](docs/images/final.png)
+
+## **3. Configure a standard Jenkins job**
 
 A job in Jenkins defines a sequence of tasks for Jenkins to perform.
-When a job is triggered, Jenkins looks for an Ant script or Maven build
-file and runs it. It also provides options to define post-build tasks.
-Follow the example below to configure a standard job and add a post
-build action:
+When a job is triggered, Jenkins looks for an Ant script or a Maven
+build file and runs it. It also provides options to define post-build actions.
+To configure a standard job and add a post-build action: 
 
-1\. Create a new Jenkins job by clicking the "New Item" link found on the
-menu.
+1\. Click **New Item** in the main Jenkins menu to create a new job:
 
-![](docs/images/worddavab4067eb8b3b9cb4c3baa72c5f99c599.png)
+![](docs/images/new-item.png)
 
-2\. Give a name for your job, check the box "Freestyle project" and click
-on "OK" button.
+2\. On the subsequent page, specify a name for your job, select **Freestyle project**, and click **OK**:
 
-![](docs/images/worddav6e461d9e7908dbff44f7148ffe57b2df.png)
+![](docs/images/my-job.png)
 
-3\. To configure the job you just created, click the \<job name\> on the
-Jenkins home page.
+3\. On the resulting page, select **Subversion** in the **Source Code Management** section and enter the
+Subversion URL where the target project resides:
 
-![](docs/images/worddavc3d84cbb0446ba1c12cf90cedb5bd92c.png)
+![](docs/images/source-code-management.png)
 
-4\. Click the "Configure" link.
+  **Note**: You may need to specify user credentials to access the SVN server. To do that, click **Add** next to the **Credentials** field. 
 
-![](docs/images/worddav46aff734fdfd756c63c5785d0799f97f.png)
+4\. In the **Build** section, click **Add build step** and select **Invoke top-level Maven targets** from the menu to add a build step:
 
-5\. Choose "Subversion" option in the "Source Code Management" section.
+![](docs/images/build.png)
 
-![](docs/images/worddav98a0233b9c432ca9339e07ac02eceebb.png)
+5\. In the **Goals** field, specify *clean package*:
 
-6\. Enter the subversion URL where the target project resides and press
-Tab.
+![](docs/images/maven.png)
 
-![](docs/images/worddav43269e625399dfe9a1299d654bdc03e0.png)
-Note: User credentials needs to be setup to access SVN server. Click on
-"enter credential" link to set it up if you see below error.
-![](docs/images/worddavda06736083fe517c7fbe7b3bc5fdcab1.png)
+6\. Specify a post-build action. You can command Jenkins to publish test results to
+   Zephyr after the build steps are performed. To do that:  
+  * Click **Add post-build action** in the **Post-build Actions** section and select
+  **Publish test result to Zephyr Enterprise** from the menu:
 
-7\. To add a build step, locate the "Build' section and select "Invoke
-top-level maven targets" from the "Add build step" dropdown.
+   ![](docs/images/post-build.png)
 
-![](docs/images/worddav63ae9fa47858a2c51daa0bf9165a371e.png)
+  * Populate the following fields:
+  
+  ![](docs/images/config.png)
+  
+  * Select your Zephyr URL from the dropdown (the servers you specified on the Jenkins global configuration page are available here).
+    This automatically pulls in Zephyr projects, releases and cycles. 
+  * Select the name of your Zephyr project. This re-populates the releases. 
+  * Select a release. Selecting a release fetches all its cycles. 
+  * Select either an existing cycle or create a new one.  
+    
+   **Note**: For an existing cycle, the default cycle duration will be the value it has in Zephyr, and no prefix will be added to the cycle name.  
+    For a new cycle, you can select a cycle duration from the dropdown and edit the default cycle prefix name. In the absence of a cycle prefix name, *Automation* is used for new cycles. 
 
-8\. Select "clean package" as your Goals.
+  * To create a package structure while creating and organizing the test cases, select the **Create Package Structure** check box. 
+  * Specify the path to the test result file to parse. 
+  * Select a parser template to parse the XML file. 
 
-![](docs/images/worddav118b96747a7fbd86cc477dbb91c4944c.png)
+7\. Click **Save** to apply the changes.
 
-# **Configuring Zephyr Enterprise Test Management plugin as a post-build action**
+## **4. Trigger the job and publish results in Zephyr**
 
+You trigger your job manually. To do that:
 
-In order to publish results in Zephyr, define post-build action.
+1\. Open the job and click **Build Now** in the menu on the left. This will build the project and publish the JUnit result:
 
-1\. Select "Publish test result to Zephyr Enterprise" from "Add
-post-build Actions" dropdown.
+![](docs/images/build-now.png)
 
+2\. In Zephyr Enterprise, Jenkins will create a new phase, *Automation*, along with the package structure of the JUnit test cases found in the project:
 
-![](docs/images/worddav4ef115780e39bf33bb484a2932b6b80d.png)
+![](docs/images/zephyr-1.png)
 
-2\. Configure Zephyr plugin job.
+3\. Finally, Jenkins will assign this phase to the selected cycle and will execute all the tests in Zephyr: 
+	
+![](docs/images/zephyr-2.png)
+	
+## **5. Configure a Pipeline Jenkins job**
+	
+To configure a Pipeline Jenkins job, do the following:
 
-![](docs/images/config.png)
+1\. Click **New Item** in the Jenkins main menu: 
 
-1.  1.  1.  Select the Zephyr URL from the dropdown. (Servers configured
-            in the Jenkins global configuration are available here to
-            select). This automatically pulls in Zephyr projects,
-            releases and cycles.
-        2.  Select the Project Name from the dropdown. This re-populates
-            the releases.
-        3.  Select the Release from the dropdown. Selecting a release
-            fetches all its cycles.
-        4.  Select either an existing Cycle from the dropdown or create
-            a new cycle.
-        5.  For existing Cycle the default Cycle Duration will be that
-            of existing cycle in Zephyr and Cycle Name Prefix will be of
-            the format "Automation\_\<Date\>\<Time\>" stamp.
-        6.  For new cycle you have option to select Cycle Duration from
-            the dropdown and to edit default cycle prefix name
-            "Automation". In the absence of a cycle prefix name
-            "Automation" is used for new cycles.
-        7.  To create a package structure while creating and organizing
-            the test cases, check the box "Create Package Structure".
-        8.  Add path for result files to parse.
-        9.  Select parser template from drop down to parse the XML files.
-        10.  Click "Save".
+![](docs/images/new-item.png)
 
+2\. In the subsequent window, enter a name for your job, select **Pipeline**, and click **OK**:
 
-**Triggering the job and publishing results in Zephyr**
+![](docs/images/pipeline-job.png)
 
-To trigger a job manually, click "Build Now" link on the menu. This
-builds the project and publishes the JUnit result.
+3\. In the **Pipeline** section, select **Pipeline script** from the **Definition** drop-down menu: 
 
-![](docs/images/worddav89ee482c9e8e48d693ad00376dceb132.png)
+![](docs/images/pipeline-script.png)
 
-In Zephyr Enterprise Jenkins creates a phase named "Automation" along
-with package structure of the JUnit test cases found in the project.
-![](docs/images/zee-1.png)
+4\. Enter your Pipeline script in the **Script** section and click **Pipeline Syntax**: 
 
+![](docs/images/pipeline-syntax.png)
 
-Finally, Jenkins assigns this phase to the selected cycle and executes
-all the tests in Zephyr.
-![](docs/images/zee-2.png)
+5\. In the subsequent window, select **zeeReporter: Publish test result to Zephyr Enterprise** from the **Sample Step** dropdown: 
 
-# **Configuring a pipeline Jenkins job**
+![](docs/images/zeeReporter.png)
 
-1. Select Pipeline project in new item instead of freestyle project while creating project.
-![](docs/images/1_create_pipeline_project.png)
+6\. In the fields that appear, specify the project name, release number, cycle name and other details, then click **Generate Pipeline Script**, and copy the
+   generated script to the clipboard:
 
-2. In configure section select pipeline script option.
-![](docs/images/2_pipeline_job_configuration.png)
-
-3. Copy pipeline script in script section.
-
-4. Click on pipeline syntax.
-![](docs/images/3_click_pipeline_syntax.png)
-
-5. Select zeeReporter: Publish test result to Zephyr Enterprise → Enter all details → Click on Generate Pipeline Script → Copy generated pipeline script.
 ![](docs/images/pipeline-config.png)
 
-6. Paste copied pipeline script to script section in configure.
-Changes in pipeline script
-    -   Add path of project in this line checkout filesystem(clearWorkspace: false, copyHidden: false, path: 'D://jenkins//Proj1-10')
-    -   Add copied script from zee reporter
-    -   Use bat if we configured with windows or sh if we configured with Linux
+7\. Return to the **Script** field of the **Pipeline** section. In the **Script** field:
+  * Paste the copied script to the `post` section of your code.
+  * Specify the path to your project in the following line:  
+    `checkout filesystem(clearWorkspace: false, copyHidden: false, path: 'D://jenkins//Proj1-10')`  
+	**Important**: Use the `bat` command if your pipeline will run on Windows, or the `sh` command if your pipeline will run on Linux. 
 
-**Sample script**
+**Sample script**  
 ```
 pipeline {
     agent any
@@ -225,48 +229,39 @@ pipeline {
 }
 ```
 
-9. Trigger the build.
+8\. Click **Save** to apply the changes:
 
-# **License**
+![](docs/images/save-changes.png)
+
+Now you can trigger your build.
+
+## **License**
 
 This plugin is open source. It follows the Apache License version 2.0
-(\<<http://www.apache.org/licenses/>\>). It means:
-It allows you to:
+(<http://www.apache.org/licenses/>). It means that it allows you to --  
 
--   freely download and use this software, in whole or in part, for
-    personal, company internal, or commercial purposes;
--   use this software in packages or distributions that you create.
+* Freely download and use this software, in whole or in part, for personal, company internal, or commercial purposes. 
+* Use this software in packages or distributions that you create. 
 
-It forbids you to:
+It forbids you to -- 
 
--   redistribute any piece of our originated software without proper
-    attribution;
--   use any marks owned by us in any way that might state or imply that
-    we [www.getzephyr.com](http://www.getzephyr.com)
-    endorse your distribution;
--   Use any marks owned by us in any way that might state or imply that
-    you created this software in question.
+* Redistribute any piece of our originated software without proper attribution. 
+* Use any marks owned by us in any way that might state or imply that we, [www.getzephyr.com](http://www.getzephyr.com), endorse your distribution.
+* Use any marks owned by us in any way that might state or imply that you created this software in question. 
 
-It requires you to:
+It requires you to --
 
--   include a copy of the license in any redistribution you may make
-    that includes this software;
--   provide clear attribution to us,
-    [www.getzephyr.com](http://www.getzephyr.com) for
-    any distributions that include this software
+* Include a copy of the license in any redistribution you may make that includes this software. 
+* Provide clear attribution to us, [www.getzephyr.com](http://www.getzephyr.com), for any distributions that include this software.
 
-It does not require you to:
+It does not require you to --
 
--   include the source of this software itself, or of any modifications
-    you may have made to it, in any redistribution you may assemble that
-    includes it;
--   Submit changes that you make to the software back to this software
-    (though such feedback is encouraged).
+* Include the source of this software itself, or of any modifications you may have made to it, in any redistribution you may assemble that includes it. 
+* Submit changes that you make to the software back to this software (though such feedback is encouraged). 
 
-See License FAQ \<<http://www.apache.org/foundation/licence-FAQ.html>\>
-for more details.
+See License FAQ (<http://www.apache.org/foundation/licence-FAQ.html>) for more information.
 
-# **Feedback**
+## **Feedback**
 
 -   Please provide feedback at [JENKINS
     JIRA](https://issues.jenkins-ci.org/projects/JENKINS)

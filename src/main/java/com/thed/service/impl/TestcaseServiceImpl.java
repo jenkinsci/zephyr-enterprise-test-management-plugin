@@ -1,12 +1,15 @@
 package com.thed.service.impl;
 
+import com.thed.model.PlanningTestcase;
 import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.model.TestStep;
 import com.thed.model.Testcase;
 import com.thed.service.TestcaseService;
+import com.thed.utils.ZephyrConstants;
 import hudson.tasks.junit.CaseResult;
 import org.jaxen.pantry.Test;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 
@@ -28,17 +31,22 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
     }
 
     @Override
-    public List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException {
+    public List<TCRCatalogTreeTestcase> getTestcasesForTreeId(Long tcrCatalogTreeId) throws URISyntaxException, IOException {
         return zephyrRestService.getTestcasesForTreeId(tcrCatalogTreeId);
     }
 
     @Override
-    public List<TCRCatalogTreeTestcase> createTestcases(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcases) throws URISyntaxException {
+    public List<PlanningTestcase> getTestcasesForTreeIdFromPlanning(Long tcrCatalogTreeId, Integer offset, Integer pageSize) throws URISyntaxException, IOException {
+        return zephyrRestService.getTestcasesForTreeIdFromPlanning(tcrCatalogTreeId, offset, pageSize);
+    }
+
+    @Override
+    public List<TCRCatalogTreeTestcase> createTestcases(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcases) throws URISyntaxException, IOException {
         return zephyrRestService.createTestcases(tcrCatalogTreeTestcases);
     }
 
     @Override
-    public Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(Map<Long, List<CaseResult>> treeIdCaseResultMap) throws URISyntaxException {
+    public Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(Map<Long, List<CaseResult>> treeIdCaseResultMap) throws URISyntaxException, IOException {
 
         if(treeIdCaseResultMap == null || treeIdCaseResultMap.isEmpty()) {
             return new HashMap<>();
@@ -80,7 +88,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
     }
 
     @Override
-    public List<TCRCatalogTreeTestcase> createTestcasesWithList(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException {
+    public List<TCRCatalogTreeTestcase> createTestcasesWithList(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException, IOException {
         List<TCRCatalogTreeTestcase> treeTestcases = new ArrayList<>();
         Set<Long> treeIds = treeIdTestcaseMap.keySet();
 
@@ -94,8 +102,14 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
                 treeTestcases.add(tcrCatalogTreeTestcase);
             }
         }
-
-        return createTestcases(treeTestcases);
+        // create testcase in Batch
+        final List<TCRCatalogTreeTestcase> testcaseList = new ArrayList<>();
+        for (int i = 0; i < treeTestcases.size(); i += ZephyrConstants.BATCH_SIZE) {
+            final List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcases = i + ZephyrConstants.BATCH_SIZE > treeTestcases.size() ? treeTestcases.subList(i, treeTestcases.size()) : treeTestcases.subList(i, i + ZephyrConstants.BATCH_SIZE);
+            final List<TCRCatalogTreeTestcase> testcases = createTestcases(tcrCatalogTreeTestcases);
+            testcaseList.addAll(testcases);
+        }
+        return testcaseList;
     }
 
 }

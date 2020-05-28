@@ -4,6 +4,7 @@ import com.thed.model.TestStep;
 import com.thed.model.TestStepResult;
 import com.thed.service.TestStepService;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -17,12 +18,12 @@ public class TestStepServiceImpl extends BaseServiceImpl implements TestStepServ
     }
 
     @Override
-    public TestStep getTestStep(Long testcaseVersionId) throws URISyntaxException {
+    public TestStep getTestStep(Long testcaseVersionId) throws URISyntaxException, IOException {
         return zephyrRestService.getTestStep(testcaseVersionId);
     }
 
     @Override
-    public TestStep addTestStep(TestStep testStep) throws URISyntaxException {
+    public TestStep addTestStep(TestStep testStep) throws URISyntaxException, IOException {
         return zephyrRestService.addTestStep(testStep);
     }
 

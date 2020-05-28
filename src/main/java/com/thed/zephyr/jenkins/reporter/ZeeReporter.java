@@ -9,6 +9,8 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_PREFIX_DEFAULT
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY_IDENTIFIER;
 
+import com.cloudbees.plugins.credentials.common.StandardCredentials;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.google.gson.Gson;
 import com.thed.model.*;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
@@ -39,6 +41,7 @@ import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import jenkins.model.Jenkins;
@@ -46,6 +49,7 @@ import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.FileSet;
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
@@ -87,6 +91,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
     private AttachmentService attachmentService = new AttachmentServiceImpl();
     private ParserTemplateService parserTemplateService = new ParserTemplateServiceImpl();
     private TestStepService testStepService = new TestStepServiceImpl();
+    private PreferenceService preferenceService = new PreferenceServiceImpl();
 
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
@@ -137,8 +142,16 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             ZephyrInstance zephyrInstance = getZephyrInstance(getServerAddress());
 
             //login to zephyr server
-            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
-            boolean loggedIn = userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
+            StandardCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
+            Boolean loggedIn = Boolean.FALSE;
+            if(upCredentials instanceof UsernamePasswordCredentialsImpl){
+                String user = ((UsernamePasswordCredentialsImpl) upCredentials).getUsername();
+                String pass = ((UsernamePasswordCredentialsImpl) upCredentials).getPassword().getPlainText();
+                loggedIn = userService.login(zephyrInstance.getServerAddress(),user,pass);
+            }else if(upCredentials instanceof StringCredentialsImpl){
+                String secretText = ((StringCredentialsImpl) upCredentials).getSecret().getPlainText();
+                loggedIn = userService.login(zephyrInstance.getServerAddress(), secretText);
+            }
             if(!loggedIn) {
                 logger.println("Authorization for zephyr server failed.");
                 return false;
@@ -255,20 +268,15 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             cyclePhase.setEndDate(new Date(cycle.getEndDate()));
             cyclePhase.setReleaseId(zephyrConfigModel.getReleaseId());
             cyclePhase.setFreeForm(true);
-
             cyclePhase = cycleService.createCyclePhase(cyclePhase);
 
             //adding testcases to free form cycle phase
             cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
 
             //assigning testcases in cycle phase to creator
-            cycleService.assignCyclePhaseToCreator(cyclePhase.getId());
+            List<ReleaseTestSchedule> releaseTestSchedules = cycleService.assignCyclePhaseToUser(cyclePhase, userService.getCurrentUser().getId());
 
-            List<ReleaseTestSchedule> releaseTestSchedules = executionService.getReleaseTestSchedules(cyclePhase.getId());
-
-            Map<Boolean, Set<Long>> executionMap = new HashMap<>();
-            executionMap.put(Boolean.TRUE, new HashSet<Long>());
-            executionMap.put(Boolean.FALSE, new HashSet<Long>());
+            Map<String, Set<Long>> executionMap = new HashMap<>();
 
             Map<Long, List<String>> testcaseAttachmentsMap = new HashMap<>();
             Map<Long, GenericAttachmentDTO> statusAttachmentMap = new HashMap<>();
@@ -283,10 +291,19 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                         // tcrTestcase matched, map caseResult.isPass status to rtsId
                         Map<String, Object> testcaseValueMap = caseEntry.getValue();
 
-                        executionMap.get(testcaseValueMap.get("status")).add(releaseTestSchedule.getId());
+                        if(testcaseValueMap.containsKey("statusId")) {
+                            String statusId = testcaseValueMap.get("statusId").toString();
+                            if(!executionMap.containsKey(statusId)) {
+                                executionMap.put(statusId, new HashSet<Long>());
+                            }
+                            executionMap.get(statusId).add(releaseTestSchedule.getId());
+                        }
 
                         if(testcaseValueMap.containsKey("attachments")) {
-                            testcaseAttachmentsMap.put(releaseTestSchedule.getId(), (List<String>)testcaseValueMap.get("attachments"));
+                            List<String> attachmentPathList = (List<String>)testcaseValueMap.get("attachments");
+                            if(!attachmentPathList.isEmpty()) {
+                                testcaseAttachmentsMap.put(releaseTestSchedule.getId(), attachmentPathList);
+                            }
                         }
 
                         if(testcaseValueMap.containsKey("statusAttachment")) {
@@ -336,27 +353,41 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 }
             }
 
-            attachmentService.addAttachments(AttachmentService.ItemType.releaseTestSchedule, testcaseAttachmentsMap, statusAttachmentMap);
-            executionService.addTestStepResults(testStepResultList);
-            executionService.executeReleaseTestSchedules(executionMap.get(Boolean.TRUE), Boolean.TRUE);
-            executionService.executeReleaseTestSchedules(executionMap.get(Boolean.FALSE), Boolean.FALSE);
+            List<String> errorLogs = attachmentService.addAttachments(AttachmentService.ItemType.releaseTestSchedule, testcaseAttachmentsMap, statusAttachmentMap);
+            errorLogs.forEach(errorLog -> logger.println(errorLog));
+
+            if(!testStepResultList.isEmpty()) {
+                executionService.addTestStepResults(testStepResultList);
+            }
+
+            Set<String> activeStatusIdSet = preferenceService.getTestcaseExecutionStatusIds(true);
+            for(Map.Entry<String, Set<Long>> entry : executionMap.entrySet()) {
+                String statusId = entry.getKey();
+                if(activeStatusIdSet.contains(statusId)) {
+                    executionService.executeReleaseTestSchedules(entry.getValue(), statusId);
+                } else {
+                    logger.println("No active testcase execution status found for id: " + statusId);
+                }
+            }
         }
         catch(Exception e) {
             //todo:handle exceptions gracefully
             e.printStackTrace();
-            logger.printf("Error uploading test results to Zephyr");
-            logger.printf("\n"+e.getMessage()+"\n");
+            logger.println("Error uploading test results to Zephyr");
+            logger.println(e.getMessage());
             for(StackTraceElement stackTraceElement : e.getStackTrace()) {
-                logger.printf(stackTraceElement.toString()+"\n");
+                logger.println(stackTraceElement.toString());
             }
             return false;
+        } finally {
+            userService.getZephyrRestService().closeHttpConnection();
         }
 
 		logger.printf("%s Done uploading tests to Zephyr.%n", pInfo);
 		return true;
 	}
 
-    private Map<String, TCRCatalogTreeDTO> createPackagePhaseMap(ZephyrConfigModel zephyrConfigModel) throws URISyntaxException {
+    private Map<String, TCRCatalogTreeDTO> createPackagePhaseMap(ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
 
         List<TCRCatalogTreeDTO> tcrCatalogTreeDTOList = tcrCatalogTreeService.getTCRCatalogTreeNodes(ZephyrConstants.TCR_CATALOG_TREE_TYPE_PHASE, zephyrConfigModel.getReleaseId());
 
@@ -430,7 +461,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return packagePhaseMap;
     }
 
-    private Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(ZephyrConfigModel zephyrConfigModel, Map<String, TCRCatalogTreeDTO> packagePhaseMap) throws URISyntaxException {
+    private Map<CaseResult, TCRCatalogTreeTestcase> createTestcases(ZephyrConfigModel zephyrConfigModel, Map<String, TCRCatalogTreeDTO> packagePhaseMap) throws URISyntaxException, IOException {
 
         Map<CaseResult, TCRCatalogTreeTestcase> existingTestcases = new HashMap<>();
         Map<Long, List<CaseResult>> testcasesToBeCreated = new HashMap<>(); // treeId -> caseResult
@@ -505,7 +536,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         return existingTestcases;
     }
 
-    private List<TCRCatalogTreeTestcase> createTestcasesWithoutDuplicate(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException {
+    private List<TCRCatalogTreeTestcase> createTestcasesWithoutDuplicate(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException, IOException {
 
         List<TCRCatalogTreeTestcase> existingTestcases = new ArrayList<>();
         Map<Long, List<Testcase>> toBeCreatedTestcases = new HashMap<>();
@@ -675,8 +706,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		return noOfCases;
 	}
 
-    private StandardUsernamePasswordCredentials getCredentialsFromId(String credentialsId) {
-        Iterable<StandardUsernamePasswordCredentials> credentials = CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class,
+    private StandardCredentials getCredentialsFromId(String credentialsId) {
+        Iterable<StandardCredentials> credentials = CredentialsProvider.lookupCredentials(StandardCredentials.class,
                 Jenkins.getInstance(),
                 ACL.SYSTEM,
                 Collections.<DomainRequirement>emptyList());
@@ -702,6 +733,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
     public Map<TCRCatalogTreeTestcase, Map<String, Object>> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList, ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
         List<Map<String, Map<String, Object>>> testcaseNameValueMapList = new ArrayList<>();
+
+        long statusAttachmentCount = 0;
 
         dataMapLoop: for (Map dataMap : dataMapList) {
 
@@ -733,20 +766,26 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 packageName = dataMap.get("packageName").toString();
             }
 
-            boolean status;
-
-            if(dataMap.containsKey("statusString") && dataMap.get("statusString") != null) {
-                boolean matched = dataMap.get("status").equals(dataMap.get("statusString"));
-                if(Boolean.valueOf(dataMap.get("statusExistPass").toString())) {
-                    status = matched;
-                } else {
-                    status = !matched;
+            Map<String, String> statusCondition = new HashMap<>();
+            if(dataMap.containsKey("statuses") && dataMap.get("statuses") != null) {
+                List<Map> statuses = (List) dataMap.get("statuses");
+                boolean matched = false;
+                for(Map sc : statuses) {
+                    if((sc.get("statusString") == null && sc.get("status") != null && StringUtils.isNotEmpty(sc.get("status").toString())) //status is not empty
+                            || (sc.get("statusString") != null && sc.get("statusString").equals(sc.get("status")))) { //status matches statusString
+                        statusCondition = sc;
+                        matched = true;
+                        break;
+                    }
                 }
-            } else {
-                if(Boolean.valueOf(dataMap.get("statusExistPass").toString())) {
-                    status = dataMap.get("status").toString().length() > 0;
-                } else {
-                    status = dataMap.get("status").toString().length() == 0;
+                if(!matched) {
+                    //none of the status condition satisfied, search for default
+                    for(Map sc : statuses) {
+                        if(sc.get("default") != null && Boolean.valueOf(sc.get("default").toString())) { //default status
+                            statusCondition = sc;
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -790,45 +829,28 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 }
             }
 
-            if(dataMap.containsKey("basePath")) {
+            if(dataMap.containsKey("basePath") && statusCondition.containsKey("attachmentFileIncludes")) {
                 String basePath = dataMap.get("basePath").toString();
-                if(status && dataMap.containsKey("statusPassAttachmentFileIncludes")) {
-                    String includesStr = dataMap.get("statusPassAttachmentFileIncludes").toString();
-                    attachments.addAll(getAllIncludedFilePathList(basePath, includesStr));
-                }
-
-                if(!status && dataMap.containsKey("statusFailAttachmentFileIncludes")) {
-                    String includesStr = dataMap.get("statusFailAttachmentFileIncludes").toString();
-                    attachments.addAll(getAllIncludedFilePathList(basePath, includesStr));
-                }
+                String includesStr = statusCondition.get("attachmentFileIncludes");
+                attachments.addAll(getAllIncludedFilePathList(basePath, includesStr));
             }
 
             Map<String, Object> valueMap = new HashMap<>();
             valueMap.put("treeId", treeDTO.getId());
             valueMap.put("mapTestcaseToRequirement", mapTestcaseToRequirement);
-            valueMap.put("status", status);
+            if(statusCondition.containsKey("statusId")) {
+                valueMap.put("statusId", statusCondition.get("statusId"));
+            }
             valueMap.put("attachments", attachments);
 
-            if(status && dataMap.containsKey("statusPassAttachmentText")) {
-                String successAttachmentStr = dataMap.get("statusPassAttachmentText").toString();
+            if(statusCondition.containsKey("attachmentText")) {
+                String successAttachmentStr = statusCondition.get("attachmentText");
                 if(!StringUtils.isEmpty(successAttachmentStr)) {
                     GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
-                    genericAttachmentDTO.setFileName("success.txt");
+                    genericAttachmentDTO.setFileName("status_" + ++statusAttachmentCount + "_" + System.currentTimeMillis() + ".txt");
                     genericAttachmentDTO.setContentType("text/plain");
                     genericAttachmentDTO.setFieldName(AttachmentService.ItemType.releaseTestSchedule.toString());
                     genericAttachmentDTO.setByteData(successAttachmentStr.getBytes());
-                    valueMap.put("statusAttachment", genericAttachmentDTO);
-                }
-            }
-
-            if(!status && dataMap.containsKey("statusFailAttachmentText")) {
-                String failureAttachmentStr = dataMap.get("statusFailAttachmentText").toString();
-                if(!StringUtils.isEmpty(failureAttachmentStr)) {
-                    GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
-                    genericAttachmentDTO.setFileName("failure.txt");
-                    genericAttachmentDTO.setContentType("text/plain");
-                    genericAttachmentDTO.setFieldName(AttachmentService.ItemType.releaseTestSchedule.toString());
-                    genericAttachmentDTO.setByteData(failureAttachmentStr.getBytes());
                     valueMap.put("statusAttachment", genericAttachmentDTO);
                 }
             }
@@ -857,7 +879,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                     if (tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey()) && tcrCatalogTreeTestcase.getTcrCatalogTreeId().equals(treeId)) {
                         //same testcase, add id and status to map
                         Map<String, Object> statusMap = new HashMap<>();
-                        statusMap.put("status", entry.getValue().get("status"));
+                        if(entry.getValue().containsKey("statusId")) {
+                            statusMap.put("statusId", entry.getValue().get("statusId"));
+                        }
 
                         MapTestcaseToRequirement mapTestcaseToRequirement = (MapTestcaseToRequirement) entry.getValue().get("mapTestcaseToRequirement");
                         mapTestcaseToRequirement.setTestcaseId(tcrCatalogTreeTestcase.getTestcase().getId());
@@ -894,28 +918,36 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         TestStep testStep = new TestStep();
         Integer i=1;
         for(String step : steps) {
-            if(keywordsList.contains(step.split(" ", 2)[0])) {
+            step = step.trim();
+            if(keywordsList.contains(step.trim().split(" ", 2)[0])) {
                 TestStepDetail testStepDetail = new TestStepDetail();
                 Map<String, String> stepMap = new HashMap<String, String>();
                 testStepDetail.setOrderId((long)i);
                 testStepDetail.setStep(step.substring(0,step.indexOf(".")));
                 stepMap.put("orderId", i.toString());
                 stepMap.put("step", step.substring(0,step.indexOf(".")));
-                status=step.substring(step.lastIndexOf(".")+1, step.length());
-                if(status.equals("failed")) {
+
+                String[] statusStringArr = step.split("\\.");
+                status = statusStringArr[statusStringArr.length-1].trim();
+
+                if(StringUtils.isNumeric(status.substring(0,1))) {
+                    //first character is numeric, check item before this in array for status
+                    status = statusStringArr[statusStringArr.length-2].trim();
+                }
+
+                if(status.startsWith("failed")) {
                     stepMap.put("status", "false");
-                }else if(status.equals("skipped") || status.equals("undefined")) {
+                }else if(status.startsWith("skipped") || status.startsWith("undefined")) {
                     stepMap.put("status", "skipped");
                 }else {
                     stepMap.put("status", "true");
                 }
                 stepsList.add(stepMap);
                 testStep.getSteps().add(testStepDetail);
+                i++;
             }
-            i++;
         }
         testStep.setMaxId((long)testStep.getSteps().size());
-//        System.out.println(stepsList);
         return testStep;
     }
 

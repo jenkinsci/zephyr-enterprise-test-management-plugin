@@ -2,6 +2,7 @@ package com.thed.service;
 
 import com.thed.model.Release;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -16,6 +17,6 @@ public interface ReleaseService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    List<Release> getAllReleasesForProjectId(Long projectId) throws URISyntaxException;
+    List<Release> getAllReleasesForProjectId(Long projectId) throws URISyntaxException, IOException;
 
 }

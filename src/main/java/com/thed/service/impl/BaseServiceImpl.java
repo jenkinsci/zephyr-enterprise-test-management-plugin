@@ -13,4 +13,8 @@ public class BaseServiceImpl implements BaseService {
     public BaseServiceImpl() {
     }
 
+    @Override
+    public ZephyrRestService getZephyrRestService() {
+        return zephyrRestService;
+    }
 }

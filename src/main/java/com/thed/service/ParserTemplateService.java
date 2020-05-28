@@ -2,6 +2,7 @@ package com.thed.service;
 
 import com.thed.model.ParserTemplate;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -15,7 +16,7 @@ public interface ParserTemplateService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    List<ParserTemplate> getAllParserTemplates() throws URISyntaxException;
+    List<ParserTemplate> getAllParserTemplates() throws URISyntaxException, IOException;
 
     /**
      * Get parser template by ID
@@ -23,6 +24,6 @@ public interface ParserTemplateService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    ParserTemplate getParserTemplateById(Long templateId) throws URISyntaxException;
+    ParserTemplate getParserTemplateById(Long templateId) throws URISyntaxException, IOException;
 
 }

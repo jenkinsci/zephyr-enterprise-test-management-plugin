@@ -3,6 +3,7 @@ package com.thed.service;
 import com.thed.model.ReleaseTestSchedule;
 import com.thed.model.TestStepResult;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
@@ -18,16 +19,26 @@ public interface ExecutionService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId) throws URISyntaxException;
+    List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId) throws URISyntaxException, IOException;
 
     /**
-     * Execute given releaseTestSchedule ids for either Pass or Fail based on pass.
-     * @param rtsIds
-     * @param pass
+     * Get releaseTestSchedules for given cyclePhaseId.
+     * @param cyclePhaseId
+     * @param offset Offset for starting results
+     * @param pageSize Number of results per page, 0 will return all
      * @return
      * @throws URISyntaxException
      */
-    List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, boolean pass) throws URISyntaxException;
+    List<ReleaseTestSchedule> getReleaseTestSchedules(Long cyclePhaseId, Integer offset, Integer pageSize) throws URISyntaxException, IOException;
+
+    /**
+     * Execute given releaseTestSchedule ids for given statusId.
+     * @param rtsIds
+     * @param statusId
+     * @return
+     * @throws URISyntaxException
+     */
+    List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String statusId) throws URISyntaxException, IOException;
 
     /**
      * Add testStep results.
@@ -35,6 +46,6 @@ public interface ExecutionService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    List<TestStepResult> addTestStepResults(List<TestStepResult> testStepResults) throws URISyntaxException;
+    List<TestStepResult> addTestStepResults(List<TestStepResult> testStepResults) throws URISyntaxException, IOException;
 
 }

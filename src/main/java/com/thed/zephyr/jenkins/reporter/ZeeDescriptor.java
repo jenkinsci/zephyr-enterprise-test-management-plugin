@@ -7,6 +7,8 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.CYCLE_DURATION_7_DAY
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NAME_POST_BUILD_ACTION;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.NEW_CYCLE_KEY;
 
+import com.cloudbees.plugins.credentials.common.StandardCredentials;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.thed.model.ParserTemplate;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -23,6 +25,7 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.*;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.logging.Level;
@@ -34,6 +37,7 @@ import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -114,14 +118,20 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
         try {
             String server = URLValidator.validateURL(jObj.getString("serverAddress").trim());
             String credentialsId = jObj.getString("credentialsId").trim();
-            StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(credentialsId);
-            String user = upCredentials.getUsername();
-            String pass = upCredentials.getPassword().getPlainText();
+			StandardCredentials upCredentials = getCredentialsFromId(credentialsId);
+			Boolean zephyrServerValidation = Boolean.FALSE;
+			if(upCredentials instanceof UsernamePasswordCredentialsImpl){
+				String user = ((UsernamePasswordCredentialsImpl) upCredentials).getUsername();
+				String pass = ((UsernamePasswordCredentialsImpl) upCredentials).getPassword().getPlainText();
+				zephyrServerValidation = userService.verifyCredentials(server, user, pass);
+			}else if(upCredentials instanceof StringCredentialsImpl){
+				String secretText = ((StringCredentialsImpl) upCredentials).getSecret().getPlainText();
+				zephyrServerValidation = userService.verifyCredentials(server, secretText);
+			}
 
             zephyrInstance.setServerAddress(server);
             zephyrInstance.setCredentialsId(credentialsId);
 
-            boolean zephyrServerValidation = userService.verifyCredentials(server, user, pass);
             if (zephyrServerValidation) {
                 this.zephyrInstances.add(zephyrInstance);
             }
@@ -136,8 +146,8 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		return NAME_POST_BUILD_ACTION;
 	}
 
-    private StandardUsernamePasswordCredentials getCredentialsFromId(String credentialsId) {
-        Iterable<StandardUsernamePasswordCredentials> credentials = CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class,
+    private StandardCredentials getCredentialsFromId(String credentialsId) {
+        Iterable<StandardCredentials> credentials = CredentialsProvider.lookupCredentials(StandardCredentials.class,
                 Jenkins.getInstance(),
                 ACL.SYSTEM,
                 Collections.<DomainRequirement>emptyList());
@@ -241,26 +251,26 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 		}
 		if (StringUtils.isBlank(projectKey)) {
 	        ListBoxModel mi = fetchProjectList(serverAddress);
-	        projectKey = mi.get(0).value;
+	        projectKey = mi.size() != 0?mi.get(0).value:"";
 		}
+        if(StringUtils.isNotBlank(projectKey)) {
+			if (projectKey.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
+					|| (this.zephyrInstances.size() == 0)) {
+				listBoxModel.add(ADD_ZEPHYR_GLOBAL_CONFIG);
+				return listBoxModel;
+			}
 
-		if (projectKey.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
-				|| (this.zephyrInstances.size() == 0)) {
-			listBoxModel.add(ADD_ZEPHYR_GLOBAL_CONFIG);
-			return listBoxModel;
+			try {
+				Long projectId = Long.parseLong(projectKey);
+				List<com.thed.model.Release> releases = releaseService.getAllReleasesForProjectId(projectId);
+				for (com.thed.model.Release release : releases) {
+					listBoxModel.add(release.getName(), release.getId().toString());
+				}
+			} catch (Exception e) {
+				//todo: handle exception gracefully
+				e.printStackTrace();
+			}
 		}
-
-        try {
-            Long projectId = Long.parseLong(projectKey);
-            List<com.thed.model.Release> releases = releaseService.getAllReleasesForProjectId(projectId);
-            for (com.thed.model.Release release : releases) {
-                listBoxModel.add(release.getName(), release.getId().toString());
-            }
-        }
-        catch(Exception e) {
-            //todo: handle exception gracefully
-            e.printStackTrace();
-        }
 
 		return listBoxModel;
 	}
@@ -396,10 +406,14 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
         return listBoxModel;
     }
 
-    private void loginUser(String serverAddress) throws URISyntaxException {
-        ZephyrInstance zephyrInstance = fetchZephyrInstance(serverAddress);
-        StandardUsernamePasswordCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
-        userService.login(zephyrInstance.getServerAddress(), upCredentials.getUsername(), upCredentials.getPassword().getPlainText());
-    }
-
+    private void loginUser(String serverAddress) throws URISyntaxException, IOException {
+		ZephyrInstance zephyrInstance = fetchZephyrInstance(serverAddress);
+		StandardCredentials upCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
+		if (upCredentials instanceof UsernamePasswordCredentialsImpl) {
+			userService.login(zephyrInstance.getServerAddress(), ((UsernamePasswordCredentialsImpl) upCredentials).getUsername(),
+					((UsernamePasswordCredentialsImpl) upCredentials).getPassword().getPlainText());
+		} else if (upCredentials instanceof StringCredentialsImpl) {
+			userService.login(zephyrInstance.getServerAddress(), ((StringCredentialsImpl) upCredentials).getSecret().getPlainText());
+		}
+	}
 }

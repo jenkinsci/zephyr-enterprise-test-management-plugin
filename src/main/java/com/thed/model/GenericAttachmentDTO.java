@@ -10,6 +10,7 @@ public class GenericAttachmentDTO {
     private String tempFilePath;
     private String contentType;
     private byte[] byteData;
+    private Long localItemId; //This variable is not used by api but used internally.
 
     public String getFileName() {
         return fileName;
@@ -49,5 +50,13 @@ public class GenericAttachmentDTO {
 
     public void setByteData(byte[] byteData) {
         this.byteData = byteData;
+    }
+
+    public Long getLocalItemId() {
+        return localItemId;
+    }
+
+    public void setLocalItemId(Long localItemId) {
+        this.localItemId = localItemId;
     }
 }

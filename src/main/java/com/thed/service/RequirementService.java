@@ -2,6 +2,7 @@ package com.thed.service;
 
 import com.thed.model.MapTestcaseToRequirement;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -16,6 +17,6 @@ public interface RequirementService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    List<String> mapTestcaseToRequirements(List<MapTestcaseToRequirement> mapTestcaseToRequirements) throws URISyntaxException;
+    List<String> mapTestcaseToRequirements(List<MapTestcaseToRequirement> mapTestcaseToRequirements) throws URISyntaxException, IOException;
 
 }

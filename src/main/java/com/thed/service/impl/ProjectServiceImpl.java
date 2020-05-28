@@ -5,6 +5,7 @@ import com.thed.model.ProjectTeam;
 import com.thed.model.User;
 import com.thed.service.ProjectService;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,7 +22,7 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
     }
 
     @Override
-    public List<Project> getAllProjectsForCurrentUser() throws URISyntaxException {
+    public List<Project> getAllProjectsForCurrentUser() throws URISyntaxException, IOException {
         List<Project> projects = zephyrRestService.getAllProjectsForCurrentUser();
         User user = zephyrRestService.getCurrentUser();
 
@@ -46,12 +47,12 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
     }
 
     @Override
-    public Project getProjectById(Long projectId) throws URISyntaxException {
+    public Project getProjectById(Long projectId) throws URISyntaxException, IOException {
         return zephyrRestService.getProjectById(projectId);
     }
 
     @Override
-    public Long getProjectDurationInDays(Long projectId) throws URISyntaxException {
+    public Long getProjectDurationInDays(Long projectId) throws URISyntaxException, IOException {
         Project project = getProjectById(projectId);
 
         if(project == null || project.getEndDate() == null) {

@@ -2,6 +2,7 @@ package com.thed.service;
 
 import com.thed.model.Project;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -10,9 +11,9 @@ import java.util.List;
  */
 public interface ProjectService extends BaseService {
 
-    List<Project> getAllProjectsForCurrentUser() throws URISyntaxException;
+    List<Project> getAllProjectsForCurrentUser() throws URISyntaxException, IOException;
 
-    Project getProjectById(Long projectId) throws URISyntaxException;
+    Project getProjectById(Long projectId) throws URISyntaxException, IOException;
 
     /**
      * Return no of days from startDate to endDate of the project. Returns -1 if no endDate specified.
@@ -20,6 +21,6 @@ public interface ProjectService extends BaseService {
      * @return
      * @throws URISyntaxException
      */
-    Long getProjectDurationInDays(Long projectId) throws URISyntaxException;
+    Long getProjectDurationInDays(Long projectId) throws URISyntaxException, IOException;
 
 }

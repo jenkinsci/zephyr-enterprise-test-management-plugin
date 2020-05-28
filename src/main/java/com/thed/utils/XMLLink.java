@@ -44,6 +44,14 @@ public class XMLLink {
         return linkList;
     }
 
+    public List<XMLLink> getAllChildren() {
+        List<XMLLink> linkList = new ArrayList<XMLLink>();
+        for (XMLLink link : getChildXMLLinks().values()) {
+            linkList.add(link);
+        }
+        return linkList;
+    }
+
     public void attachLink(String[] linkArray, Type type) {
 
         if(linkArray.length > 0 && getXmlTagName() == null) {
@@ -65,7 +73,7 @@ public class XMLLink {
                 xmlLink = new XMLLink(linkArray[1], type);
                 addChildXMLLink(xmlLink);
                 xmlLink.setParentXMLLink(this);
-                xmlLink.attachLink(Arrays.copyOfRange(linkArray, 1, linkArray.length), Type.OBJECT);
+                xmlLink.attachLink(Arrays.copyOfRange(linkArray, 1, linkArray.length), type);
             }
         }
     }
@@ -76,6 +84,28 @@ public class XMLLink {
         } else {
             return getParentXMLLink().getXMLPath() + "." + getXmlTagName();
         }
+    }
+
+    public boolean matchLink(XMLLink foreignLink) {
+        boolean match = false;
+        List<XMLLink> localChildren = this.getAllChildren();
+        if(this.getXmlTagName().equals(foreignLink.getXmlTagName())) {
+            //link match found, continue with children
+            List<XMLLink> foreignChildren = foreignLink.getAllChildren();
+            if(localChildren.size() == 0 && foreignChildren.size() == 0) {
+                return true;
+            }
+            for (XMLLink localChild : localChildren) {
+                for (XMLLink foreignChild : foreignChildren) {
+                    match = match || localChild.matchLink(foreignChild);
+                }
+            }
+        } else {
+            for(XMLLink localChild : localChildren) {
+                match = match || localChild.matchLink(foreignLink);
+            }
+        }
+        return match;
     }
 
     public String getXmlTagName() {

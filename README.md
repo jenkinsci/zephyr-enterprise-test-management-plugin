@@ -237,8 +237,8 @@ Now you can trigger your build.
 
 ## **Compatibility**
 
-Compatibility between this plugin and Zephyr Standalone is:
-|Plugin|Zephyr Standalone|
+Compatibility between this plugin and Zephyr Enterprise is:
+|Plugin|Zephyr Enterprise|
 |------|-----------------|
 |v2.1|v6.7|
 |v2.0|v6.6.x|

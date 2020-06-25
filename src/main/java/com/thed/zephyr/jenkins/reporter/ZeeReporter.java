@@ -264,8 +264,8 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
             CyclePhase cyclePhase = new CyclePhase();
             cyclePhase.setName(packagePhaseMap.get("parentPhase").getName());
             cyclePhase.setCycleId(cycle.getId());
-            cyclePhase.setStartDate(cycle.getStartDate());
-            cyclePhase.setEndDate(cycle.getEndDate());
+            cyclePhase.setStartDate(new Date(cycle.getStartDate()));
+            cyclePhase.setEndDate(new Date(cycle.getEndDate()));
             cyclePhase.setReleaseId(zephyrConfigModel.getReleaseId());
             cyclePhase.setFreeForm(true);
             cyclePhase = cycleService.createCyclePhase(cyclePhase);

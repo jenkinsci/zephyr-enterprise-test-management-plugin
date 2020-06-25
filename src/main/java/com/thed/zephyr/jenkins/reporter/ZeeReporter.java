@@ -923,9 +923,9 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
                 TestStepDetail testStepDetail = new TestStepDetail();
                 Map<String, String> stepMap = new HashMap<String, String>();
                 testStepDetail.setOrderId((long)i);
-                testStepDetail.setStep(step.substring(0,step.indexOf(".")));
+                testStepDetail.setStep(step.substring(0,step.indexOf("..")));
                 stepMap.put("orderId", i.toString());
-                stepMap.put("step", step.substring(0,step.indexOf(".")));
+                stepMap.put("step", step.substring(0,step.indexOf("..")));
 
                 String[] statusStringArr = step.split("\\.");
                 status = statusStringArr[statusStringArr.length-1].trim();

@@ -24,7 +24,6 @@ import com.thed.model.TCRCatalogTreeTestcase;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import com.thed.utils.EggplantParser;
-import com.thed.utils.ParserUtil;
 import com.thed.utils.ZephyrConstants;
 import hudson.FilePath;
 import hudson.Launcher;

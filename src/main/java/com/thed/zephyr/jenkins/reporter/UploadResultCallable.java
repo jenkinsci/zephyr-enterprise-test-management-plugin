@@ -8,10 +8,10 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.google.gson.Gson;
 import com.thed.model.*;
+import com.thed.parser.ParserUtil;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import com.thed.utils.EggplantParser;
-import com.thed.utils.ParserUtil;
 import com.thed.utils.ZephyrConstants;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import com.thed.zephyr.jenkins.model.ZephyrInstance;
@@ -510,8 +510,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
     }
 
     public List<Map> genericParserXML(String absoluteFilePath, String parserTemplate) throws ParserConfigurationException, SAXException, IOException {
-        ParserUtil parserUtil = new ParserUtil();
-        return parserUtil.parseXmlLang(absoluteFilePath, parserTemplate);
+        return ParserUtil.parseXmlLang(absoluteFilePath, parserTemplate);
     }
 
     public Map<TCRCatalogTreeTestcase, Map<String, Object>> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList, ZephyrConfigModel zephyrConfigModel, PrintStream logger) throws URISyntaxException, IOException {
@@ -737,10 +736,9 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
     private List<String> getTestcasesForEggplant(List<EggPlantResult> eggPlantResults) throws ParseException, ParserConfigurationException, SAXException, IOException {
         String scriptNameParseTemplate = "[{\"scriptName\": \"${testsuite:name}\"}]";
-        ParserUtil parserUtil = new ParserUtil();
         Map<String, EggPlantResult> eggPlantMap = new HashMap<>();//suite name, eggPlantResult
         for (EggPlantResult eggPlantResult : eggPlantResults) {
-            List<Map> parseData = parserUtil.parseXmlLang(eggPlantResult.getXmlResultFile(), scriptNameParseTemplate);
+            List<Map> parseData = ParserUtil.parseXmlLang(eggPlantResult.getXmlResultFile(), scriptNameParseTemplate);
             EggPlantResult existingEPR = eggPlantMap.get(parseData.get(0).get("scriptName").toString());
             if (existingEPR == null || existingEPR.getRunDateInDate().before(eggPlantResult.getRunDateInDate())) {
                 //either the file path for this eggplant script doesn't exist in map or it is older

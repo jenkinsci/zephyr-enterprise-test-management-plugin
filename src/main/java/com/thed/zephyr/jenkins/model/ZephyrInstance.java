@@ -19,6 +19,7 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.client.HttpResponseException;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.kohsuke.stapler.AncestorInPath;
@@ -131,8 +132,12 @@ public class ZephyrInstance extends AbstractDescribableImpl<ZephyrInstance> {
                         return FormValidation.error("Api token is incorrect.");
                     }
                 }
-            } catch (Exception e) {
-                return FormValidation.error("Error occurred while verifying credentials. Please try again later.");
+            }
+            catch (HttpResponseException e) {
+                return FormValidation.error("Error occurred while verifying credentials. Please try again later.\n" + e.getMessage());
+            }
+            catch (Exception e) {
+                return FormValidation.error("Error occurred while verifying credentials. Please try again later.\n" + e.toString());
             }
 
             return FormValidation.ok("Connection to Zephyr has been validated");

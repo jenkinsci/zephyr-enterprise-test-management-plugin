@@ -134,7 +134,7 @@ public class ZephyrInstance extends AbstractDescribableImpl<ZephyrInstance> {
                 }
             }
             catch (HttpResponseException e) {
-                return FormValidation.error("Error occurred while verifying credentials. Please try again later.\n" + e.getMessage());
+                return FormValidation.error("Error occurred while verifying credentials.\n" + e.getMessage());
             }
             catch (Exception e) {
                 return FormValidation.error("Error occurred while verifying credentials. Please try again later.\n" + e.toString());

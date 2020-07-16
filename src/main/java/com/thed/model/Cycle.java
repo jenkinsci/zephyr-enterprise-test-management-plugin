@@ -15,8 +15,8 @@ public class Cycle extends BaseEntity {
     private String name;
     private String build;
     private Long releaseId;
-    private Long startDate;
-    private Long endDate;
+    private Date startDate;
+    private Date endDate;
     private String cycleStartDate;
     private String cycleEndDate;
 
@@ -44,36 +44,38 @@ public class Cycle extends BaseEntity {
         this.releaseId = releaseId;
     }
 
-    public Long getStartDate() {
+    public Date getStartDate() {
         return startDate;
     }
 
     public void setStartDate(Date startDate) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(startDate);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        this.startDate = calendar.getTimeInMillis();
-        DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
-        setCycleStartDate(dateFormat.format(startDate));
+        this.startDate = startDate;
+//        Calendar calendar = Calendar.getInstance();
+//        calendar.setTime(startDate);
+//        calendar.set(Calendar.HOUR_OF_DAY, 0);
+//        calendar.set(Calendar.MINUTE, 0);
+//        calendar.set(Calendar.SECOND, 0);
+//        calendar.set(Calendar.MILLISECOND, 0);
+//        this.startDate = calendar.getTimeInMillis();
+//        DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
+//        setCycleStartDate(dateFormat.format(startDate));
     }
 
-    public Long getEndDate() {
+    public Date getEndDate() {
         return endDate;
     }
 
     public void setEndDate(Date endDate) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(endDate);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        this.endDate = calendar.getTimeInMillis();
-        DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
-        setCycleEndDate(dateFormat.format(endDate));
+        this.endDate = endDate;
+//        Calendar calendar = Calendar.getInstance();
+//        calendar.setTime(endDate);
+//        calendar.set(Calendar.HOUR_OF_DAY, 0);
+//        calendar.set(Calendar.MINUTE, 0);
+//        calendar.set(Calendar.SECOND, 0);
+//        calendar.set(Calendar.MILLISECOND, 0);
+//        this.endDate = calendar.getTimeInMillis();
+//        DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
+//        setCycleEndDate(dateFormat.format(endDate));
     }
 
     public String getCycleStartDate() {

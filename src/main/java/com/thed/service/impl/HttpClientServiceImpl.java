@@ -1,25 +1,19 @@
 package com.thed.service.impl;
 
 import com.thed.service.HttpClientService;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.*;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -87,6 +81,22 @@ public class HttpClientServiceImpl implements HttpClientService {
         return new String(byteArray, StandardCharsets.UTF_8);
     }
 
+    private String getResponseContent(CloseableHttpResponse response, HttpRequestBase httpRequestBase) throws IOException {
+        String result = convertInputStreamToString(response.getEntity().getContent());
+        if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
+            return result;
+        } else if(response.getStatusLine().getStatusCode() == 401) {
+            try {
+                JSONObject resultJson = new JSONObject(result);
+                JSONObject messageJson = new JSONObject(resultJson.getString("message"));
+                throw new HttpResponseException(response.getStatusLine().getStatusCode(), messageJson.getString("message"));
+            } catch (HttpResponseException e) {
+                throw e;
+            } catch (Exception e) {}
+        }
+        throw new HttpResponseException(response.getStatusLine().getStatusCode(), httpRequestBase.getMethod() + ": " + httpRequestBase.getURI() + "\n" + "Response:" + result);
+    }
+
     @Override
     public String getRequest(String url) throws IOException {
         if(StringUtils.isEmpty(url)) {
@@ -102,11 +112,7 @@ public class HttpClientServiceImpl implements HttpClientService {
 
         CloseableHttpResponse response = httpClient.execute(httpGet);
         try {
-            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
-                result = convertInputStreamToString(response.getEntity().getContent());
-            } else {
-                throw new HttpResponseException(response.getStatusLine().getStatusCode(), "GET: " + url + "\n" + "Response:" + convertInputStreamToString(response.getEntity().getContent()));
-            }
+            result = getResponseContent(response, httpGet);
         } finally {
             response.close();
             httpGet.releaseConnection();
@@ -144,13 +150,7 @@ public class HttpClientServiceImpl implements HttpClientService {
 
         CloseableHttpResponse response = httpClient.execute(httpPost);
         try {
-            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
-                result = convertInputStreamToString(response.getEntity().getContent());
-            } else {
-                throw new HttpResponseException(response.getStatusLine().getStatusCode(), "POST: " + url
-                        + "\n" + "Payload: " + (httpEntity != null ? convertInputStreamToString(httpEntity.getContent()) : "")
-                        + "\nResponse: " + convertInputStreamToString(response.getEntity().getContent()));
-            }
+            result = getResponseContent(response, httpPost);
         } finally {
             response.close();
             httpPost.releaseConnection();
@@ -179,13 +179,7 @@ public class HttpClientServiceImpl implements HttpClientService {
 
         CloseableHttpResponse response = httpClient.execute(httpPut);
         try {
-            if(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() <= 299) {
-                result =  convertInputStreamToString(response.getEntity().getContent());
-            } else {
-                throw new HttpResponseException(response.getStatusLine().getStatusCode(), "PUT: " + url
-                        + "\n" + "Payload: " + content
-                        + "\nResponse: " + convertInputStreamToString(response.getEntity().getContent()));
-            }
+            result = getResponseContent(response, httpPut);
         } finally {
             response.close();
             httpPut.releaseConnection();

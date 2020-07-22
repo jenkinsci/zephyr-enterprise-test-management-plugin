@@ -627,7 +627,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
             if(statusCondition.containsKey("attachmentText")) {
                 String successAttachmentStr = statusCondition.get("attachmentText");
-                if(!StringUtils.isEmpty(successAttachmentStr)) {
+                if(StringUtils.isNotBlank(successAttachmentStr)) {
                     GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
                     genericAttachmentDTO.setFileName("status_" + ++statusAttachmentCount + "_" + System.currentTimeMillis() + ".txt");
                     genericAttachmentDTO.setContentType("text/plain");

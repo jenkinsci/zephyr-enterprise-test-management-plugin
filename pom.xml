@@ -161,7 +161,7 @@
     <dependency>
       <groupId>com.thed</groupId>
       <artifactId>ze_integrator_plugin</artifactId>
-      <version>1.0</version>
+      <version>1.1-SNAPSHOT</version>
     </dependency>
 
   </dependencies>

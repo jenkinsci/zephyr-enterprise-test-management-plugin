@@ -196,7 +196,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             if(zephyrConfigModel.getCycleId() == NEW_CYCLE_KEY_IDENTIFIER) {
 
                 Date date = new Date();
-                SimpleDateFormat sdf = new SimpleDateFormat("E MM, dd, yyyy hh:mm a");
+                SimpleDateFormat sdf = new SimpleDateFormat("E_dd MMM, yyyy hh:mm a");
                 String dateFormatForCycleCreation = sdf.format(date);
 
                 String cycleName = zephyrConfigModel.getCyclePrefix() + dateFormatForCycleCreation;

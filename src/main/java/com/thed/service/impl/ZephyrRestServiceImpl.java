@@ -31,6 +31,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
     public static final String GET_PROJECT_BY_ID_URL = "/flex/services/rest/{restVersion}/project/{projectId}";
     public static final String GET_ALL_PROJECTS_FOR_CURRENT_USER_URL = "/flex/services/rest/{restVersion}/project/user/{userId}";
+    public static final String GET_ALL_PROJECT_ID_FOR_CURRENT_USER_URL = "/flex/services/rest/{restVersion}/project/project/{userId}";
 
     public static final String GET_ALL_RELEASES_FOR_PROJECT_ID_URL = "/flex/services/rest/{restVersion}/release/paged/project/{projectId}"; //?order=id&isascorder=true&isVisible=false
 
@@ -206,6 +207,24 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         Type projectListType = new TypeToken<List<Project>>(){}.getType();
         return GsonUtil.CUSTOM_GSON.fromJson(res, projectListType);
     }
+
+    @Override
+    public List<Long> getAllProjectIdsForCurrentUser() throws URISyntaxException, IOException {
+        if(currentUser == null) {
+            return null;
+        }
+
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("userId", currentUser.getId().toString());
+        String url = buildUrl(prepareUrl(GET_ALL_PROJECT_ID_FOR_CURRENT_USER_URL), pathParams, null);
+
+        String res = httpClientService.getRequest(url);
+
+        Type longListType = new TypeToken<List<Long>>(){}.getType();
+        return GsonUtil.CUSTOM_GSON.fromJson(res, longListType);
+    }
+
+
 
     @Override
     public List<Release> getAllReleasesForProjectId(Long projectId) throws URISyntaxException, IOException {

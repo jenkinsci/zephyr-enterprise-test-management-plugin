@@ -229,7 +229,10 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             }
 
             CyclePhase cyclePhase = new CyclePhase();
-            cyclePhase.setName(packagePhaseMap.get("parentPhase").getName());
+            SimpleDateFormat sdf = new SimpleDateFormat("_E_dd MMM yyyy_HH:mm");
+            String timeFormatForCyclePhaseCreation = sdf.format(new Date());
+            String phaseName = packagePhaseMap.get("parentPhase").getName() + timeFormatForCyclePhaseCreation;
+            cyclePhase.setName(phaseName);
             cyclePhase.setCycleId(cycle.getId());
             cyclePhase.setStartDate(cycle.getStartDate());
             cyclePhase.setEndDate(cycle.getEndDate());

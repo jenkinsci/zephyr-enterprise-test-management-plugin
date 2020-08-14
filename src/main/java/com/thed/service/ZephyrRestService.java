@@ -72,6 +72,8 @@ public interface ZephyrRestService {
      */
     public List<Project> getAllProjectsForCurrentUser() throws URISyntaxException, IOException;
 
+    List<Long> getAllProjectIdsForCurrentUser() throws URISyntaxException, IOException;
+
     /**
      * Get all releases for given projectId.
      * @param projectId

@@ -465,7 +465,9 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                                 && (StringUtils.isBlank(tcrCatalogTreeTestcase.getTestcase().getTag()) ||
                                 !ListUtil.getSet(tcrCatalogTreeTestcase.getTestcase().getTag(), " ").equals(ListUtil.getSet(testcase.getTag(), " ")))) {
                             //parsed tag is not null and is not equal to existing tag so update the tag
-                            tcrCatalogTreeTestcase.getTestcase().setTag(tcrCatalogTreeTestcase.getTestcase().getTag() + " " + testcase.getTag());
+                            tcrCatalogTreeTestcase.getTestcase().setTag(StringUtils.isNotBlank(tcrCatalogTreeTestcase.getTestcase().getTag())
+                                    ? tcrCatalogTreeTestcase.getTestcase().getTag() + " " + testcase.getTag()
+                                    : testcase.getTag());
                             updateTagTestcases.add(tcrCatalogTreeTestcase);
                         } else {
                             //no tag change found so no need to update

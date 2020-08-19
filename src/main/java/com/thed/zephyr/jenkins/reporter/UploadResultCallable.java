@@ -463,7 +463,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                         //this testcase already exists in this tree, no need to create
                         if((StringUtils.isNotBlank(testcase.getTag()))
                                 && (StringUtils.isBlank(tcrCatalogTreeTestcase.getTestcase().getTag()) ||
-                                !ListUtil.getSet(tcrCatalogTreeTestcase.getTestcase().getTag(), " ").equals(ListUtil.getSet(testcase.getTag(), " ")))) {
+                                !ListUtil.getSet(tcrCatalogTreeTestcase.getTestcase().getTag(), " ").containsAll(ListUtil.getSet(testcase.getTag(), " ")))) {
                             //parsed tag is not null and is not equal to existing tag so update the tag
                             tcrCatalogTreeTestcase.getTestcase().setTag(StringUtils.isNotBlank(tcrCatalogTreeTestcase.getTestcase().getTag())
                                     ? tcrCatalogTreeTestcase.getTestcase().getTag() + " " + testcase.getTag()

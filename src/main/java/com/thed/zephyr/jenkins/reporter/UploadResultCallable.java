@@ -461,13 +461,15 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 for (TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrTestcases) {
                     if(tcrCatalogTreeTestcase.getTestcase().getName().equals(testcase.getName())) {
                         //this testcase already exists in this tree, no need to create
-                        if((StringUtils.isNotBlank(testcase.getTag()))
-                                && (StringUtils.isBlank(tcrCatalogTreeTestcase.getTestcase().getTag()) ||
-                                !ListUtil.getSet(tcrCatalogTreeTestcase.getTestcase().getTag(), " ").containsAll(ListUtil.getSet(testcase.getTag(), " ")))) {
+                        String parsedTag = StringUtils.isBlank(testcase.getTag()) ? testcase.getTag() : testcase.getTag().trim().replaceAll(" +", " ");
+                        String existingTag = StringUtils.isBlank(tcrCatalogTreeTestcase.getTestcase().getTag())
+                                ? tcrCatalogTreeTestcase.getTestcase().getTag() : tcrCatalogTreeTestcase.getTestcase().getTag().trim().replaceAll(" +", " ");
+                        if((StringUtils.isNotBlank(parsedTag))
+                                && (StringUtils.isBlank(existingTag) || !ListUtil.getSet(existingTag, " ").containsAll(ListUtil.getSet(parsedTag, " ")))) {
                             //parsed tag is not null and is not equal to existing tag so update the tag
-                            tcrCatalogTreeTestcase.getTestcase().setTag(StringUtils.isNotBlank(tcrCatalogTreeTestcase.getTestcase().getTag())
-                                    ? tcrCatalogTreeTestcase.getTestcase().getTag() + " " + testcase.getTag()
-                                    : testcase.getTag());
+                            tcrCatalogTreeTestcase.getTestcase().setTag(StringUtils.isNotBlank(existingTag)
+                                    ? existingTag + " " + parsedTag
+                                    : parsedTag);
                             updateTagTestcases.add(tcrCatalogTreeTestcase);
                         } else {
                             //no tag change found so no need to update

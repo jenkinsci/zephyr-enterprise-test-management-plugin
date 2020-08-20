@@ -123,7 +123,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
                 if(tagTestcaseMap.containsKey(tagSet)) {
                     tagTestcaseMap.get(tagSet).add(param);
                 } else {
-                    tagTestcaseMap.put(tagSet, Collections.singletonList(param));
+                    tagTestcaseMap.put(tagSet, new ArrayList<>(Collections.singletonList(param)));
                 }
             }
             resultList.addAll(updateTagsInTestcases(tagTestcaseMap));
@@ -138,6 +138,5 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
         }
         return zephyrRestService.updateTestcases(paramList);
     }
-
 
 }

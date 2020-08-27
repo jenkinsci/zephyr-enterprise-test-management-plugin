@@ -134,7 +134,8 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
     private List<TCRCatalogTreeTestcase> updateTagsInTestcases(Map<Set<String>, List<TctTestcaseVersionParam>> tagTestcaseMap) throws IOException, URISyntaxException {
         List<TestcaseBulkUpdateParam> paramList = new ArrayList<>();
         for(Map.Entry<Set<String>, List<TctTestcaseVersionParam>> entry : tagTestcaseMap.entrySet()) {
-            paramList.add(new TestcaseBulkUpdateParam(String.join(" ", entry.getKey()), entry.getValue()));
+            //extra space padding before tag data as the api is not handling this without space as expected and corrupts the tag data
+            paramList.add(new TestcaseBulkUpdateParam(" " + String.join(" ", entry.getKey()), entry.getValue()));
         }
         return zephyrRestService.updateTestcases(paramList);
     }

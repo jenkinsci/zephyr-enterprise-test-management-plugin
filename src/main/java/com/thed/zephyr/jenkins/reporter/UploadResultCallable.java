@@ -12,6 +12,7 @@ import com.thed.parser.ParserUtil;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import com.thed.utils.EggplantParser;
+import com.thed.utils.ListUtil;
 import com.thed.utils.ZephyrConstants;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import com.thed.zephyr.jenkins.model.ZephyrInstance;
@@ -196,7 +197,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             if(zephyrConfigModel.getCycleId() == NEW_CYCLE_KEY_IDENTIFIER) {
 
                 Date date = new Date();
-                SimpleDateFormat sdf = new SimpleDateFormat("E dd, yyyy hh:mm a");
+                SimpleDateFormat sdf = new SimpleDateFormat("E_dd MMM yyyy_HH:mm");
                 String dateFormatForCycleCreation = sdf.format(date);
 
                 String cycleName = zephyrConfigModel.getCyclePrefix() + dateFormatForCycleCreation;
@@ -229,7 +230,10 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             }
 
             CyclePhase cyclePhase = new CyclePhase();
-            cyclePhase.setName(packagePhaseMap.get("parentPhase").getName());
+            SimpleDateFormat sdf = new SimpleDateFormat("_E_dd MMM yyyy_HH:mm");
+            String timeFormatForCyclePhaseCreation = sdf.format(new Date());
+            String phaseName = packagePhaseMap.get("parentPhase").getName() + timeFormatForCyclePhaseCreation;
+            cyclePhase.setName(phaseName);
             cyclePhase.setCycleId(cycle.getId());
             cyclePhase.setStartDate(cycle.getStartDate());
             cyclePhase.setEndDate(cycle.getEndDate());
@@ -431,6 +435,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
     private List<TCRCatalogTreeTestcase> createTestcasesWithoutDuplicate(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException, IOException {
 
         List<TCRCatalogTreeTestcase> existingTestcases = new ArrayList<>();
+        List<TCRCatalogTreeTestcase> updateTagTestcases = new ArrayList<>();
         Map<Long, List<Testcase>> toBeCreatedTestcases = new HashMap<>();
 
         for(Map.Entry<Long, List<Testcase>> entry : treeIdTestcaseMap.entrySet()) {
@@ -456,7 +461,20 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 for (TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrTestcases) {
                     if(tcrCatalogTreeTestcase.getTestcase().getName().equals(testcase.getName())) {
                         //this testcase already exists in this tree, no need to create
-                        existingTestcases.add(tcrCatalogTreeTestcase);
+                        String parsedTag = StringUtils.isBlank(testcase.getTag()) ? testcase.getTag() : testcase.getTag().trim().replaceAll(" +", " ");
+                        String existingTag = StringUtils.isBlank(tcrCatalogTreeTestcase.getTestcase().getTag())
+                                ? tcrCatalogTreeTestcase.getTestcase().getTag() : tcrCatalogTreeTestcase.getTestcase().getTag().trim().replaceAll(" +", " ");
+                        if((StringUtils.isNotBlank(parsedTag))
+                                && (StringUtils.isBlank(existingTag) || !ListUtil.getSet(existingTag, " ").containsAll(ListUtil.getSet(parsedTag, " ")))) {
+                            //parsed tag is not null and is not equal to existing tag so update the tag
+                            tcrCatalogTreeTestcase.getTestcase().setTag(StringUtils.isNotBlank(existingTag)
+                                    ? existingTag + " " + parsedTag
+                                    : parsedTag);
+                            updateTagTestcases.add(tcrCatalogTreeTestcase);
+                        } else {
+                            //no tag change found so no need to update
+                            existingTestcases.add(tcrCatalogTreeTestcase);
+                        }
                         tcrTestcases.remove(tcrCatalogTreeTestcase);
                         continue testcaseLoop;
                     }
@@ -472,6 +490,10 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                     addToList.add(testcase);
                 }
             }
+        }
+
+        if(!updateTagTestcases.isEmpty()) {
+            existingTestcases.addAll(testcaseService.updateTestcaseTags(updateTagTestcases));
         }
 
         if(!toBeCreatedTestcases.isEmpty()) {
@@ -627,7 +649,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
             if(statusCondition.containsKey("attachmentText")) {
                 String successAttachmentStr = statusCondition.get("attachmentText");
-                if(!StringUtils.isEmpty(successAttachmentStr)) {
+                if(StringUtils.isNotBlank(successAttachmentStr)) {
                     GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
                     genericAttachmentDTO.setFileName("status_" + ++statusAttachmentCount + "_" + System.currentTimeMillis() + ".txt");
                     genericAttachmentDTO.setContentType("text/plain");

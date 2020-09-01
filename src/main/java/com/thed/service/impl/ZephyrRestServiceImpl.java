@@ -31,6 +31,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
     public static final String GET_PROJECT_BY_ID_URL = "/flex/services/rest/{restVersion}/project/{projectId}";
     public static final String GET_ALL_PROJECTS_FOR_CURRENT_USER_URL = "/flex/services/rest/{restVersion}/project/user/{userId}";
+    public static final String GET_ALL_PROJECT_ID_FOR_CURRENT_USER_URL = "/flex/services/rest/{restVersion}/project/project/{userId}";
 
     public static final String GET_ALL_RELEASES_FOR_PROJECT_ID_URL = "/flex/services/rest/{restVersion}/release/paged/project/{projectId}"; //?order=id&isascorder=true&isVisible=false
 
@@ -44,6 +45,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_TESTCASES_FOR_TREE_ID_URL = "/flex/services/rest/{restVersion}/testcase/tree/{tcrCatalogTreeId}"; //?offset=0&pagesize=50&dbsearch=true&isascorder=true&order=orderId&frozen=false&is_cfield=false
     public static final String GET_TESTCASES_FOR_TREE_ID_FROM_PLANNING_URL = "/flex/services/rest/{restVersion}/testcase/planning/{tcrCatalogTreeId}"; //?offset=0&pagesize=50&dbsearch=true&isascorder=true&order=orderId
     public static final String CREATE_TESTCASES_BULK_URL = "/flex/services/rest/{restVersion}/testcase/bulk";
+    public static final String UPDATE_TESTCASES_URL = "/flex/services/rest/{restVersion}/testcase/update";
 
     public static final String GET_CYCLE_BY_ID_URL = "/flex/services/rest/{restVersion}/cycle/{id}";
     public static final String CREATE_CYCLE_URL = "/flex/services/rest/{restVersion}/cycle";
@@ -208,6 +210,24 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     }
 
     @Override
+    public List<Long> getAllProjectIdsForCurrentUser() throws URISyntaxException, IOException {
+        if(currentUser == null) {
+            return null;
+        }
+
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("userId", currentUser.getId().toString());
+        String url = buildUrl(prepareUrl(GET_ALL_PROJECT_ID_FOR_CURRENT_USER_URL), pathParams, null);
+
+        String res = httpClientService.getRequest(url);
+
+        Type longListType = new TypeToken<List<Long>>(){}.getType();
+        return GsonUtil.CUSTOM_GSON.fromJson(res, longListType);
+    }
+
+
+
+    @Override
     public List<Release> getAllReleasesForProjectId(Long projectId) throws URISyntaxException, IOException {
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("projectId", projectId.toString());
@@ -348,6 +368,15 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public List<TCRCatalogTreeTestcase> createTestcases(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcases) throws URISyntaxException, IOException {
         String url = prepareUrl(CREATE_TESTCASES_BULK_URL);
         String res = httpClientService.postRequest(url, GsonUtil.CUSTOM_GSON.toJson(tcrCatalogTreeTestcases));
+
+        Type tcrCatalogTreeTestcaseListType = new TypeToken<List<TCRCatalogTreeTestcase>>(){}.getType();
+        return GsonUtil.CUSTOM_GSON.fromJson(res, tcrCatalogTreeTestcaseListType);
+    }
+
+    @Override
+    public List<TCRCatalogTreeTestcase> updateTestcases(List<TestcaseBulkUpdateParam> testcaseBulkUpdateParamList) throws URISyntaxException, IOException {
+        String url = prepareUrl(UPDATE_TESTCASES_URL);
+        String res = httpClientService.putRequest(url, GsonUtil.CUSTOM_GSON.toJson(testcaseBulkUpdateParamList));
 
         Type tcrCatalogTreeTestcaseListType = new TypeToken<List<TCRCatalogTreeTestcase>>(){}.getType();
         return GsonUtil.CUSTOM_GSON.fromJson(res, tcrCatalogTreeTestcaseListType);

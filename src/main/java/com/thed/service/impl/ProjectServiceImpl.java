@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Created by prashant on 25/6/19.
@@ -24,24 +25,12 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
     @Override
     public List<Project> getAllProjectsForCurrentUser() throws URISyntaxException, IOException {
         List<Project> projects = zephyrRestService.getAllProjectsForCurrentUser();
+        List<Long> ids = zephyrRestService.getAllProjectIdsForCurrentUser();
         User user = zephyrRestService.getCurrentUser();
 
         List<Project> userProjects = new ArrayList<>();
 
-        projectLoop : for (Project project : projects) {
-            List<ProjectTeam> projectTeams = project.getMembers();
-
-            if(projectTeams == null) {
-                continue;
-            }
-
-            for (ProjectTeam projectTeam : projectTeams) {
-                if(projectTeam.getUserId().equals(user.getId())) {
-                    userProjects.add(project);
-                    continue projectLoop;
-                }
-            }
-        }
+        userProjects = projects.stream().filter(project -> ids.contains(project.getId())).collect(Collectors.toList());
 
         return userProjects;
     }

@@ -57,6 +57,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String EXECUTION_MODIFY_URL = "/flex/services/rest/{restVersion}/execution/modify";
     public static final String GET_RELEASE_TEST_SCHEDULES_URL = "/flex/services/rest/{restVersion}/execution"; //?cyclephaseid=11&pagesize=10000;
     public static final String EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL = "/flex/services/rest/{restVersion}/execution/bulk";//?status=1&testerid=1&allExecutions=false&includeanyoneuser=true
+    public static final String EXECUTE_IN_BULK_URL = "/flex/services/rest/{restVersion}/execution/bulk/execute";
 
     public static final String UPLOAD_ATTACHMENT_URL = "/flex/upload/document/genericattachment";
     public static final String ADD_ATTACHMENT_URL = "/flex/services/rest/{restVersion}/attachment/list";
@@ -494,6 +495,15 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
         String url = buildUrl(prepareUrl(EXECUTE_RELEASE_TEST_SCHEDULES_IN_BULK_URL), null, queryParams);
         String res = httpClientService.putRequest(url, jsonObject.toString());
+
+        Type releaseTestScheduleListType = new TypeToken<List<ReleaseTestSchedule>>(){}.getType();
+        return GsonUtil.CUSTOM_GSON.fromJson(res, releaseTestScheduleListType);
+    }
+
+    @Override
+    public List<ReleaseTestSchedule> execute(List<ExecutionRequest> executionRequestList) throws URISyntaxException, IOException {
+        String url = buildUrl(prepareUrl(EXECUTE_IN_BULK_URL), null, null);
+        String res = httpClientService.putRequest(url, GsonUtil.CUSTOM_GSON.toJson(executionRequestList));
 
         Type releaseTestScheduleListType = new TypeToken<List<ReleaseTestSchedule>>(){}.getType();
         return GsonUtil.CUSTOM_GSON.fromJson(res, releaseTestScheduleListType);

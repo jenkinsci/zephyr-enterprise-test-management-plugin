@@ -232,6 +232,14 @@ public interface ZephyrRestService {
     List<ReleaseTestSchedule> executeReleaseTestSchedules(Set<Long> rtsIds, String executionStatus) throws URISyntaxException, IOException;
 
     /**
+     * Execute given execution requests.
+     * @param executionRequestList List of requests to execute
+     * @return
+     * @throws URISyntaxException
+     */
+    List<ReleaseTestSchedule> execute(List<ExecutionRequest> executionRequestList) throws URISyntaxException, IOException;
+
+    /**
      * Upload all the attachments from list given.
      * @param attachmentDTOs
      * @return

@@ -1,5 +1,6 @@
 package com.thed.service;
 
+import com.thed.model.ExecutionRequest;
 import com.thed.model.ReleaseTestSchedule;
 import com.thed.model.TestStepResult;
 
@@ -47,5 +48,14 @@ public interface ExecutionService extends BaseService {
      * @throws URISyntaxException
      */
     List<TestStepResult> addTestStepResults(List<TestStepResult> testStepResults) throws URISyntaxException, IOException;
+
+    /**
+     * Execute provided list of ExecutionRequest.
+     * @param executionRequestList
+     * @return
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    List<ReleaseTestSchedule> execute(List<ExecutionRequest> executionRequestList) throws IOException, URISyntaxException;
 
 }

@@ -65,12 +65,23 @@ public class ExecutionServiceImpl extends BaseServiceImpl implements ExecutionSe
 
     @Override
     public List<ReleaseTestSchedule> execute(List<ExecutionRequest> executionRequestList) throws IOException, URISyntaxException {
-        executionRequestList.forEach(er -> {
+        List<ReleaseTestSchedule> rtsList = new ArrayList<>();
+        List<ExecutionRequest> tempList = new ArrayList<>();
+
+        for(ExecutionRequest er : executionRequestList) {
             if(er.getTesterId() == null) {
                 er.setTesterId(userService.getCurrentUser().getId());
             }
-        });
-        return zephyrRestService.execute(executionRequestList);
+            tempList.add(er);
+            if(tempList.size() == ZephyrConstants.BATCH_SIZE) {
+                rtsList.addAll(zephyrRestService.execute(tempList));
+                tempList.clear();
+            }
+        }
+        if(!tempList.isEmpty()) {
+            rtsList.addAll(zephyrRestService.execute(tempList));
+        }
+        return rtsList;
     }
 
 }

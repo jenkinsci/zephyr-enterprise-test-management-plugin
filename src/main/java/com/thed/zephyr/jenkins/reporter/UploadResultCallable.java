@@ -709,6 +709,12 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                     executionRequest.setStatus(statusCondition.get("statusId"));
                 }
                 valueMap.put("execution", executionRequest);
+            } else {
+                ExecutionRequest executionRequest = new ExecutionRequest();
+                if(statusCondition.containsKey("statusId")) {
+                    executionRequest.setStatus(statusCondition.get("statusId"));
+                    valueMap.put("execution", executionRequest);
+                }
             }
 
             Map<String, Map<String, Object>> testcaseNameValueMap = new HashMap<>();

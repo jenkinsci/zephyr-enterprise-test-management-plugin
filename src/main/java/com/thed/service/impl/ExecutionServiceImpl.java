@@ -1,8 +1,10 @@
 package com.thed.service.impl;
 
+import com.thed.model.ExecutionRequest;
 import com.thed.model.ReleaseTestSchedule;
 import com.thed.model.TestStepResult;
 import com.thed.service.ExecutionService;
+import com.thed.service.UserService;
 import com.thed.utils.ZephyrConstants;
 
 import java.io.IOException;
@@ -16,6 +18,8 @@ import java.util.Set;
  * Created by prashant on 29/6/19.
  */
 public class ExecutionServiceImpl extends BaseServiceImpl implements ExecutionService {
+
+    private UserService userService = new UserServiceImpl();
 
     public ExecutionServiceImpl() {
         super();
@@ -57,6 +61,27 @@ public class ExecutionServiceImpl extends BaseServiceImpl implements ExecutionSe
     @Override
     public List<TestStepResult> addTestStepResults(List<TestStepResult> testStepResults) throws URISyntaxException, IOException {
         return zephyrRestService.addTestStepsResults(testStepResults);
+    }
+
+    @Override
+    public List<ReleaseTestSchedule> execute(List<ExecutionRequest> executionRequestList) throws IOException, URISyntaxException {
+        List<ReleaseTestSchedule> rtsList = new ArrayList<>();
+        List<ExecutionRequest> tempList = new ArrayList<>();
+
+        for(ExecutionRequest er : executionRequestList) {
+            if(er.getTesterId() == null) {
+                er.setTesterId(userService.getCurrentUser().getId());
+            }
+            tempList.add(er);
+            if(tempList.size() == ZephyrConstants.BATCH_SIZE) {
+                rtsList.addAll(zephyrRestService.execute(tempList));
+                tempList.clear();
+            }
+        }
+        if(!tempList.isEmpty()) {
+            rtsList.addAll(zephyrRestService.execute(tempList));
+        }
+        return rtsList;
     }
 
 }

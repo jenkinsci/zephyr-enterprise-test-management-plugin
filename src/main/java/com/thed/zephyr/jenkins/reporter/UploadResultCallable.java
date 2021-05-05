@@ -12,6 +12,7 @@ import com.thed.parser.ParserUtil;
 import com.thed.service.*;
 import com.thed.service.impl.*;
 import com.thed.utils.EggplantParser;
+import com.thed.utils.GsonUtil;
 import com.thed.utils.ListUtil;
 import com.thed.utils.ZephyrConstants;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
@@ -31,10 +32,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.*;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.ADD_ZEPHYR_GLOBAL_CONFIG;
@@ -59,6 +62,8 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
     private static final String PluginName = "[Zephyr Enterprise Test Management";
     private final String pInfo = String.format("%s [INFO]", PluginName);
+
+    private PrintStream logger;
 
     private UserService userService = new UserServiceImpl();
     private ProjectService projectService = new ProjectServiceImpl();
@@ -103,6 +108,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
     public boolean perform(int buildNumber, final TaskListener listener) throws IOException, InterruptedException {
         PrintStream logger = listener.getLogger();
+        this.logger = logger;
         logger.printf("%s Examining test results...%n", pInfo);
 
         if (!validateBuildConfig()) {
@@ -247,7 +253,9 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             //assigning testcases in cycle phase to creator
             List<ReleaseTestSchedule> releaseTestSchedules = cycleService.assignCyclePhaseToUser(cyclePhase, userService.getCurrentUser().getId());
 
-            Map<String, Set<Long>> executionMap = new HashMap<>();
+            Set<String> activeStatusIdSet = preferenceService.getTestcaseExecutionStatusIds(true);
+            List<ExecutionRequest> executionRequestList = new ArrayList<>();
+            Set<String> unexecutedIdSet = new HashSet<>();
 
             Map<Long, List<String>> testcaseAttachmentsMap = new HashMap<>();
             Map<Long, GenericAttachmentDTO> statusAttachmentMap = new HashMap<>();
@@ -262,12 +270,16 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                         // tcrTestcase matched, map caseResult.isPass status to rtsId
                         Map<String, Object> testcaseValueMap = caseEntry.getValue();
 
-                        if(testcaseValueMap.containsKey("statusId")) {
-                            String statusId = testcaseValueMap.get("statusId").toString();
-                            if(!executionMap.containsKey(statusId)) {
-                                executionMap.put(statusId, new HashSet<Long>());
+                        if(testcaseValueMap.containsKey("execution")) {
+                            ExecutionRequest executionRequest = (ExecutionRequest) testcaseValueMap.get("execution");
+                            if(executionRequest != null) {
+                                if(activeStatusIdSet.contains(executionRequest.getStatus())) {
+                                    executionRequest.setRtsId(releaseTestSchedule.getId());
+                                    executionRequestList.add(executionRequest);
+                                } else {
+                                    unexecutedIdSet.add(executionRequest.getStatus());
+                                }
                             }
-                            executionMap.get(statusId).add(releaseTestSchedule.getId());
                         }
 
                         if(testcaseValueMap.containsKey("attachments")) {
@@ -331,15 +343,8 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 executionService.addTestStepResults(testStepResultList);
             }
 
-            Set<String> activeStatusIdSet = preferenceService.getTestcaseExecutionStatusIds(true);
-            for(Map.Entry<String, Set<Long>> entry : executionMap.entrySet()) {
-                String statusId = entry.getKey();
-                if(activeStatusIdSet.contains(statusId)) {
-                    executionService.executeReleaseTestSchedules(entry.getValue(), statusId);
-                } else {
-                    logger.println("No active testcase execution status found for id: " + statusId);
-                }
-            }
+            executionService.execute(executionRequestList);
+            unexecutedIdSet.forEach(statusId -> logger.println("No active testcase execution status found for id: " + statusId));
         }
         catch(Exception e) {
             //todo:handle exceptions gracefully
@@ -538,6 +543,8 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         Map<Long, List<Testcase>> treeIdTestcaseMap = new HashMap<>();
         List<Map<String, Map<String, Object>>> testcaseNameValueMapList = new ArrayList<>();
 
+        Set<String> processingWarningMessages = new HashSet<>();
+
         long statusAttachmentCount = 0;
 
         dataMapLoop: for (Map dataMap : dataMapList) {
@@ -642,9 +649,6 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             Map<String, Object> valueMap = new HashMap<>();
             valueMap.put("treeId", treeDTO.getId());
             valueMap.put("mapTestcaseToRequirement", mapTestcaseToRequirement);
-            if(statusCondition.containsKey("statusId")) {
-                valueMap.put("statusId", statusCondition.get("statusId"));
-            }
             valueMap.put("attachments", attachments);
 
             if(statusCondition.containsKey("attachmentText")) {
@@ -669,10 +673,55 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 }
             }
 
+            if(dataMap.containsKey("execution")) {
+                Map<String, Object> executionDataMap = (Map<String, Object>) dataMap.get("execution");
+                Object actualTimeObj = executionDataMap.get("actualTime");
+                Object actualTimeUnitObj = executionDataMap.get("actualTimeUnit");
+                executionDataMap.remove("actualTime");
+                ExecutionRequest executionRequest = GsonUtil.CUSTOM_GSON.fromJson(GsonUtil.CUSTOM_GSON.toJson(executionDataMap), ExecutionRequest.class);
+                if(executionRequest == null) {
+                    executionRequest = new ExecutionRequest();
+                }
+                if(actualTimeObj != null && StringUtils.isNotBlank(actualTimeObj.toString())) {
+                    BigDecimal actualTimeSrc = new BigDecimal(actualTimeObj.toString());
+                    TimeUnit actualTimeUnit = null;
+                    try {
+                        actualTimeUnit = actualTimeUnitObj != null
+                                ? TimeUnit.valueOf(actualTimeUnitObj.toString())
+                                : TimeUnit.SECONDS;
+                    } catch (Exception e) {
+                        processingWarningMessages.add(String.format(ZephyrConstants.ERROR_MESSAGE_ACTUAL_TIME_UNIT, actualTimeUnitObj.toString()));
+                        actualTimeUnit = TimeUnit.SECONDS;
+                    }
+                    switch (actualTimeUnit) {
+                        case MILLISECONDS: executionRequest.setActualTime(actualTimeSrc.longValue());
+                            break;
+
+                        case SECONDS:
+                        default:
+                            actualTimeSrc = actualTimeSrc.multiply(new BigDecimal("1000"));
+                            executionRequest.setActualTime(actualTimeSrc.longValue());
+                        break;
+
+                    }
+                }
+                if(statusCondition.containsKey("statusId")) {
+                    executionRequest.setStatus(statusCondition.get("statusId"));
+                }
+                valueMap.put("execution", executionRequest);
+            } else {
+                ExecutionRequest executionRequest = new ExecutionRequest();
+                if(statusCondition.containsKey("statusId")) {
+                    executionRequest.setStatus(statusCondition.get("statusId"));
+                    valueMap.put("execution", executionRequest);
+                }
+            }
+
             Map<String, Map<String, Object>> testcaseNameValueMap = new HashMap<>();
             testcaseNameValueMap.put(testcase.getName(), valueMap);
             testcaseNameValueMapList.add(testcaseNameValueMap);
         }
+        printWarningMessages(processingWarningMessages);
         List<TCRCatalogTreeTestcase> tcrList =  createTestcasesWithoutDuplicate(treeIdTestcaseMap);
         Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrTestcaseStatusMap = new HashMap<>();
         List<MapTestcaseToRequirement> mapTestcaseToRequirements = new ArrayList<>();
@@ -683,8 +732,8 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                     if (tcrCatalogTreeTestcase.getTestcase().getName().equals(entry.getKey()) && tcrCatalogTreeTestcase.getTcrCatalogTreeId().equals(treeId)) {
                         //same testcase, add id and status to map
                         Map<String, Object> statusMap = new HashMap<>();
-                        if(entry.getValue().containsKey("statusId")) {
-                            statusMap.put("statusId", entry.getValue().get("statusId"));
+                        if(entry.getValue().containsKey("execution")) {
+                            statusMap.put("execution", entry.getValue().get("execution"));
                         }
 
                         MapTestcaseToRequirement mapTestcaseToRequirement = (MapTestcaseToRequirement) entry.getValue().get("mapTestcaseToRequirement");
@@ -785,6 +834,14 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             filePathList.add( baseDir + File.separator + path);
         }
         return filePathList;
+    }
+
+    private void printWarningMessage(String message) {
+        logger.println("WARNING: " + message);
+    }
+
+    private void printWarningMessages(Iterable<String> messageIterable) {
+        messageIterable.forEach(this::printWarningMessage);
     }
 
     public String getProjectKey() {

@@ -19,5 +19,6 @@ public class ZephyrConstants {
 
     public static final Integer BATCH_SIZE = 500;
 
+    public static final String ERROR_MESSAGE_ACTUAL_TIME_UNIT = "Unsupported time unit: %s, default time unit SECONDS will be used.";
 
 }

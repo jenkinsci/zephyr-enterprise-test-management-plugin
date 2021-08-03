@@ -536,7 +536,8 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
     }
 
     public List<Map> genericParserXML(String absoluteFilePath, String parserTemplate) throws ParserConfigurationException, SAXException, IOException {
-        return ParserUtil.parseXmlLang(absoluteFilePath, parserTemplate);
+        ParserUtil parserUtil = new ParserUtil();
+        return parserUtil.parseXmlLang(absoluteFilePath, parserTemplate);
     }
 
     public Map<TCRCatalogTreeTestcase, Map<String, Object>> createTestcasesFromMap(Map<String, TCRCatalogTreeDTO> packagePhaseMap, List<Map> dataMapList, ZephyrConfigModel zephyrConfigModel, PrintStream logger) throws URISyntaxException, IOException {
@@ -811,10 +812,11 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
     }
 
     private List<String> getTestcasesForEggplant(List<EggPlantResult> eggPlantResults) throws ParseException, ParserConfigurationException, SAXException, IOException {
+        ParserUtil parserUtil = new ParserUtil();
         String scriptNameParseTemplate = "[{\"scriptName\": \"${testsuite:name}\"}]";
         Map<String, EggPlantResult> eggPlantMap = new HashMap<>();//suite name, eggPlantResult
         for (EggPlantResult eggPlantResult : eggPlantResults) {
-            List<Map> parseData = ParserUtil.parseXmlLang(eggPlantResult.getXmlResultFile(), scriptNameParseTemplate);
+            List<Map> parseData = parserUtil.parseXmlLang(eggPlantResult.getXmlResultFile(), scriptNameParseTemplate);
             EggPlantResult existingEPR = eggPlantMap.get(parseData.get(0).get("scriptName").toString());
             if (existingEPR == null || existingEPR.getRunDateInDate().before(eggPlantResult.getRunDateInDate())) {
                 //either the file path for this eggplant script doesn't exist in map or it is older

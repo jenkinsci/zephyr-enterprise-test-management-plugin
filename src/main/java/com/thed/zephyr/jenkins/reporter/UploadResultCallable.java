@@ -545,7 +545,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         List<Map<String, Map<String, Object>>> testcaseNameValueMapList = new ArrayList<>();
 
         Set<String> processingWarningMessages = new HashSet<>();
-
+        List<String> testcaseNameList=new ArrayList<>();
         long statusAttachmentCount = 0;
 
         dataMapLoop: for (Map dataMap : dataMapList) {
@@ -561,6 +561,13 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
             if(testcase.getName().isEmpty()) {
                 continue;
+            }
+
+            String testcaseNameTmp= testcase.getName();
+            if(testcaseNameTmp!=null && testcaseNameTmp.length()>=ZeeConstants.TESTCASE_NAME_LIMIT) {
+                testcaseNameList.add(testcaseNameTmp);
+                testcaseNameTmp= testcase.getName().substring(0,TESTCASE_NAME_LIMIT-1);
+                testcase.setName(testcaseNameTmp);
             }
 
             if(dataMap.containsKey("skipTestcaseNames")) {
@@ -722,6 +729,11 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             testcaseNameValueMap.put(testcase.getName(), valueMap);
             testcaseNameValueMapList.add(testcaseNameValueMap);
         }
+
+        if(!testcaseNameList.isEmpty()){
+            logger.println("WARNING: Total "+testcaseNameList.size()+" testcases exceed 255 characters limit on name, trimming name to fit size. Example:"+ testcaseNameList.get(0));
+        }
+
         printWarningMessages(processingWarningMessages);
         List<TCRCatalogTreeTestcase> tcrList =  createTestcasesWithoutDuplicate(treeIdTestcaseMap);
         Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrTestcaseStatusMap = new HashMap<>();

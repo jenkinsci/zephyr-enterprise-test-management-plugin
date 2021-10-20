@@ -19,6 +19,7 @@ public class ZeeConstants {
 	public static final String CYCLE_DURATION_1_DAY = "1 day";
 	public static final String CYCLE_DURATION_7_DAYS = "7 days";
 	public static final String CYCLE_DURATION_30_DAYS = "30 days";
+    public static final int TESTCASE_NAME_LIMIT = 255;
 
 	
 	public static final long NEW_CYCLE_KEY_IDENTIFIER = 1000000000L;

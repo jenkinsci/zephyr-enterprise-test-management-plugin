@@ -750,7 +750,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                         }
 
                         MapTestcaseToRequirement mapTestcaseToRequirement = (MapTestcaseToRequirement) entry.getValue().get("mapTestcaseToRequirement");
-                        mapTestcaseToRequirement.setTestcaseId(tcrCatalogTreeTestcase.getTestcase().getId());
+                        mapTestcaseToRequirement.setTestcaseId(tcrCatalogTreeTestcase.getTestcase().getTestcaseId());
                         mapTestcaseToRequirements.add(mapTestcaseToRequirement);
 
                         if (entry.getValue().containsKey("attachments")) {

@@ -181,7 +181,7 @@
     <repository>
       <id>inhouse</id>
       <name>theD Internal repository</name>
-      <url>http://svninfra.yourzephyr.com/repository/</url>
+      <url>https://svninfra.yourzephyr.com/repository/</url>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>

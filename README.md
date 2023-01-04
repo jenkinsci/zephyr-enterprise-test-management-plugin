@@ -241,15 +241,16 @@ Now you can trigger your build.
 
 Compatibility between this plugin and Zephyr Enterprise is:
 
-|Plugin|Zephyr Enterprise|
-|------|-----------------|
-|v2.4|v7.0 or later|
-|v2.3|v7.0 or later|
-|v2.2|v6.7.x or later|
-|v2.1.1|v6.7 to v6.7.3|
-|v2.1|v6.7|
-|v2.0|v6.6.x|
-|v1.10|v6.5 and older|
+| Plugin | Zephyr Enterprise |
+|--------|-------------------|
+| v2.5   | v7.15.1 or later  |
+| v2.4   | v7.0 or later     |
+| v2.3   | v7.0 or later     |
+| v2.2   | v6.7.x or later   |
+| v2.1.1 | v6.7 to v6.7.3    |
+| v2.1   | v6.7              |
+| v2.0   | v6.6.x            |
+| v1.10  | v6.5 and older    |
 
 Older build for plugin can be downloaded [here](https://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/zephyr-enterprise-test-management/).
 

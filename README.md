@@ -52,7 +52,30 @@ Zephyr Enterprise by using this plugin. You will learn how to:
 After you install the plugin, you can configure the Jenkins global settings to establish a connection to one or
 several Zephyr servers. You can do this in two ways:  
 
-**Option 1**  
+**Option 1**
+
+1\. Log in to Zephyr as an administrator, create an API token, and copy it to the clipboard:
+
+![](docs/images/token-creation.png)
+
+2\. On the **Jenkins Configuration** page, click **Add** next to the **Credentials** field and select **Jenkins**:
+
+![](docs/images/add-jenkins2.png)
+
+3\. In the subsequent window, select **Secret text** form the **Kind** drop-down menu, paste your API token to the **Secret**
+field, specify a short description in the **Description** field, and click **Add**:
+
+![](docs/images/secret.png)
+
+After adding your credentials in any of the ways described above, choose them from the **Credentials** drop-down menu, click
+**Test Configuration** to validate the connection to your Zephyr server, and then, if the validation was successful, click **Save**
+to apply the changes:
+
+![](docs/images/final.png)
+
+**Option 2**  
+
+*Note*: SmartBear strongly recommends using the API token for authentication instead of username/password.
 
 1\. Click **Manage Jenkins** > **Configure System**: 
 
@@ -73,27 +96,6 @@ several Zephyr servers. You can do this in two ways:
     **Important**: you must specify the credentials of a Zephyr administrator.
 
     ![](docs/images/credentials.png)
-
-**Option 2**  
-
-1\. Log in to Zephyr as an administrator, create an API token, and copy it to the clipboard:
-
-![](docs/images/token-creation.png)
-
-2\. On the **Jenkins Configuration** page, click **Add** next to the **Credentials** field and select **Jenkins**:
-
-![](docs/images/add-jenkins2.png)
-
-3\. In the subsequent window, select **Secret text** form the **Kind** drop-down menu, paste your API token to the **Secret**
-   field, specify a short description in the **Description** field, and click **Add**:
-
-![](docs/images/secret.png)
-
-After adding your credentials in any of the ways described above, choose them from the **Credentials** drop-down menu, click
-**Test Configuration** to validate the connection to your Zephyr server, and then, if the validation was successful, click **Save**
-to apply the changes:
-
-![](docs/images/final.png)
 
 ## **3. Configure a standard Jenkins job**
 

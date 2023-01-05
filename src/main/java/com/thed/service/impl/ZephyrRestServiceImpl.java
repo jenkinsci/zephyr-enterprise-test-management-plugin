@@ -139,9 +139,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         httpClientService.clear();
         String encoding = Base64.getEncoder().encodeToString((username+":"+password).getBytes());
         httpClientService.getHeaders().add(new BasicHeader("Authorization", "Basic "+encoding));
-        httpClientService.getHeaders().add(new BasicHeader("accessType", "HTMLUI"));
         String res = httpClientService.getRequest(url);
-        httpClientService.getHeaders().clear();
         if(res != null) {
             setCurrentUser(GsonUtil.CUSTOM_GSON.fromJson(res, User.class));
             setHostAddress(hostAddress);

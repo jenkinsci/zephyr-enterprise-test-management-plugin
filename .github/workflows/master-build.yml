@@ -1,0 +1,41 @@
+name: Master Build
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  BACKEND_REPO: 'SmartBear/zephyr-enterprise-test-management-plugin'
+  BACKEND_BRANCH: 'main'
+
+jobs:
+  build:
+    name: Run Build
+    runs-on: ze-test-management-plugin
+
+    steps:
+  
+    - name: Checkout BackEnd Code
+      uses: actions/checkout@v2
+      with:
+        repository: ${{ env.BACKEND_REPO }}
+        ref: ${{ env.BACKEND_BRANCH }}
+        fetch-depth: 0
+        
+    - name: Cache Maven Packages
+      uses: actions/cache@v2
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2     
+        
+    - name: Build with Maven
+      run:  |
+       /opt/apache-maven-3.8.8/bin/mvn clean package -Dmaven.test.skip=true
+      
+    - name: Copy Files to FTP Server
+      shell: bash
+      run: |
+        scp target/zephyr-enterprise-test-management*.hpi zephyr@18.221.237.186:/share-infra/RelEng/Nightly/jenkins_integration/zephyr_jenkins_${{ env.BACKEND_BRANCH }}_${{github.run_number}}.hpi    
+
+    

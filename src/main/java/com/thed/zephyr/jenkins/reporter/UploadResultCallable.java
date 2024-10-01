@@ -371,7 +371,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         boolean createPhase = true;
         TCRCatalogTreeDTO automationPhase = null;
         for(TCRCatalogTreeDTO tcrCatalogTreeDTO : tcrCatalogTreeDTOList) {
-            if(tcrCatalogTreeDTO.getName().equals(ZephyrConstants.TOP_PARENT_PHASE_NAME)) {
+            if (ZephyrConstants.TOP_PARENT_PHASE_NAME.equals(tcrCatalogTreeDTO.getName())) {
                 if((zephyrConfigModel.isCreatePackage() && ZephyrConstants.PACKAGE_TRUE_DESCRIPTION.equals(tcrCatalogTreeDTO.getDescription()))
                         || (!zephyrConfigModel.isCreatePackage() && ZephyrConstants.PACKAGE_FALSE_DESCRIPTION.equals(tcrCatalogTreeDTO.getDescription()))) {
                     automationPhase = tcrCatalogTreeDTO;
@@ -418,7 +418,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
                     if(endingNode.getCategories() != null && endingNode.getCategories().size() > 0) {
                         for (TCRCatalogTreeDTO tct : endingNode.getCategories()) {
-                            if(tct.getName().equals(pName)) {
+                            if (tct.getName() != null && tct.getName().equals(pName)) {
                                 searchedPhase = tct;
                             }
                         }

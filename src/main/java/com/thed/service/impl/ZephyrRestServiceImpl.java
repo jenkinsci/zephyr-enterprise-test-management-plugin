@@ -271,8 +271,17 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         String url = buildUrl(prepareUrl(GET_TCR_CATALOG_TREE_NODES_URL), null, queryParams);
         String res = httpClientService.getRequest(url);
 
+        Gson gson = GsonUtil.CUSTOM_GSON;
+        JsonElement jsonElement = gson.fromJson(res, JsonElement.class);
         Type tcrCatalogTreeListType = new TypeToken<List<TCRCatalogTreeDTO>>(){}.getType();
-        return GsonUtil.CUSTOM_GSON.fromJson(res, tcrCatalogTreeListType);
+        if (jsonElement.isJsonArray()) {
+            return gson.fromJson(jsonElement, tcrCatalogTreeListType);
+        } else if (jsonElement.isJsonObject()) {
+            JSONObject resObject = new JSONObject(res);
+            JSONArray resultsArray = resObject.getJSONArray("results");
+            return gson.fromJson(resultsArray.toString(), tcrCatalogTreeListType);
+        }
+        throw new JsonSyntaxException("Expected JSON Array or Object, found: " + jsonElement);
     }
 
     @Override

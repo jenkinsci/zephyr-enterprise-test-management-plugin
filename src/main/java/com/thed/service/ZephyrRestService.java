@@ -309,4 +309,6 @@ public interface ZephyrRestService {
      * @throws IOException
      */
     PreferenceDTO getPreference(String key) throws URISyntaxException, IOException;
+
+    boolean isCycleEnvironmentEnabled() throws URISyntaxException, IOException;
 }

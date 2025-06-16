@@ -65,6 +65,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 	private String cyclePrefix;
 	private String serverAddress;
 	private String cycleDuration;
+	private String environment;
 	private boolean createPackage;
     private String resultXmlFilePath;
     private Long eggplantParserIndex = 3l;
@@ -91,7 +92,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
-			String releaseKey, String cycleKey, String cyclePrefix,
+			String releaseKey, String cycleKey, String cyclePrefix, String environment,
 			String cycleDuration, boolean createPackage, String resultXmlFilePath, String parserTemplateKey) {
 		this.serverAddress = serverAddress;
 		this.projectKey = projectKey;
@@ -100,6 +101,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		this.cyclePrefix = cyclePrefix;
 		this.createPackage = createPackage;
 		this.cycleDuration = cycleDuration;
+		this.environment = environment;
         this.resultXmlFilePath = resultXmlFilePath;
         this.parserTemplateKey = parserTemplateKey;
 	}
@@ -124,7 +126,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         ZephyrInstance zephyrInstance = getZephyrInstance(serverAddress);
         StandardCredentials standardCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
 
-        return new UploadResultCallable(serverAddress, projectKey, releaseKey, cycleKey, cyclePrefix, cycleDuration, createPackage,
+        return new UploadResultCallable(serverAddress, projectKey, releaseKey, cycleKey, cyclePrefix, environment, cycleDuration, createPackage,
                 resultXmlFilePath, parserTemplateKey, listener, build.getNumber(), standardCredentials);
     }
 
@@ -193,6 +195,14 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
 	public void setServerAddress(String serverAddress) {
 		this.serverAddress = serverAddress;
+	}
+
+	public String getEnvironment() {
+		return environment;
+	}
+
+	public void setEnvironment(String environment) {
+		this.environment = environment;
 	}
 
 	public String getCycleDuration() {

@@ -19,6 +19,7 @@ public class Cycle extends BaseEntity {
     private Date endDate;
     private String cycleStartDate;
     private String cycleEndDate;
+    private String environment;
 
     public String getName() {
         return name;
@@ -92,5 +93,13 @@ public class Cycle extends BaseEntity {
 
     public void setCycleEndDate(String cycleEndDate) {
         this.cycleEndDate = cycleEndDate;
+    }
+
+    public String getEnvironment() {
+        return this.environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 }

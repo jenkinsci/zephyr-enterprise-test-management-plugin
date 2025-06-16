@@ -69,7 +69,9 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_ALL_PARSER_TEMPLATES_URL = "/flex/services/rest/{restVersion}/parsertemplate/";
     public static final String GET_PARSER_TEMPLATE_BY_ID_URL = "/flex/services/rest/{restVersion}/parsertemplate/{id}";
 
-    public static final String GET_PREFERENCE_URL = "/flex/services/rest/{restVersion}/admin/preference"; //?key=testresult.testresultStatus.LOV
+    public static final String GET_PREFERENCE_URL = "/flex/services/rest/{restVersion}/admin/preference";//?key=testresult.testresultStatus.LOV
+
+    public static final String GET_SYSTEM_PREFERENCES_URL = "/flex/services/rest/v4/admin/preference/all/system";
 
     private User currentUser;
     private String hostAddress;
@@ -590,11 +592,33 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     @Override
     public PreferenceDTO getPreference(String key) throws URISyntaxException, IOException {
         List<NameValuePair> queryParams = Collections.singletonList(new BasicNameValuePair("key", key));
-
         String url = buildUrl(prepareUrl(GET_PREFERENCE_URL), null, queryParams);
         String res = httpClientService.getRequest(url);
         return GsonUtil.CUSTOM_GSON.fromJson(res, PreferenceDTO.class);
     }
+
+    public String getSystemPreference(String key) throws URISyntaxException, IOException {
+        List<NameValuePair> queryParams = Collections.singletonList(new BasicNameValuePair("name", key));
+        String url = buildUrl(prepareUrl(GET_SYSTEM_PREFERENCES_URL), null, queryParams);
+        String res = httpClientService.getRequest(url);
+        Type preferenceListType = new TypeToken<List<PreferenceDTO>>() {}.getType();
+        List<PreferenceDTO> preferences = GsonUtil.CUSTOM_GSON.fromJson(res, preferenceListType);
+
+        // Find and return the value of the specified key
+        if (preferences != null) {
+            for (PreferenceDTO preference : preferences) {
+                if (key.equals(preference.getName())) {
+                    return preference.getValue();
+                }
+            }
+        }
+        return null;
+    }
+    public boolean isCycleEnvironmentEnabled() throws URISyntaxException, IOException {
+        String preferenceValue = getSystemPreference("cycle.environment.enabled");
+        return "true".equalsIgnoreCase(preferenceValue);
+    }
+
 
     @Override
     public User getCurrentUser() {

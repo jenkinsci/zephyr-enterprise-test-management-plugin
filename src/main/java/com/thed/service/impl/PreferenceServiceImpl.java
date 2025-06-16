@@ -23,6 +23,10 @@ public class PreferenceServiceImpl extends BaseServiceImpl implements Preference
         return zephyrRestService.getPreference(key);
     }
 
+    public boolean isEnvironmentEnabled() throws IOException, URISyntaxException {
+       return zephyrRestService.isCycleEnvironmentEnabled();
+    }
+
     @Override
     public PreferenceDTO getTestcaseExecutionStatusPreference() throws IOException, URISyntaxException {
         return getPreference(TESTCASE_EXECUTION_STATUS_PREFERENCE_KEY);

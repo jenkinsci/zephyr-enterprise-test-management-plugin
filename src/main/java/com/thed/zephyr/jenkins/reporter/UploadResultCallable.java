@@ -136,7 +136,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
             if(StringUtils.isBlank(environment) && preferenceService.isEnvironmentEnabled()) {
                 logger.println("Environment is mandatory.Please provide Environment name.");
-                return false;
+                throw new hudson.AbortException("Missing required parameter: environment");
             }
 
             if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
@@ -346,6 +346,9 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
             executionService.execute(executionRequestList);
             unexecutedIdSet.forEach(statusId -> logger.println("No active testcase execution status found for id: " + statusId));
+        }
+        catch (hudson.AbortException ae) {
+            throw ae;
         }
         catch(Exception e) {
             //todo:handle exceptions gracefully

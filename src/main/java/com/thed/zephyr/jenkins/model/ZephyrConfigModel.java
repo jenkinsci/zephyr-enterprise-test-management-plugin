@@ -11,6 +11,7 @@ public class ZephyrConfigModel {
 	private Set<String> packageNames;
 	private String cyclePrefix;
 	private String cycleDuration;
+	private String environment;
 	private long zephyrProjectId;
 	private long releaseId;
 	private long cycleId;
@@ -70,6 +71,14 @@ public class ZephyrConfigModel {
 
 	public void setPackageNames(Set<String> packageNames) {
 		this.packageNames = packageNames;
+	}
+
+	public String getEnvironment() {
+		return environment;
+	}
+
+	public void setEnvironment(String environment) {
+		this.environment = environment;
 	}
 
 	public String getCycleDuration() {

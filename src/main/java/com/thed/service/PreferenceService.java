@@ -14,4 +14,6 @@ public interface PreferenceService extends BaseService {
 
     Set<String> getTestcaseExecutionStatusIds(Boolean searchActive) throws IOException, URISyntaxException;
 
+    boolean isEnvironmentEnabled() throws IOException, URISyntaxException;
+
 }

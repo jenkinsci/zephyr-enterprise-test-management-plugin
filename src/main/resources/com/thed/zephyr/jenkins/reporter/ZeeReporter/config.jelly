@@ -14,6 +14,10 @@
     <f:select />
   </f:entry>
 
+  <f:entry title="Environment" field="environment">
+    <f:textbox field="environment"/>
+  </f:entry>
+
   <f:entry title="Cycle Duration" field="cycleDuration">
     <f:select />
   </f:entry>

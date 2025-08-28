@@ -1,10 +1,6 @@
 package com.thed.zephyr.jenkins.reporter;
 
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.google.gson.Gson;
 import com.thed.model.*;
@@ -16,13 +12,10 @@ import com.thed.utils.GsonUtil;
 import com.thed.utils.ListUtil;
 import com.thed.utils.ZephyrConstants;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
-import com.thed.zephyr.jenkins.model.ZephyrInstance;
 import hudson.Util;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
-import hudson.security.ACL;
 import jenkins.MasterToSlaveFileCallable;
-import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.types.FileSet;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
@@ -50,6 +43,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
     private String cyclePrefix;
     private String serverAddress;
     private String cycleDuration;
+    private String environment;
     private boolean createPackage;
     private String resultXmlFilePath;
     private Long eggplantParserIndex = 3l;
@@ -78,7 +72,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
     private PreferenceService preferenceService = new PreferenceServiceImpl();
 
     public UploadResultCallable(String serverAddress, String projectKey,
-                                String releaseKey, String cycleKey, String cyclePrefix,
+                                String releaseKey, String cycleKey, String cyclePrefix, String environment,
                                 String cycleDuration, boolean createPackage, String resultXmlFilePath, String parserTemplateKey,
                                 TaskListener listener, int buildNumber, StandardCredentials standardCredentials) {
         this.serverAddress = serverAddress;
@@ -87,6 +81,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         this.cycleKey = cycleKey;
         this.cyclePrefix = cyclePrefix;
         this.createPackage = createPackage;
+        this.environment = environment;
         this.cycleDuration = cycleDuration;
         this.resultXmlFilePath = resultXmlFilePath;
         this.parserTemplateKey = parserTemplateKey;
@@ -139,14 +134,19 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             zephyrConfigModel.setParserTemplateId(Long.parseLong(getParserTemplateKey()));
             zephyrConfigModel.setJsonParserTemplate(parserTemplateService.getParserTemplateById(zephyrConfigModel.getParserTemplateId()).getJsonTemplate());
 
+            if(StringUtils.isBlank(environment) && preferenceService.isEnvironmentEnabled()) {
+                logger.println("Environment is mandatory.Please provide Environment name.");
+                throw new hudson.AbortException("Missing required parameter: environment");
+            }
+
             if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
                 zephyrConfigModel.setCycleId(NEW_CYCLE_KEY_IDENTIFIER);
             }
             else {
                 zephyrConfigModel.setCycleId(Long.parseLong(getCycleKey()));
             }
-
             zephyrConfigModel.setCycleDuration(getCycleDuration());
+            zephyrConfigModel.setEnvironment(getEnvironment());
 
             if (StringUtils.isNotBlank(getCyclePrefix())) {
                 zephyrConfigModel.setCyclePrefix(getCyclePrefix() + "_");
@@ -213,6 +213,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 cycle.setReleaseId(zephyrConfigModel.getReleaseId());
                 cycle.setBuild(String.valueOf(zephyrConfigModel.getBuilNumber()));
                 cycle.setStartDate(project.getStartDate());
+                cycle.setEnvironment(zephyrConfigModel.getEnvironment());
 
                 Date projectStartDate = project.getStartDate();
 
@@ -345,6 +346,9 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
             executionService.execute(executionRequestList);
             unexecutedIdSet.forEach(statusId -> logger.println("No active testcase execution status found for id: " + statusId));
+        }
+        catch (hudson.AbortException ae) {
+            throw ae;
         }
         catch(Exception e) {
             //todo:handle exceptions gracefully
@@ -896,6 +900,14 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
     public void setServerAddress(String serverAddress) {
         this.serverAddress = serverAddress;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 
     public String getCycleDuration() {

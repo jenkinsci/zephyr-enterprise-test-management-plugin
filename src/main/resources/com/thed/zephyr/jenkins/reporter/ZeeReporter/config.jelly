@@ -18,6 +18,10 @@
     <f:textbox field="environment"/>
   </f:entry>
 
+ <f:entry title="CustomFields" field="customFields">
+    <f:textbox field="customFields"/>
+  </f:entry>
+
   <f:entry title="Cycle Duration" field="cycleDuration">
     <f:select />
   </f:entry>

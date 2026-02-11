@@ -1,5 +1,7 @@
 package com.thed.model;
 
+import java.util.Map;
+
 public class Testcase extends BaseEntity {
 
     private String name;
@@ -11,6 +13,7 @@ public class Testcase extends BaseEntity {
     private String scriptName;
     private Long testcaseId;
     private TestStep testSteps;
+    private Map<String, String> customProperties;
 
     public String getName() {
         return name;
@@ -82,5 +85,13 @@ public class Testcase extends BaseEntity {
 
     public void setTestSteps(TestStep testSteps) {
         this.testSteps = testSteps;
+    }
+
+    public Map<String, String> getCustomProperties() {
+        return customProperties;
+    }
+
+    public void setCustomProperties(Map<String, String> customProperties) {
+        this.customProperties = customProperties;
     }
 }

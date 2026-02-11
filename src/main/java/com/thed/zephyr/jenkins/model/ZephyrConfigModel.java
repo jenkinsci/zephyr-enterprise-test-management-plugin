@@ -12,6 +12,7 @@ public class ZephyrConfigModel {
 	private String cyclePrefix;
 	private String cycleDuration;
 	private String environment;
+    private String customFields;
 	private long zephyrProjectId;
 	private long releaseId;
 	private long cycleId;
@@ -143,5 +144,13 @@ public class ZephyrConfigModel {
 
     public void setJsonParserTemplate(String jsonParserTemplate) {
         this.jsonParserTemplate = jsonParserTemplate;
+    }
+
+    public String getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(String customFields) {
+        this.customFields = customFields;
     }
 }

@@ -66,6 +66,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 	private String serverAddress;
 	private String cycleDuration;
 	private String environment;
+    private String customFields;
 	private boolean createPackage;
     private String resultXmlFilePath;
     private Long eggplantParserIndex = 3l;
@@ -93,7 +94,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 	@DataBoundConstructor
 	public ZeeReporter(String serverAddress, String projectKey,
 			String releaseKey, String cycleKey, String cyclePrefix, String environment,
-			String cycleDuration, boolean createPackage, String resultXmlFilePath, String parserTemplateKey) {
+			String cycleDuration, boolean createPackage, String resultXmlFilePath, String parserTemplateKey,String customFields) {
 		this.serverAddress = serverAddress;
 		this.projectKey = projectKey;
 		this.releaseKey = releaseKey;
@@ -104,6 +105,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		this.environment = environment;
         this.resultXmlFilePath = resultXmlFilePath;
         this.parserTemplateKey = parserTemplateKey;
+        this.customFields = customFields;
 	}
 
 	@Override
@@ -127,7 +129,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         StandardCredentials standardCredentials = getCredentialsFromId(zephyrInstance.getCredentialsId());
 
         return new UploadResultCallable(serverAddress, projectKey, releaseKey, cycleKey, cyclePrefix, environment, cycleDuration, createPackage,
-                resultXmlFilePath, parserTemplateKey, listener, build.getNumber(), standardCredentials);
+                resultXmlFilePath, parserTemplateKey, listener, build.getNumber(), standardCredentials,customFields);
     }
 
     private ZephyrInstance getZephyrInstance(String serverAddress) {
@@ -205,7 +207,15 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
 		this.environment = environment;
 	}
 
-	public String getCycleDuration() {
+    public String getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(String customFields) {
+        this.customFields = customFields;
+    }
+
+    public String getCycleDuration() {
 		return cycleDuration;
 	}
 

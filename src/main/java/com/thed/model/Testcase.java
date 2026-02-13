@@ -10,6 +10,7 @@ public class Testcase extends BaseEntity {
     private Long projectId;
     private Long releaseId;
     private Boolean automated;
+    private Boolean fromJenkins=true;
     private String scriptName;
     private Long testcaseId;
     private TestStep testSteps;
@@ -93,5 +94,13 @@ public class Testcase extends BaseEntity {
 
     public void setCustomProperties(Map<String, String> customProperties) {
         this.customProperties = customProperties;
+    }
+
+    public Boolean getFromJenkins() {
+        return fromJenkins;
+    }
+
+    public void setFromJenkins(Boolean fromJenkins) {
+        this.fromJenkins = fromJenkins;
     }
 }

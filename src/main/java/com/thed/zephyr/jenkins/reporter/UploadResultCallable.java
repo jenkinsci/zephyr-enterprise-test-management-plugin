@@ -568,6 +568,8 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                     testcase.setCustomProperties(customFields);
             }
 
+            testcase.setProjectId(Long.parseLong(getProjectKey()));
+            testcase.setReleaseId(Long.parseLong(getReleaseKey()));
             if(testcase.getName().isEmpty()) {
                 continue;
             }

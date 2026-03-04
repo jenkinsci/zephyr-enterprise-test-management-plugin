@@ -44,6 +44,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
     private String serverAddress;
     private String cycleDuration;
     private String environment;
+    private String customFields;
     private boolean createPackage;
     private String resultXmlFilePath;
     private Long eggplantParserIndex = 3l;
@@ -74,7 +75,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
     public UploadResultCallable(String serverAddress, String projectKey,
                                 String releaseKey, String cycleKey, String cyclePrefix, String environment,
                                 String cycleDuration, boolean createPackage, String resultXmlFilePath, String parserTemplateKey,
-                                TaskListener listener, int buildNumber, StandardCredentials standardCredentials) {
+                                TaskListener listener, int buildNumber, StandardCredentials standardCredentials, String customFields) {
         this.serverAddress = serverAddress;
         this.projectKey = projectKey;
         this.releaseKey = releaseKey;
@@ -88,6 +89,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         this.listener = listener;
         this.buildNumber = buildNumber;
         this.standardCredentials = standardCredentials;
+        this.customFields = customFields;
     }
 
     @Override
@@ -551,7 +553,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         Set<String> processingWarningMessages = new HashSet<>();
         List<String> testcaseNameList=new ArrayList<>();
         long statusAttachmentCount = 0;
-
+        Map<String,String> customFields=GsonUtil.validateAndParseJson(getCustomFields());
         dataMapLoop: for (Map dataMap : dataMapList) {
 
             Map testcaseMap = (Map) dataMap.get("testcase");
@@ -562,7 +564,12 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 testcase.setAutomated(true);
                 testcase.setScriptName("Created By Jenkins");
             }
+            if(customFields!=null && !customFields.isEmpty()) {
+                    testcase.setCustomProperties(customFields);
+            }
 
+            testcase.setProjectId(Long.parseLong(getProjectKey()));
+            testcase.setReleaseId(Long.parseLong(getReleaseKey()));
             if(testcase.getName().isEmpty()) {
                 continue;
             }
@@ -864,6 +871,14 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
     public String getProjectKey() {
         return projectKey;
+    }
+
+    public String getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(String customFields) {
+        this.customFields = customFields;
     }
 
     public void setProjectKey(String projectKey) {

@@ -73,6 +73,8 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
     public static final String GET_SYSTEM_PREFERENCES_URL = "/flex/services/rest/v4/admin/preference/all/system";
 
+    public static final String GET_CUSTOM_FIELDS_URL= "/flex/services/rest/{restVersion}/field/entity/testcase";
+
     private User currentUser;
     private String hostAddress;
     private String restVersion = "v3";
@@ -617,6 +619,18 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public boolean isCycleEnvironmentEnabled() throws URISyntaxException, IOException {
         String preferenceValue = getSystemPreference("cycle.environment.enabled");
         return "true".equalsIgnoreCase(preferenceValue);
+    }
+
+    @Override
+    public List<CustomFieldsDTO> getCustomFieldsForCycle() throws URISyntaxException, IOException {
+        List<NameValuePair> queryParams = new ArrayList<>();
+        queryParams.add(new BasicNameValuePair("entityname", "testcase"));
+
+        String url = buildUrl(prepareUrl(GET_CUSTOM_FIELDS_URL), null, queryParams);
+        String res = httpClientService.getRequest(url);
+
+        Type listType = new TypeToken<List<CustomFieldsDTO>>(){}.getType();
+        return GsonUtil.CUSTOM_GSON.fromJson(res, listType);
     }
 
 

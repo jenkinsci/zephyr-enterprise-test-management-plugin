@@ -140,7 +140,15 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 logger.println("Environment is mandatory.Please provide Environment name.");
                 throw new hudson.AbortException("Missing required parameter: environment");
             }
+            List<CustomFieldsDTO> customFieldMeta =
+                    preferenceService.getCustomFieldsForCycle();
+            Map<String,String> customFields =
+                    GsonUtil.validateAndParseJson(getCustomFields());
+            validateMandatoryCustomFields(customFieldMeta, customFields);
 
+            if (customFields != null && !customFields.isEmpty()) {
+                zephyrConfigModel.setCustomFields(customFields.toString());
+            }
             if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
                 zephyrConfigModel.setCycleId(NEW_CYCLE_KEY_IDENTIFIER);
             }
@@ -367,6 +375,35 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
         logger.printf("%s Done uploading tests to Zephyr.%n", pInfo);
         return true;
+    }
+
+    private void validateMandatoryCustomFields(
+            List<CustomFieldsDTO> fieldList,
+            Map<String, String> customProperties) throws Exception {
+
+        List<String> missingFields = new ArrayList<>();
+
+        for (CustomFieldsDTO field : fieldList) {
+
+            if (Boolean.TRUE.equals(field.getMandatory())
+                    && Boolean.TRUE.equals(field.getImportable())
+                    && Boolean.TRUE.equals(field.getVisible())) {
+
+                String key = field.getDisplayName();
+
+                if (customProperties == null
+                        || !customProperties.containsKey(key)
+                        || StringUtils.isBlank(customProperties.get(key))) {
+
+                    missingFields.add(field.getDisplayName());
+                }
+            }
+        }
+
+        if (!missingFields.isEmpty()) {
+            throw new Exception(
+                    "Missing mandatory custom fields: " + StringUtils.join(missingFields, ", "));
+        }
     }
 
     private Map<String, TCRCatalogTreeDTO> createPackagePhaseMap(ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {

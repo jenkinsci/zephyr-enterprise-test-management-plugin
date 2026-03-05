@@ -1,6 +1,7 @@
 package com.thed.service;
 
 import com.thed.model.*;
+import com.thed.service.impl.CustomFieldsDTO;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -311,4 +312,6 @@ public interface ZephyrRestService {
     PreferenceDTO getPreference(String key) throws URISyntaxException, IOException;
 
     boolean isCycleEnvironmentEnabled() throws URISyntaxException, IOException;
+
+    List<CustomFieldsDTO> getCustomFieldsForCycle() throws URISyntaxException, IOException;
 }

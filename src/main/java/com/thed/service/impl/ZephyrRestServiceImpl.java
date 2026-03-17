@@ -74,6 +74,8 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     public static final String GET_SYSTEM_PREFERENCES_URL = "/flex/services/rest/v4/admin/preference/all/system";
 
     public static final String GET_CUSTOM_FIELDS_URL= "/flex/services/rest/{restVersion}/field/entity/testcase";
+    public static final String ENTITY_NAME= "entityname";
+    public static final String TESTCASE= "testcase";
 
     private User currentUser;
     private String hostAddress;
@@ -624,7 +626,7 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
     @Override
     public List<CustomFieldsDTO> getCustomFieldsForCycle() throws URISyntaxException, IOException {
         List<NameValuePair> queryParams = new ArrayList<>();
-        queryParams.add(new BasicNameValuePair("entityname", "testcase"));
+        queryParams.add(new BasicNameValuePair(ENTITY_NAME,TESTCASE));
 
         String url = buildUrl(prepareUrl(GET_CUSTOM_FIELDS_URL), null, queryParams);
         String res = httpClientService.getRequest(url);

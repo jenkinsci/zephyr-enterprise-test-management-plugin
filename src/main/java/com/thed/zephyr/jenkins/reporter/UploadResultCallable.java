@@ -16,7 +16,9 @@ import hudson.Util;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import jenkins.MasterToSlaveFileCallable;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.tools.ant.types.FileSet;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.xml.sax.SAXException;
@@ -38,6 +40,7 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.ADD_ZEPHYR_GLOBAL_CO
 
 public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
+    private static final Logger log = Logger.getLogger(UploadResultCallable.class);
     private String projectKey;
     private String releaseKey;
     private String cycleKey;
@@ -161,7 +164,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 }
             }
 
-            if (customFields != null && !customFields.isEmpty()) {
+            if (MapUtils.isNotEmpty(mappedFields)) {
                 zephyrConfigModel.setCustomFields(
                         GsonUtil.CUSTOM_GSON.toJson(mappedFields)
                 );
@@ -394,18 +397,15 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         return true;
     }
 
-    private void validateMandatoryCustomFields(
-            List<CustomFieldsDTO> fieldList,
-            Map<String, Object> customProperties) throws Exception {
-
+    private void validateMandatoryCustomFields(List<CustomFieldsDTO> fieldList, Map<String, Object> customProperties) throws Exception {
+        if(customProperties == null) {
+            return;
+        }
         List<String> missingFields = new ArrayList<>();
 
         for (CustomFieldsDTO field : fieldList) {
 
-            if (Boolean.TRUE.equals(field.getMandatory())
-                    && Boolean.TRUE.equals(field.getImportable())
-                    && Boolean.TRUE.equals(field.getVisible())) {
-
+            if (Boolean.TRUE.equals(field.getMandatory())){
                 String key = field.getDisplayName();
 
                 if (customProperties == null
@@ -418,6 +418,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         }
 
         if (!missingFields.isEmpty()) {
+            log.error("Missing mandatory custom fields.");
             throw new Exception(
                     "Missing mandatory custom fields: " + StringUtils.join(missingFields, ", "));
         }

@@ -3,10 +3,17 @@ package com.thed.service.impl;
 import com.google.common.collect.Lists;
 import com.thed.model.*;
 import com.thed.service.TestcaseService;
+import com.thed.utils.GsonUtil;
 import com.thed.utils.ZephyrConstants;
+import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import hudson.tasks.junit.CaseResult;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
+import javax.swing.*;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URISyntaxException;
 import java.util.*;
 
@@ -14,6 +21,8 @@ import java.util.*;
  * Created by tarun on 25/6/19.
  */
 public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseService {
+
+    private static final Logger log = Logger.getLogger(TestcaseServiceImpl.class);
 
     public TestcaseServiceImpl() {
         super();
@@ -110,9 +119,17 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
     }
 
     @Override
-    public List<TCRCatalogTreeTestcase> updateTestcaseTags(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcaseList) throws IOException, URISyntaxException {
+    public List<TCRCatalogTreeTestcase> updateTestcaseTags(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcaseList ,ZephyrConfigModel zephyrConfigModel) throws IOException, URISyntaxException {
         List<TCRCatalogTreeTestcase> resultList = new ArrayList<>();
         Map<Set<String>, List<TctTestcaseVersionParam>> tagTestcaseMap = new HashMap<>();
+        Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>() {}.getType();
+
+        Map<String, Object> customFieldsMap = GsonUtil.CUSTOM_GSON.fromJson(zephyrConfigModel.getCustomFields(), type);
+
+        if (MapUtils.isNotEmpty(customFieldsMap)) {
+            log.debug("Custom fields to update: " + customFieldsMap);
+            updateCustomFieldsOnly(tcrCatalogTreeTestcaseList, customFieldsMap);
+        }
         List<List<TCRCatalogTreeTestcase>> subLists = Lists.partition(tcrCatalogTreeTestcaseList, ZephyrConstants.BATCH_SIZE);
 
         for(List<TCRCatalogTreeTestcase> subList : subLists) {
@@ -125,18 +142,63 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
                     tagTestcaseMap.put(tagSet, new ArrayList<>(Collections.singletonList(param)));
                 }
             }
-            resultList.addAll(updateTagsInTestcases(tagTestcaseMap));
+            resultList.addAll(updateTagsAndCustomFieldsInTestcases(tagTestcaseMap,customFieldsMap));
         }
         return resultList;
     }
 
-    private List<TCRCatalogTreeTestcase> updateTagsInTestcases(Map<Set<String>, List<TctTestcaseVersionParam>> tagTestcaseMap) throws IOException, URISyntaxException {
+    private List<TCRCatalogTreeTestcase> updateTagsAndCustomFieldsInTestcases(Map<Set<String>, List<TctTestcaseVersionParam>> tagTestcaseMap, Map<String, Object> customFieldsMap) throws IOException, URISyntaxException {
         List<TestcaseBulkUpdateParam> paramList = new ArrayList<>();
-        for(Map.Entry<Set<String>, List<TctTestcaseVersionParam>> entry : tagTestcaseMap.entrySet()) {
-            //extra space padding before tag data as the api is not handling this without space as expected and corrupts the tag data
-            paramList.add(new TestcaseBulkUpdateParam(" " + String.join(" ", entry.getKey()), entry.getValue()));
+        for (Map.Entry<Set<String>, List<TctTestcaseVersionParam>> entry : tagTestcaseMap.entrySet()) {
+
+            TestcaseBulkUpdateParam param = new TestcaseBulkUpdateParam();
+
+            String tags = String.join(" ", entry.getKey());
+
+            param.setTag(StringUtils.isNotEmpty(tags) ? tags : " ");
+            param.setTagsOperation(0);
+            param.setFromJenkins(true);
+
+            if (MapUtils.isNotEmpty(customFieldsMap)) {
+                param.setCustomFields(customFieldsMap);
+            }
+
+            param.setTctTestcaseVersionParam(entry.getValue());
+
+            paramList.add(param);
         }
         return zephyrRestService.updateTestcases(paramList);
+    }
+
+
+    public void updateCustomFieldsOnly(
+            List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcaseList,
+            Map<String, Object> customFieldsMap
+    ) throws IOException, URISyntaxException {
+
+        if (MapUtils.isEmpty(customFieldsMap)) {
+            log.error("Custom fields map is empty");
+            throw new IllegalArgumentException("Custom fields map cannot be null or empty");
+        }
+
+        List<TestcaseBulkUpdateParam> paramList = new ArrayList<>();
+
+        for (TCRCatalogTreeTestcase tcrTestcase : tcrCatalogTreeTestcaseList) {
+            TestcaseBulkUpdateParam param = new TestcaseBulkUpdateParam();
+            param.setCustomFields(customFieldsMap);
+            param.setTagsOperation(0);
+            param.setFromJenkins(true);
+
+            TctTestcaseVersionParam versionParam = new TctTestcaseVersionParam(
+                    tcrTestcase.getTcrCatalogTreeId(),
+                    tcrTestcase.getTestcase().getId(),
+                   tcrTestcase.getId()
+            );
+            param.setTctTestcaseVersionParam(Collections.singletonList(versionParam));
+
+            paramList.add(param);
+        }
+        zephyrRestService.updateTestcases(paramList);
     }
 
 }

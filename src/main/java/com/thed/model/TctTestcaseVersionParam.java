@@ -13,6 +13,12 @@ public class TctTestcaseVersionParam {
         setTestcaseVersionId(testcaseVersionId);
     }
 
+    public TctTestcaseVersionParam(Long tcrCatalogTreeId, Long id, Long testcaseId) {
+        setTctId(tcrCatalogTreeId);
+        setTctId(testcaseId);
+        setTestcaseVersionId(id);
+    }
+
     public Long getTctId() {
         return tctId;
     }

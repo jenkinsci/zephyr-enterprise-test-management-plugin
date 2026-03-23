@@ -14,7 +14,7 @@ public class Testcase extends BaseEntity {
     private String scriptName;
     private Long testcaseId;
     private TestStep testSteps;
-    private Map<String, String> customProperties;
+    private Map<String, Object> customProperties;
 
     public String getName() {
         return name;
@@ -88,11 +88,11 @@ public class Testcase extends BaseEntity {
         this.testSteps = testSteps;
     }
 
-    public Map<String, String> getCustomProperties() {
+    public Map<String, Object> getCustomProperties() {
         return customProperties;
     }
 
-    public void setCustomProperties(Map<String, String> customProperties) {
+    public void setCustomProperties(Map<String, Object> customProperties) {
         this.customProperties = customProperties;
     }
 

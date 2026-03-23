@@ -16,7 +16,9 @@ import hudson.Util;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import jenkins.MasterToSlaveFileCallable;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.tools.ant.types.FileSet;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.xml.sax.SAXException;
@@ -25,6 +27,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -37,6 +40,7 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.ADD_ZEPHYR_GLOBAL_CO
 
 public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
+    private static final Logger log = Logger.getLogger(UploadResultCallable.class);
     private String projectKey;
     private String releaseKey;
     private String cycleKey;
@@ -140,7 +144,30 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 logger.println("Environment is mandatory.Please provide Environment name.");
                 throw new hudson.AbortException("Missing required parameter: environment");
             }
+            List<CustomFieldsDTO> customFieldMeta =
+                    preferenceService.getCustomFieldsForCycle();
+            Map<String,Object> customFields =
+                    GsonUtil.validateAndParseJson(getCustomFields());
+            validateMandatoryCustomFields(customFieldMeta, customFields);
+            Map<String,String> mappedFields = new HashMap<>();
 
+            for (CustomFieldsDTO field : customFieldMeta) {
+
+                String displayName = field.getDisplayName();
+
+                if (customFields != null && customFields.containsKey(displayName)) {
+
+                    Object value = customFields.get(displayName);
+
+                    mappedFields.put( field.getFieldName(), (String) value);
+                }
+            }
+
+            if (MapUtils.isNotEmpty(mappedFields)) {
+                zephyrConfigModel.setCustomFields(
+                        GsonUtil.CUSTOM_GSON.toJson(mappedFields)
+                );
+            }
             if (cycleKey.equalsIgnoreCase(NEW_CYCLE_KEY)) {
                 zephyrConfigModel.setCycleId(NEW_CYCLE_KEY_IDENTIFIER);
             }
@@ -369,6 +396,33 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         return true;
     }
 
+    private void validateMandatoryCustomFields(List<CustomFieldsDTO> fieldList, Map<String, Object> customProperties) throws Exception {
+        if(customProperties == null) {
+            return;
+        }
+        List<String> missingFields = new ArrayList<>();
+
+        for (CustomFieldsDTO field : fieldList) {
+
+            if (Boolean.TRUE.equals(field.getMandatory())){
+                String key = field.getDisplayName();
+
+                if (customProperties == null
+                        || !customProperties.containsKey(key)
+                        || StringUtils.isBlank((String) customProperties.get(key))) {
+
+                    missingFields.add(field.getDisplayName());
+                }
+            }
+        }
+
+        if (!missingFields.isEmpty()) {
+            log.error("Missing mandatory custom fields.");
+            throw new Exception(
+                    "Missing mandatory custom fields: " + StringUtils.join(missingFields, ", "));
+        }
+    }
+
     private Map<String, TCRCatalogTreeDTO> createPackagePhaseMap(ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
 
         List<TCRCatalogTreeDTO> tcrCatalogTreeDTOList = tcrCatalogTreeService.getTCRCatalogTreeNodes(ZephyrConstants.TCR_CATALOG_TREE_TYPE_PHASE, zephyrConfigModel.getReleaseId());
@@ -443,10 +497,11 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         return packagePhaseMap;
     }
 
-    private List<TCRCatalogTreeTestcase> createTestcasesWithoutDuplicate(Map<Long, List<Testcase>> treeIdTestcaseMap) throws URISyntaxException, IOException {
+    private List<TCRCatalogTreeTestcase> createTestcasesWithoutDuplicate(Map<Long, List<Testcase>> treeIdTestcaseMap ,ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
 
         List<TCRCatalogTreeTestcase> existingTestcases = new ArrayList<>();
         List<TCRCatalogTreeTestcase> updateTagTestcases = new ArrayList<>();
+        List<TCRCatalogTreeTestcase> customField = new ArrayList<>();
         Map<Long, List<Testcase>> toBeCreatedTestcases = new HashMap<>();
 
         for(Map.Entry<Long, List<Testcase>> entry : treeIdTestcaseMap.entrySet()) {
@@ -471,6 +526,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             testcaseLoop : for(Testcase testcase : testcaseList) {
                 for (TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrTestcases) {
                     if(tcrCatalogTreeTestcase.getTestcase().getName().equals(testcase.getName())) {
+                        forCustomValues(testcase, tcrCatalogTreeTestcase, customField);
                         //this testcase already exists in this tree, no need to create
                         String parsedTag = StringUtils.isBlank(testcase.getTag()) ? testcase.getTag() : testcase.getTag().trim().replaceAll(" +", " ");
                         String existingTag = StringUtils.isBlank(tcrCatalogTreeTestcase.getTestcase().getTag())
@@ -502,9 +558,16 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 }
             }
         }
+        Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>() {}.getType();
+
+        Map<String, Object> customFieldsMap = GsonUtil.CUSTOM_GSON.fromJson(zephyrConfigModel.getCustomFields(), type);
+
+        if(!customField.isEmpty() && customFieldsMap != null && !customFieldsMap.isEmpty()) {
+            testcaseService.updateCustomFieldsOnly(customField, customFieldsMap);
+        }
 
         if(!updateTagTestcases.isEmpty()) {
-            existingTestcases.addAll(testcaseService.updateTestcaseTags(updateTagTestcases));
+            existingTestcases.addAll(testcaseService.updateTestcaseTags(updateTagTestcases, zephyrConfigModel));
         }
 
         if(!toBeCreatedTestcases.isEmpty()) {
@@ -513,6 +576,30 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         }
 
         return existingTestcases;
+    }
+
+    private static void forCustomValues(Testcase testcase, TCRCatalogTreeTestcase tcrCatalogTreeTestcase, List<TCRCatalogTreeTestcase> customField) {
+        Map<String, Object> newCustomFields = (testcase.getCustomProperties());
+        Map<String, Object> existingCustomFields = (tcrCatalogTreeTestcase.getTestcase().getCustomProperties());
+        boolean customFieldsUpdated = false;
+        for (Map.Entry<String, Object> entrySet: newCustomFields.entrySet()) {
+            String key = entrySet.getKey();
+            Object newValue = entrySet.getValue();
+            Object existingValue = existingCustomFields != null ? existingCustomFields.get(key) : null;
+            if (newValue != null && !newValue.equals(existingValue)) {
+                if (existingCustomFields == null) {
+                    existingCustomFields = new HashMap<>();
+                }
+                existingCustomFields.put(key, newValue);
+                customFieldsUpdated = true;
+            }
+        }
+        if (customFieldsUpdated) {
+            tcrCatalogTreeTestcase.getTestcase().setCustomProperties(
+                  (existingCustomFields)
+            );
+           customField.add(tcrCatalogTreeTestcase);
+        }
     }
 
     /**
@@ -553,7 +640,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         Set<String> processingWarningMessages = new HashSet<>();
         List<String> testcaseNameList=new ArrayList<>();
         long statusAttachmentCount = 0;
-        Map<String,String> customFields=GsonUtil.validateAndParseJson(getCustomFields());
+        Map<String,Object> customFields=GsonUtil.validateAndParseJson(getCustomFields());
         dataMapLoop: for (Map dataMap : dataMapList) {
 
             Map testcaseMap = (Map) dataMap.get("testcase");
@@ -746,7 +833,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         }
 
         printWarningMessages(processingWarningMessages);
-        List<TCRCatalogTreeTestcase> tcrList =  createTestcasesWithoutDuplicate(treeIdTestcaseMap);
+        List<TCRCatalogTreeTestcase> tcrList =  createTestcasesWithoutDuplicate(treeIdTestcaseMap,zephyrConfigModel);
         Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrTestcaseStatusMap = new HashMap<>();
         List<MapTestcaseToRequirement> mapTestcaseToRequirements = new ArrayList<>();
         loop1 : for (Map<String, Map<String, Object>> map : testcaseNameValueMapList) {

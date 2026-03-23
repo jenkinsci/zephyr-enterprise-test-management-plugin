@@ -28,6 +28,11 @@ public class PreferenceServiceImpl extends BaseServiceImpl implements Preference
     }
 
     @Override
+    public List<CustomFieldsDTO> getCustomFieldsForCycle() throws IOException, URISyntaxException {
+        return zephyrRestService.getCustomFieldsForCycle();
+    }
+
+    @Override
     public PreferenceDTO getTestcaseExecutionStatusPreference() throws IOException, URISyntaxException {
         return getPreference(TESTCASE_EXECUTION_STATUS_PREFERENCE_KEY);
     }

@@ -39,8 +39,8 @@ public class GsonUtil {
                 .registerTypeAdapter(Date.class, deser).create();
     }
 
-    public static Map<String, String> validateAndParseJson(String jsonString) throws IllegalArgumentException {
-        Map<String, String> customProperties = new java.util.HashMap<>();
+    public static Map<String, Object> validateAndParseJson(String jsonString) throws IllegalArgumentException {
+        Map<String, Object> customProperties = new java.util.HashMap<>();
         if (StringUtils.isNotBlank(jsonString)) {
             try {
                 JSONObject jsonObject = new JSONObject(jsonString);

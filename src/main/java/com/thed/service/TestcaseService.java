@@ -2,8 +2,8 @@ package com.thed.service;
 
 import com.thed.model.PlanningTestcase;
 import com.thed.model.TCRCatalogTreeTestcase;
-import com.thed.model.TestStep;
 import com.thed.model.Testcase;
+import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import hudson.tasks.junit.CaseResult;
 
 import java.io.IOException;
@@ -57,6 +57,7 @@ public interface TestcaseService extends BaseService {
      * @param tcrCatalogTreeTestcaseList
      * @return
      */
-    List<TCRCatalogTreeTestcase> updateTestcaseTags(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcaseList) throws IOException, URISyntaxException;
+    List<TCRCatalogTreeTestcase> updateTestcaseTags(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcaseLis , ZephyrConfigModel zephyrConfigModel) throws IOException, URISyntaxException;
 
+     void updateCustomFieldsOnly(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcaseList, Map<String, Object> customFieldsMap) throws IOException, URISyntaxException;
 }

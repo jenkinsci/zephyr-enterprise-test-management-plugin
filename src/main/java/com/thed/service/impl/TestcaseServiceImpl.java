@@ -154,7 +154,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
             String tags = String.join(" ", entry.getKey());
 
             if (tags != null && !tags.trim().isEmpty()) {
-                param.setTag(" " + tags);
+                param.setTag(tags);
                 param.setTagsOperation(0);
             } else {
                 param.setTag(" ");

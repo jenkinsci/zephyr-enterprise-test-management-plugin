@@ -149,7 +149,6 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             Map<String,Object> customFields =
                     GsonUtil.validateAndParseJson(getCustomFields());
             validateMandatoryCustomFields(customFieldMeta, customFields);
-            System.out.println("Custom fields after validation: " + customFields);
             Map<String,String> mappedFields = new HashMap<>();
 
             for (CustomFieldsDTO field : customFieldMeta) {
@@ -527,28 +526,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             testcaseLoop : for(Testcase testcase : testcaseList) {
                 for (TCRCatalogTreeTestcase tcrCatalogTreeTestcase : tcrTestcases) {
                     if(tcrCatalogTreeTestcase.getTestcase().getName().equals(testcase.getName())) {
-                        Map<String, Object> newCustomFields = (testcase.getCustomProperties());
-                        Map<String, Object> existingCustomFields = (tcrCatalogTreeTestcase.getTestcase().getCustomProperties());
-                        boolean customFieldsUpdated = false;
-                        for (Map.Entry<String, Object> entrySet: newCustomFields.entrySet()) {
-                            String key = entrySet.getKey();
-                            Object newValue = entrySet.getValue();
-                            Object existingValue = existingCustomFields != null ? existingCustomFields.get(key) : null;
-                            if (newValue != null && !newValue.equals(existingValue)) {
-                                if (existingCustomFields == null) {
-                                    existingCustomFields = new HashMap<>();
-                                }
-                                existingCustomFields.put(key, newValue);
-                                customFieldsUpdated = true;
-                            }
-                        }
-                        if (customFieldsUpdated) {
-                            tcrCatalogTreeTestcase.getTestcase().setCustomProperties(
-                                  (existingCustomFields)
-                            );
-                           customField.add(tcrCatalogTreeTestcase);
-                        }
-
+                        forCustomValues(testcase, tcrCatalogTreeTestcase, customField);
                         //this testcase already exists in this tree, no need to create
                         String parsedTag = StringUtils.isBlank(testcase.getTag()) ? testcase.getTag() : testcase.getTag().trim().replaceAll(" +", " ");
                         String existingTag = StringUtils.isBlank(tcrCatalogTreeTestcase.getTestcase().getTag())
@@ -598,6 +576,30 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         }
 
         return existingTestcases;
+    }
+
+    private static void forCustomValues(Testcase testcase, TCRCatalogTreeTestcase tcrCatalogTreeTestcase, List<TCRCatalogTreeTestcase> customField) {
+        Map<String, Object> newCustomFields = (testcase.getCustomProperties());
+        Map<String, Object> existingCustomFields = (tcrCatalogTreeTestcase.getTestcase().getCustomProperties());
+        boolean customFieldsUpdated = false;
+        for (Map.Entry<String, Object> entrySet: newCustomFields.entrySet()) {
+            String key = entrySet.getKey();
+            Object newValue = entrySet.getValue();
+            Object existingValue = existingCustomFields != null ? existingCustomFields.get(key) : null;
+            if (newValue != null && !newValue.equals(existingValue)) {
+                if (existingCustomFields == null) {
+                    existingCustomFields = new HashMap<>();
+                }
+                existingCustomFields.put(key, newValue);
+                customFieldsUpdated = true;
+            }
+        }
+        if (customFieldsUpdated) {
+            tcrCatalogTreeTestcase.getTestcase().setCustomProperties(
+                  (existingCustomFields)
+            );
+           customField.add(tcrCatalogTreeTestcase);
+        }
     }
 
     /**

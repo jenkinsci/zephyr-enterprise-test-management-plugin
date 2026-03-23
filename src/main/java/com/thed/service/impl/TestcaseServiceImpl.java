@@ -7,6 +7,8 @@ import com.thed.utils.GsonUtil;
 import com.thed.utils.ZephyrConstants;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import hudson.tasks.junit.CaseResult;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -17,6 +19,8 @@ import java.util.*;
  * Created by tarun on 25/6/19.
  */
 public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseService {
+
+    private static final Logger log = Logger.getLogger(TestcaseServiceImpl.class);
 
     public TestcaseServiceImpl() {
         super();
@@ -120,8 +124,8 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
 
         Map<String, Object> customFieldsMap = GsonUtil.CUSTOM_GSON.fromJson(zephyrConfigModel.getCustomFields(), type);
 
-        if (customFieldsMap != null && !customFieldsMap.isEmpty()) {
-            System.out.println("Custom fields to update: " + customFieldsMap);
+        if (MapUtils.isNotEmpty(customFieldsMap)) {
+            log.debug("Custom fields to update: " + customFieldsMap);
             updateCustomFieldsOnly(tcrCatalogTreeTestcaseList, customFieldsMap);
         }
         List<List<TCRCatalogTreeTestcase>> subLists = Lists.partition(tcrCatalogTreeTestcaseList, ZephyrConstants.BATCH_SIZE);
@@ -153,7 +157,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
                 param.setTag(" " + tags);
                 param.setTagsOperation(0);
             } else {
-                param.setTag("sdfds ");
+                param.setTag(" ");
                 param.setTagsOperation(0);
             }
             param.setFromJenkins(true);
@@ -175,7 +179,8 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
             Map<String, Object> customFieldsMap
     ) throws IOException, URISyntaxException {
 
-        if (customFieldsMap == null || customFieldsMap.isEmpty()) {
+        if (MapUtils.isEmpty(customFieldsMap)) {
+            log.error("Custom fields map is empty");
             throw new IllegalArgumentException("Custom fields map cannot be null or empty");
         }
 
@@ -192,7 +197,6 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
                     tcrTestcase.getTestcase().getId(),
                    tcrTestcase.getId()
             );
-            System.out.println(versionParam+"version param for testcase id: " + tcrTestcase.getTestcase().getId());
             param.setTctTestcaseVersionParam(Collections.singletonList(versionParam));
 
             paramList.add(param);

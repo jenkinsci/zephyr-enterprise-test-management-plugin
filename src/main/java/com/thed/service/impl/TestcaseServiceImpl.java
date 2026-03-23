@@ -164,7 +164,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
             }
             param.setFromJenkins(true);
 
-            if (customFieldsMap != null && !customFieldsMap.isEmpty()) {
+            if (MapUtils.isNotEmpty(customFieldsMap)) {
                 param.setCustomFields(customFieldsMap);
             }
 

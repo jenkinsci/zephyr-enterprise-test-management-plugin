@@ -155,13 +155,8 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
 
             String tags = String.join(" ", entry.getKey());
 
-            if (StringUtils.isNotEmpty(tags)) {
-                param.setTag(tags);
-                param.setTagsOperation(0);
-            } else {
-                param.setTag(" ");
-                param.setTagsOperation(0);
-            }
+            param.setTag(StringUtils.isNotEmpty(tags) ? tags : " ");
+            param.setTagsOperation(0);
             param.setFromJenkins(true);
 
             if (MapUtils.isNotEmpty(customFieldsMap)) {

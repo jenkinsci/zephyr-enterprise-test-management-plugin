@@ -156,6 +156,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
                 param.setTag("sdfds ");
                 param.setTagsOperation(0);
             }
+            param.setFromJenkins(true);
 
             if (customFieldsMap != null && !customFieldsMap.isEmpty()) {
                 param.setCustomFields(customFieldsMap);
@@ -184,6 +185,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
             TestcaseBulkUpdateParam param = new TestcaseBulkUpdateParam();
             param.setCustomFields(customFieldsMap);
             param.setTagsOperation(0);
+            param.setFromJenkins(true);
 
             TctTestcaseVersionParam versionParam = new TctTestcaseVersionParam(
                     tcrTestcase.getTcrCatalogTreeId(),

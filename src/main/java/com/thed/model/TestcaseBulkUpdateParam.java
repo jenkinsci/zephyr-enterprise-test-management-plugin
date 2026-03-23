@@ -10,6 +10,16 @@ public class TestcaseBulkUpdateParam {
     private List<TctTestcaseVersionParam> tctTestcaseVersionParam;
     private Integer tagsOperation;
 
+    public boolean isFromJenkins() {
+        return fromJenkins;
+    }
+
+    public void setFromJenkins(boolean fromJenkins) {
+        this.fromJenkins = fromJenkins;
+    }
+
+    private boolean fromJenkins;
+
 
     public TestcaseBulkUpdateParam() {}
 

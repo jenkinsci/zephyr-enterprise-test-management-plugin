@@ -148,7 +148,6 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                     preferenceService.getCustomFieldsForCycle();
             Map<String,Object> customFields =
                     GsonUtil.validateAndParseJson(getCustomFields());
-            validateMandatoryCustomFields(customFieldMeta, customFields);
             Map<String,String> mappedFields = new HashMap<>();
 
             for (CustomFieldsDTO field : customFieldMeta) {
@@ -394,33 +393,6 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
         logger.printf("%s Done uploading tests to Zephyr.%n", pInfo);
         return true;
-    }
-
-    private void validateMandatoryCustomFields(List<CustomFieldsDTO> fieldList, Map<String, Object> customProperties) throws Exception {
-        if(customProperties == null) {
-            return;
-        }
-        List<String> missingFields = new ArrayList<>();
-
-        for (CustomFieldsDTO field : fieldList) {
-
-            if (Boolean.TRUE.equals(field.getMandatory())){
-                String key = field.getDisplayName();
-
-                if (customProperties == null
-                        || !customProperties.containsKey(key)
-                        || StringUtils.isBlank((String) customProperties.get(key))) {
-
-                    missingFields.add(field.getDisplayName());
-                }
-            }
-        }
-
-        if (!missingFields.isEmpty()) {
-            log.error("Missing mandatory custom fields.");
-            throw new Exception(
-                    "Missing mandatory custom fields: " + StringUtils.join(missingFields, ", "));
-        }
     }
 
     private Map<String, TCRCatalogTreeDTO> createPackagePhaseMap(ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {

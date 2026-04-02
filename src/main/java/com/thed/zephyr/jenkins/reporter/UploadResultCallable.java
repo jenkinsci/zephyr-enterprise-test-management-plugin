@@ -552,6 +552,9 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
     private static void forCustomValues(Testcase testcase, TCRCatalogTreeTestcase tcrCatalogTreeTestcase, List<TCRCatalogTreeTestcase> customField) {
         Map<String, Object> newCustomFields = (testcase.getCustomProperties());
+        if (MapUtils.isEmpty(newCustomFields)) {
+            return;
+        }
         Map<String, Object> existingCustomFields = (tcrCatalogTreeTestcase.getTestcase().getCustomProperties());
         boolean customFieldsUpdated = false;
         for (Map.Entry<String, Object> entrySet: newCustomFields.entrySet()) {
@@ -624,7 +627,10 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 testcase.setScriptName("Created By Jenkins");
             }
             if(customFields!=null && !customFields.isEmpty()) {
-                    testcase.setCustomProperties(customFields);
+                    testcase.setCustomProperties(new HashMap<>(customFields));
+            } else if (testcase.getCustomProperties() == null) {
+                // Bulk create API expects customProperties to be present as an object, not null.
+                testcase.setCustomProperties(new HashMap<>());
             }
 
             testcase.setProjectId(Long.parseLong(getProjectKey()));

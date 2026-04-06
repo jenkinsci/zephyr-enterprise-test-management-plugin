@@ -626,7 +626,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 testcase.setAutomated(true);
                 testcase.setScriptName("Created By Jenkins");
             }
-            if(customFields!=null && !customFields.isEmpty()) {
+            if(MapUtils.isNotEmpty(customFields)) {
                     testcase.setCustomProperties(new HashMap<>(customFields));
             } else if (testcase.getCustomProperties() == null) {
                 // Bulk create API expects customProperties to be present as an object, not null.

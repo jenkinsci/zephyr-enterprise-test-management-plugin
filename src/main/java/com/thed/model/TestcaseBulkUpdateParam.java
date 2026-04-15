@@ -8,6 +8,8 @@ public class TestcaseBulkUpdateParam {
     private String tag;
     private Map<String, Object> customFields;
     private List<TctTestcaseVersionParam> tctTestcaseVersionParam;
+    private Long zephyrProjectId;
+
     private Integer tagsOperation;
 
     public boolean isFromJenkins() {
@@ -19,6 +21,15 @@ public class TestcaseBulkUpdateParam {
     }
 
     private boolean fromJenkins;
+
+
+    public Long getZephyrProjectId() {
+        return zephyrProjectId;
+    }
+
+    public void setZephyrProjectId(Long zephyrProjectId) {
+        this.zephyrProjectId = zephyrProjectId;
+    }
 
 
     public TestcaseBulkUpdateParam() {}

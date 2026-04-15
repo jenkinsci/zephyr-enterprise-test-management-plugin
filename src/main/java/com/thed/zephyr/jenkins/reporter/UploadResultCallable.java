@@ -535,7 +535,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         Map<String, Object> customFieldsMap = GsonUtil.CUSTOM_GSON.fromJson(zephyrConfigModel.getCustomFields(), type);
 
         if(!customField.isEmpty() && customFieldsMap != null && !customFieldsMap.isEmpty()) {
-            testcaseService.updateCustomFieldsOnly(customField, customFieldsMap);
+            testcaseService.updateCustomFieldsOnly(customField, customFieldsMap,zephyrConfigModel.getZephyrProjectId());
         }
 
         if(!updateTagTestcases.isEmpty()) {

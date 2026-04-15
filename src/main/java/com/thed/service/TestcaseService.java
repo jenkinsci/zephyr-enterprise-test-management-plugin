@@ -59,5 +59,5 @@ public interface TestcaseService extends BaseService {
      */
     List<TCRCatalogTreeTestcase> updateTestcaseTags(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcaseLis , ZephyrConfigModel zephyrConfigModel) throws IOException, URISyntaxException;
 
-     void updateCustomFieldsOnly(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcaseList, Map<String, Object> customFieldsMap) throws IOException, URISyntaxException;
+     void updateCustomFieldsOnly(List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcaseList, Map<String, Object> customFieldsMap , Long zephyrProjectId) throws IOException, URISyntaxException;
 }

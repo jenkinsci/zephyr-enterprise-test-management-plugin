@@ -128,7 +128,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
 
         if (MapUtils.isNotEmpty(customFieldsMap)) {
             log.debug("Custom fields to update: " + customFieldsMap);
-            updateCustomFieldsOnly(tcrCatalogTreeTestcaseList, customFieldsMap);
+            updateCustomFieldsOnly(tcrCatalogTreeTestcaseList, customFieldsMap , zephyrConfigModel.getZephyrProjectId());
         }
         List<List<TCRCatalogTreeTestcase>> subLists = Lists.partition(tcrCatalogTreeTestcaseList, ZephyrConstants.BATCH_SIZE);
 
@@ -173,7 +173,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
 
     public void updateCustomFieldsOnly(
             List<TCRCatalogTreeTestcase> tcrCatalogTreeTestcaseList,
-            Map<String, Object> customFieldsMap
+            Map<String, Object> customFieldsMap , Long zephyrProjectId
     ) throws IOException, URISyntaxException {
 
         if (MapUtils.isEmpty(customFieldsMap)) {
@@ -188,6 +188,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
             param.setCustomFields(customFieldsMap);
             param.setTagsOperation(0);
             param.setFromJenkins(true);
+            param.setZephyrProjectId(zephyrProjectId);
 
             TctTestcaseVersionParam versionParam = new TctTestcaseVersionParam(
                     tcrTestcase.getTcrCatalogTreeId(),

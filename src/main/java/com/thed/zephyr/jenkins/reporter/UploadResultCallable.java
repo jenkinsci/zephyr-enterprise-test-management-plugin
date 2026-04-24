@@ -386,7 +386,8 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             for(StackTraceElement stackTraceElement : e.getStackTrace()) {
                 logger.println(stackTraceElement.toString());
             }
-            return false;
+            // Re-throw as AbortException so Jenkins marks the build as FAILURE
+            throw new hudson.AbortException("Error uploading test results to Zephyr: " + e.getMessage());
         } finally {
             userService.getZephyrRestService().closeHttpConnection();
         }

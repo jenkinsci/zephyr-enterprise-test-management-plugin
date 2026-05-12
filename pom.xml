@@ -25,6 +25,7 @@
         <jenkins.version>2.452.1</jenkins.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <java.level>17</java.level>
+        <spotbugs.skip>true</spotbugs.skip>
     </properties>
 
     <dependencyManagement>

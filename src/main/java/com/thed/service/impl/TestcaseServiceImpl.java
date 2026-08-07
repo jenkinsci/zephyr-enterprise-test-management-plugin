@@ -8,7 +8,6 @@ import com.thed.utils.ZephyrConstants;
 import com.thed.zephyr.jenkins.model.ZephyrConfigModel;
 import hudson.tasks.junit.CaseResult;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -16,6 +15,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URISyntaxException;
 import java.util.*;
+import hudson.Util;
 
 /**
  * Created by tarun on 25/6/19.
@@ -155,7 +155,7 @@ public class TestcaseServiceImpl extends BaseServiceImpl implements TestcaseServ
 
             String tags = String.join(" ", entry.getKey());
 
-            param.setTag(StringUtils.isNotEmpty(tags) ? tags : " ");
+            param.setTag(Util.fixEmpty(tags) != null ? tags : " ");
             param.setTagsOperation(0);
             param.setFromJenkins(true);
 

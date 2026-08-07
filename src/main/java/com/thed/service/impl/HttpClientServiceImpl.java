@@ -1,7 +1,6 @@
 package com.thed.service.impl;
 
 import com.thed.service.HttpClientService;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpResponseException;
@@ -21,6 +20,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import hudson.Util;
 
 /**
  * Created by prashant on 18/6/19.
@@ -99,7 +99,7 @@ public class HttpClientServiceImpl implements HttpClientService {
 
     @Override
     public String getRequest(String url) throws IOException {
-        if(StringUtils.isEmpty(url)) {
+        if(Util.fixEmpty(url) == null) {
             return null;
         }
 
@@ -124,7 +124,7 @@ public class HttpClientServiceImpl implements HttpClientService {
     @Override
     public String postRequest(String url, String content) throws IOException {
         StringEntity stringEntity = null;
-        if(!StringUtils.isEmpty(content)) {
+        if(Util.fixEmpty(content) != null) {
             stringEntity = new StringEntity(content, ContentType.APPLICATION_JSON);
         }
         return postRequest(url, stringEntity);
@@ -132,7 +132,7 @@ public class HttpClientServiceImpl implements HttpClientService {
 
     @Override
     public String postRequest(String url, HttpEntity httpEntity) throws IOException {
-        if(StringUtils.isEmpty(url)) {
+        if(Util.fixEmpty(url) == null) {
             return null;
         }
 
@@ -160,7 +160,7 @@ public class HttpClientServiceImpl implements HttpClientService {
 
     @Override
     public String putRequest(String url, String content) throws IOException {
-        if(StringUtils.isEmpty(url)) {
+        if(Util.fixEmpty(url) == null) {
             return null;
         }
 
@@ -172,7 +172,7 @@ public class HttpClientServiceImpl implements HttpClientService {
             httpPut.addHeader(header);
         }
 
-        if(!StringUtils.isEmpty(content)) {
+        if(Util.fixEmpty(content) != null) {
             StringEntity stringEntity = new StringEntity(content, ContentType.APPLICATION_JSON);
             httpPut.setEntity(stringEntity);
         }

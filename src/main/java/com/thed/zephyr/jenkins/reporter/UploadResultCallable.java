@@ -867,7 +867,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 Map<String, String> stepMap = new HashMap<String, String>();
                 testStepDetail.setOrderId((long)i);
                 int countMatches = 0;
-                for (int idx = step.indexOf(".."); idx >= 0; idx = step.indexOf("..", idx + 2)) {
+for (int idx = step.indexOf(".."); idx >= 0; idx = step.indexOf("..", idx + "..".length())) { 
                     countMatches++;
                 }
                 if(countMatches == 0){

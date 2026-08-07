@@ -45,7 +45,6 @@ import java.util.*;
 
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
-import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.FileSet;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
@@ -56,6 +55,7 @@ import com.thed.zephyr.jenkins.model.ZephyrInstance;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
+import hudson.Util;
 
 public class ZeeReporter extends Notifier implements SimpleBuildStep {
 
@@ -136,7 +136,7 @@ public class ZeeReporter extends Notifier implements SimpleBuildStep {
         List<ZephyrInstance> zephyrServers = getDescriptor().getZephyrInstances();
 
         for (ZephyrInstance zephyrInstance : zephyrServers) {
-            if (StringUtils.isNotBlank(zephyrInstance.getServerAddress()) && zephyrInstance.getServerAddress().trim().equals(serverAddress)) {
+            if (Util.fixEmptyAndTrim(zephyrInstance.getServerAddress()) != null && zephyrInstance.getServerAddress().trim().equals(serverAddress)) {
                 return zephyrInstance;
             }
         }

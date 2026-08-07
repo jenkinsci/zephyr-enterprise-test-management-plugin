@@ -18,7 +18,6 @@ import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.HttpResponseException;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
@@ -29,6 +28,7 @@ import org.kohsuke.stapler.verb.POST;
 
 import java.util.Collections;
 import java.util.logging.Logger;
+import hudson.Util;
 
 public class ZephyrInstance extends AbstractDescribableImpl<ZephyrInstance> {
 
@@ -98,11 +98,11 @@ public class ZephyrInstance extends AbstractDescribableImpl<ZephyrInstance> {
 
             Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
 
-            if (StringUtils.isBlank(serverAddress)) {
+            if (Util.fixEmptyAndTrim(serverAddress) == null) {
                 return FormValidation.error("Please enter the server url.");
             }
 
-            if(StringUtils.isBlank(credentialsId)) {
+            if(Util.fixEmptyAndTrim(credentialsId) == null) {
                 return FormValidation.error("Please select credentials.");
             }
 

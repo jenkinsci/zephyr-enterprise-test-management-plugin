@@ -17,7 +17,6 @@ import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import jenkins.MasterToSlaveFileCallable;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.tools.ant.types.FileSet;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
@@ -37,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.*;
 import static com.thed.zephyr.jenkins.reporter.ZeeConstants.ADD_ZEPHYR_GLOBAL_CONFIG;
+import java.util.Objects;
 
 public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
@@ -140,7 +140,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             zephyrConfigModel.setParserTemplateId(Long.parseLong(getParserTemplateKey()));
             zephyrConfigModel.setJsonParserTemplate(parserTemplateService.getParserTemplateById(zephyrConfigModel.getParserTemplateId()).getJsonTemplate());
 
-            if(StringUtils.isBlank(environment) && preferenceService.isEnvironmentEnabled()) {
+            if(Util.fixEmptyAndTrim(environment) == null && preferenceService.isEnvironmentEnabled()) {
                 logger.println("Environment is mandatory.Please provide Environment name.");
                 throw new hudson.AbortException("Missing required parameter: environment");
             }
@@ -176,7 +176,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             zephyrConfigModel.setCycleDuration(getCycleDuration());
             zephyrConfigModel.setEnvironment(getEnvironment());
 
-            if (StringUtils.isNotBlank(getCyclePrefix())) {
+            if (Util.fixEmptyAndTrim(getCyclePrefix()) != null) {
                 zephyrConfigModel.setCyclePrefix(getCyclePrefix() + "_");
             } else {
                 zephyrConfigModel.setCyclePrefix(CYCLE_PREFIX_DEFAULT);
@@ -501,13 +501,13 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                     if(tcrCatalogTreeTestcase.getTestcase().getName().equals(testcase.getName())) {
                         forCustomValues(testcase, tcrCatalogTreeTestcase, customField);
                         //this testcase already exists in this tree, no need to create
-                        String parsedTag = StringUtils.isBlank(testcase.getTag()) ? testcase.getTag() : testcase.getTag().trim().replaceAll(" +", " ");
-                        String existingTag = StringUtils.isBlank(tcrCatalogTreeTestcase.getTestcase().getTag())
+                        String parsedTag = Util.fixEmptyAndTrim(testcase.getTag()) == null ? testcase.getTag() : testcase.getTag().trim().replaceAll(" +", " ");
+                        String existingTag = Util.fixEmptyAndTrim(tcrCatalogTreeTestcase.getTestcase().getTag()) == null
                                 ? tcrCatalogTreeTestcase.getTestcase().getTag() : tcrCatalogTreeTestcase.getTestcase().getTag().trim().replaceAll(" +", " ");
-                        if((StringUtils.isNotBlank(parsedTag))
-                                && (StringUtils.isBlank(existingTag) || !ListUtil.getSet(existingTag, " ").containsAll(ListUtil.getSet(parsedTag, " ")))) {
+                        if((Util.fixEmptyAndTrim(parsedTag) != null)
+                                && (Util.fixEmptyAndTrim(existingTag) == null || !ListUtil.getSet(existingTag, " ").containsAll(ListUtil.getSet(parsedTag, " ")))) {
                             //parsed tag is not null and is not equal to existing tag so update the tag
-                            tcrCatalogTreeTestcase.getTestcase().setTag(StringUtils.isNotBlank(existingTag)
+                            tcrCatalogTreeTestcase.getTestcase().setTag(Util.fixEmptyAndTrim(existingTag) != null
                                     ? existingTag + " " + parsedTag
                                     : parsedTag);
                             updateTagTestcases.add(tcrCatalogTreeTestcase);
@@ -583,10 +583,10 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
      */
     private boolean validateBuildConfig() {
         boolean valid = true;
-        if (StringUtils.isBlank(serverAddress)
-                || StringUtils.isBlank(projectKey)
-                || StringUtils.isBlank(releaseKey)
-                || StringUtils.isBlank(cycleKey)
+        if (Util.fixEmptyAndTrim(serverAddress) == null
+                || Util.fixEmptyAndTrim(projectKey) == null
+                || Util.fixEmptyAndTrim(releaseKey) == null
+                || Util.fixEmptyAndTrim(cycleKey) == null
                 || ADD_ZEPHYR_GLOBAL_CONFIG.equals(serverAddress.trim())
                 || ADD_ZEPHYR_GLOBAL_CONFIG.equals(projectKey.trim())
                 || ADD_ZEPHYR_GLOBAL_CONFIG.equals(releaseKey.trim())
@@ -667,7 +667,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 List<Map> statuses = (List) dataMap.get("statuses");
                 boolean matched = false;
                 for(Map sc : statuses) {
-                    if((sc.get("statusString") == null && sc.get("status") != null && StringUtils.isNotEmpty(sc.get("status").toString())) //status is not empty
+                    if((sc.get("statusString") == null && sc.get("status") != null && Util.fixEmpty(sc.get("status").toString()) != null) //status is not empty
                             || (sc.get("statusString") != null && sc.get("statusString").equals(sc.get("status")))) { //status matches statusString
                         statusCondition = sc;
                         matched = true;
@@ -738,7 +738,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
             if(statusCondition.containsKey("attachmentText")) {
                 String successAttachmentStr = statusCondition.get("attachmentText");
-                if(StringUtils.isNotBlank(successAttachmentStr)) {
+                if(Util.fixEmptyAndTrim(successAttachmentStr) != null) {
                     GenericAttachmentDTO genericAttachmentDTO = new GenericAttachmentDTO();
                     genericAttachmentDTO.setFileName("status_" + ++statusAttachmentCount + "_" + System.currentTimeMillis() + ".txt");
                     genericAttachmentDTO.setContentType("text/plain");
@@ -750,7 +750,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
             if(dataMap.containsKey("stepText")) {
                 String stepStr = dataMap.get("stepText").toString();
-                if(!StringUtils.isEmpty(stepStr)) {
+                if(Util.fixEmpty(stepStr) != null) {
                     List<Map<String, String>> stepList = new ArrayList<>();
                     TestStep testStep = stepMaker(stepStr, stepList);
                     valueMap.put("stepList", stepList);
@@ -767,7 +767,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 if(executionRequest == null) {
                     executionRequest = new ExecutionRequest();
                 }
-                if(actualTimeObj != null && StringUtils.isNotBlank(actualTimeObj.toString())) {
+                if(actualTimeObj != null && Util.fixEmptyAndTrim(actualTimeObj.toString()) != null) {
                     BigDecimal actualTimeSrc = new BigDecimal(actualTimeObj.toString());
                     TimeUnit actualTimeUnit = null;
                     try {
@@ -866,7 +866,10 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 TestStepDetail testStepDetail = new TestStepDetail();
                 Map<String, String> stepMap = new HashMap<String, String>();
                 testStepDetail.setOrderId((long)i);
-                int countMatches = StringUtils.countMatches(step, "..");
+                int countMatches = 0;
+                for (int idx = step.indexOf(".."); idx >= 0; idx = step.indexOf("..", idx + 2)) {
+                    countMatches++;
+                }
                 if(countMatches == 0){
                     String stepData = step.substring(0,step.lastIndexOf(".")).trim();
                     testStepDetail.setStep(stepData);
@@ -879,7 +882,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 String[] statusStringArr = step.split("\\.");
                 status = statusStringArr[statusStringArr.length-1].trim();
 
-                if(StringUtils.isNumeric(status.substring(0,1))) {
+                if(Character.isDigit(status.charAt(0))) {
                     //first character is numeric, check item before this in array for status
                     status = statusStringArr[statusStringArr.length-2].trim();
                 }

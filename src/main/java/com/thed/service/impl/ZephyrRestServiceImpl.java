@@ -452,7 +452,14 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         }
 
         String url = buildUrl(prepareUrl(ADD_TESTCASES_TO_FREE_FORM_CYCLE_PHASE_URL), pathParams, queryParams);
-        return httpClientService.postRequest(url, contentJsonArray.toString());
+        String requestBody = contentJsonArray.toString();
+        log.info("addTestcasesToFreeFormCyclePhase: cyclePhaseId=" + cyclePhase.getId()
+                + ", tcrCatalogTreeId=" + cyclePhase.getTcrCatalogTreeId()
+                + ", includeHierarchy=" + includeHierarchy
+                + ", treeTestcaseMap=" + treeTestcaseMap
+                + ", url=" + url
+                + ", requestBody=" + requestBody);
+        return httpClientService.postRequest(url, requestBody);
     }
 
     @Override

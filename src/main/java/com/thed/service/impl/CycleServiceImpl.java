@@ -164,10 +164,12 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
             if(count == ZephyrConstants.BATCH_SIZE) {
                 //batch limit reached, process these testcases
                 String response = zephyrRestService.addTestcasesToFreeFormCyclePhase(cyclePhase, treeTestcaseMap, includeHierarchy);
+
                 log.info("addTestcasesToFreeFormCyclePhase: cyclePhaseId=" + cyclePhase.getId()
                         + ", treeTestcaseMap=" + treeTestcaseMap
                         + ", includeHierarchy=" + includeHierarchy
                         + ", response=" + response);
+
                 discoveredTreeIds.addAll(parseFrozenTreeIds(response));
 
                 //testcases processed, clear map and reset count

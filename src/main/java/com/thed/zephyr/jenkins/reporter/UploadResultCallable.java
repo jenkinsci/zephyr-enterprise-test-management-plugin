@@ -26,6 +26,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -108,7 +109,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
     }
 
     public boolean perform(int buildNumber, final TaskListener listener) throws IOException, InterruptedException {
-        PrintStream logger = listener.getLogger();
+        PrintStream logger = createMirroredLogger(listener.getLogger());
         this.logger = logger;
         logger.printf("%s Examining test results...%n", pInfo);
         logger.println("perform: buildNumber=" + buildNumber
@@ -239,7 +240,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             logger.println("perform: packagePhaseMap keys=" + packagePhaseMap.keySet());
             Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList, zephyrConfigModel, logger);
 
-            logger.println("Total Test Cases : " + tcrStatusMap.keySet().size());
+            logger.println("tcrStatusMap: " + formatTcrStatusMap(tcrStatusMap));
 
             com.thed.model.Project project = projectService.getProjectById(zephyrConfigModel.getZephyrProjectId());
 
@@ -411,6 +412,50 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
         logger.printf("%s Done uploading tests to Zephyr.%n", pInfo);
         return true;
+    }
+
+    private PrintStream createMirroredLogger(final PrintStream jenkinsLogger) {
+        return new PrintStream(new OutputStream() {
+            private final StringBuilder buffer = new StringBuilder();
+
+            @Override
+            public void write(int b) throws IOException {
+                jenkinsLogger.write(b);
+                if (b == '\r') {
+                    return;
+                }
+                if (b == '\n') {
+                    flushBuffer();
+                    return;
+                }
+                buffer.append((char) b);
+            }
+
+            @Override
+            public void flush() throws IOException {
+                jenkinsLogger.flush();
+                flushBuffer();
+            }
+
+            private void flushBuffer() {
+                if (buffer.length() == 0) {
+                    return;
+                }
+                log.info(buffer.toString());
+                buffer.setLength(0);
+            }
+        }, true);
+    }
+
+    private String formatTcrStatusMap(Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrStatusMap) {
+        List<Map<String, Object>> entries = new ArrayList<>();
+        for (Map.Entry<TCRCatalogTreeTestcase, Map<String, Object>> entry : tcrStatusMap.entrySet()) {
+            Map<String, Object> formattedEntry = new LinkedHashMap<>();
+            formattedEntry.put("tcrCatalogTreeTestcase", entry.getKey());
+            formattedEntry.put("statusData", entry.getValue());
+            entries.add(formattedEntry);
+        }
+        return GsonUtil.CUSTOM_GSON.toJson(entries);
     }
 
     private Map<String, TCRCatalogTreeDTO> createPackagePhaseMap(ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {

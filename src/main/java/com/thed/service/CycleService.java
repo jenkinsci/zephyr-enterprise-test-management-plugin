@@ -26,16 +26,7 @@ public interface CycleService extends BaseService {
 
     Integer assignCyclePhaseToCreator(Long cyclePhaseId) throws URISyntaxException, IOException;
 
-    /**
-     * Assign testcases in given cyclePhase to given user.
-     * @param cyclePhase
-     * @param userId
-     * @return
-     * @throws URISyntaxException
-     */
-    default List<ReleaseTestSchedule> assignCyclePhaseToUser(CyclePhase cyclePhase, Long userId) throws URISyntaxException, IOException {
-        return assignCyclePhaseToUser(cyclePhase, userId, Collections.emptySet());
-    }
+
 
     /**
      * Assign testcases in given cyclePhase to given user.

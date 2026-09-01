@@ -63,24 +63,13 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
         return zephyrRestService.assignCyclePhaseToCreator(cyclePhaseId);
     }
 
-    // tcrCatalogTreeService.getTCRCatalogTreeIdHierarchy() is backed by the server's search index
-    // (Elasticsearch), not a live DB read. When "Create Package Structure" is used, the package
-    // sub-folders under the cycle phase are created moments earlier in the same build, and the
-    // index may not have caught up yet (or may not get indexed at all via this bulk-save path),
-    // causing the hierarchy lookup to only return the cycle phase's own (still-empty) root id.
-    // We mitigate this two ways: (1) addTestcasesToFreeFormCyclePhase() parses the server's own
-    // response to discover the exact tree ids that received testcases, so we don't have to rely
-    // on the hierarchy lookup finding them; (2) as a fallback/safety net we still retry the
-    // hierarchy lookup a few times with a short backoff.
-    private static final int HIERARCHY_LOOKUP_MAX_ATTEMPTS = 5;
-    private static final long HIERARCHY_LOOKUP_RETRY_DELAY_MS = 1000L;
+
 
     @Override
     public List<ReleaseTestSchedule> assignCyclePhaseToUser(CyclePhase cyclePhase, Long userId, Set<Long> additionalTreeIds) throws URISyntaxException, IOException {
         int batchSize = ZephyrConstants.BATCH_SIZE;
 
         List<ReleaseTestSchedule> rtsList = new ArrayList<>();
-        for (int attempt = 1; attempt <= HIERARCHY_LOOKUP_MAX_ATTEMPTS; attempt++) {
             Set<Long> treeIds = new LinkedHashSet<>();
             // known-good ids first (discovered from the add-testcases response) - these are
             // guaranteed correct regardless of search-index state.
@@ -89,7 +78,7 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
             }
             treeIds.addAll(tcrCatalogTreeService.getTCRCatalogTreeIdHierarchy(cyclePhase.getTcrCatalogTreeId()));
 
-            log.info("assignCyclePhaseToUser: attempt=" + attempt
+            log.info("assignCyclePhaseToUser:"
                     + ", cyclePhase.id=" + cyclePhase.getId()
                     + ", cyclePhase.tcrCatalogTreeId=" + cyclePhase.getTcrCatalogTreeId()
                     + ", cyclePhase.cycleId=" + cyclePhase.getCycleId()
@@ -126,20 +115,10 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
                 }
             }
 
-            if (!rtsList.isEmpty() || attempt == HIERARCHY_LOOKUP_MAX_ATTEMPTS) {
-                break;
-            }
 
             log.warn("assignCyclePhaseToUser: no testcases found for cyclePhase.tcrCatalogTreeId="
-                    + cyclePhase.getTcrCatalogTreeId() + " on attempt=" + attempt
-                    + ", retrying in " + HIERARCHY_LOOKUP_RETRY_DELAY_MS + "ms (search index may still be catching up)");
-            try {
-                Thread.sleep(HIERARCHY_LOOKUP_RETRY_DELAY_MS);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
+                    + cyclePhase.getTcrCatalogTreeId()
+                    + ", retrying in " + "ms (search index may still be catching up)");
         return rtsList;
     }
 

@@ -277,10 +277,10 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             cyclePhase = cycleService.createCyclePhase(cyclePhase);
 
             //adding testcases to free form cycle phase
-            cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
+            Set<Long> discoveredTreeIds = cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
 
             //assigning testcases in cycle phase to creator
-            List<ReleaseTestSchedule> releaseTestSchedules = cycleService.assignCyclePhaseToUser(cyclePhase, userService.getCurrentUser().getId());
+            List<ReleaseTestSchedule> releaseTestSchedules = cycleService.assignCyclePhaseToUser(cyclePhase, userService.getCurrentUser().getId(), discoveredTreeIds);
 
             Set<String> activeStatusIdSet = preferenceService.getTestcaseExecutionStatusIds(true);
             List<ExecutionRequest> executionRequestList = new ArrayList<>();

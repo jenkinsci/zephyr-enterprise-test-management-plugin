@@ -5,9 +5,22 @@ import com.thed.service.CycleService;
 import com.thed.service.ExecutionService;
 import com.thed.service.TCRCatalogTreeService;
 import com.thed.service.TestcaseService;
+import com.thed.utils.GsonUtil;
 import com.thed.utils.ZephyrConstants;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,6 +29,8 @@ import java.util.stream.Collectors;
  * Created by prashant on 26/6/19.
  */
 public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
+
+    private static final Logger log = Logger.getLogger(CycleServiceImpl.class);
 
     private ExecutionService executionService = new ExecutionServiceImpl();
     private TCRCatalogTreeService tcrCatalogTreeService = new TCRCatalogTreeServiceImpl();
@@ -51,11 +66,16 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
     }
 
     @Override
-    public List<ReleaseTestSchedule> assignCyclePhaseToUser(CyclePhase cyclePhase, Long userId) throws URISyntaxException, IOException {
+    public List<ReleaseTestSchedule> assignCyclePhaseToUser(CyclePhase cyclePhase, Long userId, Set<Long> additionalTreeIds) throws URISyntaxException, IOException {
         List<ReleaseTestSchedule> rtsList = new ArrayList<>();
         int batchSize = ZephyrConstants.BATCH_SIZE;
 
-        Set<Long> treeIds = tcrCatalogTreeService.getTCRCatalogTreeIdHierarchy(cyclePhase.getTcrCatalogTreeId());
+        Set<Long> treeIds = new LinkedHashSet<>();
+        if (CollectionUtils.isNotEmpty(additionalTreeIds))
+        {
+            treeIds.addAll(additionalTreeIds);
+        }
+        treeIds.addAll(tcrCatalogTreeService.getTCRCatalogTreeIdHierarchy(cyclePhase.getTcrCatalogTreeId()));
 
         for(Long treeId : treeIds) {
             for(int pageNo = 0; true; pageNo++) {
@@ -78,9 +98,10 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
     }
 
     @Override
-    public void addTestcasesToFreeFormCyclePhase(CyclePhase cyclePhase, List<TCRCatalogTreeTestcase> testcases, Boolean includeHierarchy) throws URISyntaxException, IOException {
+    public Set<Long> addTestcasesToFreeFormCyclePhase(CyclePhase cyclePhase, List<TCRCatalogTreeTestcase> testcases, Boolean includeHierarchy) throws URISyntaxException, IOException {
         //todo: this data parsing loop runs two times, once here and once in ZephyrRestService, need to fix this
         Map<Long, Set<Long>> treeTestcaseMap = new HashMap<>();
+        Set<Long> discoveredTreeIds = new LinkedHashSet<>();
 
         int count = 0;
         for (TCRCatalogTreeTestcase testcase : testcases) {
@@ -96,7 +117,8 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
 
             if(count == ZephyrConstants.BATCH_SIZE) {
                 //batch limit reached, process these testcases
-                zephyrRestService.addTestcasesToFreeFormCyclePhase(cyclePhase, treeTestcaseMap, includeHierarchy);
+                String response = zephyrRestService.addTestcasesToFreeFormCyclePhase(cyclePhase, treeTestcaseMap, includeHierarchy);
+                discoveredTreeIds.addAll(parseFrozenTreeIds(response));
 
                 //testcases processed, clear map and reset count
                 treeTestcaseMap = new HashMap<>();
@@ -105,7 +127,55 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
         }
 
         if(!treeTestcaseMap.isEmpty()) {
-            zephyrRestService.addTestcasesToFreeFormCyclePhase(cyclePhase, treeTestcaseMap, includeHierarchy);
+            String response = zephyrRestService.addTestcasesToFreeFormCyclePhase(cyclePhase, treeTestcaseMap, includeHierarchy);
+            discoveredTreeIds.addAll(parseFrozenTreeIds(response));
         }
+
+        return discoveredTreeIds;
+    }
+
+
+    private Set<Long> parseFrozenTreeIds(String response) {
+        Set<Long> ids = new LinkedHashSet<>();
+        if (response == null || response.trim().isEmpty()) {
+            return ids;
+        }
+
+        String xml = response;
+        try {
+            // Response body is typically a JSON string literal wrapping the XML document
+            // (RestServiceUtil.toJsonStr(document.asXML())); unwrap it if so.
+            String decoded = GsonUtil.CUSTOM_GSON.fromJson(response, String.class);
+            if (decoded != null) {
+                xml = decoded;
+            }
+        } catch (Exception e) {
+            // not JSON-quoted, use the raw response as-is
+        }
+
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            Document doc = db.parse(new InputSource(new StringReader(xml)));
+            NodeList nodeList = doc.getElementsByTagName("TCRCatalogTree");
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node node = nodeList.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    String frozenId = ((Element) node).getAttribute("frozenId");
+                    if (StringUtils.isNotBlank(frozenId)) {
+                        try {
+                            ids.add(Long.parseLong(frozenId));
+                        } catch (NumberFormatException e) {
+                            log.warn("parseFrozenTreeIds: skipping non-numeric frozenId=" + frozenId, e);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("parseFrozenTreeIds: failed to parse addTestcasesToFreeFormCyclePhase response as XML. response=" + response, e);
+        }
+        return ids;
     }
 }

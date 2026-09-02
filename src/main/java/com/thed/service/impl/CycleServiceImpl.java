@@ -137,20 +137,19 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
 
     private Set<Long> parseFrozenTreeIds(String response) {
         Set<Long> ids = new LinkedHashSet<>();
-        if (response == null || response.trim().isEmpty()) {
+        if (StringUtils.isBlank(response)) {
             return ids;
         }
 
         String xml = response;
         try {
-            // Response body is typically a JSON string literal wrapping the XML document
-            // (RestServiceUtil.toJsonStr(document.asXML())); unwrap it if so.
             String decoded = GsonUtil.CUSTOM_GSON.fromJson(response, String.class);
             if (decoded != null) {
                 xml = decoded;
             }
         } catch (Exception e) {
-            // not JSON-quoted, use the raw response as-is
+            log.warn("parseFrozenTreeIds: response is not JSON-quoted, using raw response. responseSnippet = %s".formatted(
+                    StringUtils.abbreviate(response, 500)), e);
         }
 
         try {
@@ -168,13 +167,13 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
                         try {
                             ids.add(Long.parseLong(frozenId));
                         } catch (NumberFormatException e) {
-                            log.warn("parseFrozenTreeIds: skipping non-numeric frozenId=" + frozenId, e);
+                            log.warn("parseFrozenTreeIds: skipping non-numeric frozenId = %s".formatted(frozenId), e);
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            log.warn("parseFrozenTreeIds: failed to parse addTestcasesToFreeFormCyclePhase response as XML. response=" + response, e);
+            log.warn("parseFrozenTreeIds: failed to parse addTestcasesToFreeFormCyclePhase response as XML. response= %s".formatted(response), e);
         }
         return ids;
     }

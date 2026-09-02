@@ -18,7 +18,8 @@ import hudson.remoting.VirtualChannel;
 import jenkins.MasterToSlaveFileCallable;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.tools.ant.types.FileSet;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.xml.sax.SAXException;
@@ -26,6 +27,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -40,7 +42,7 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.ADD_ZEPHYR_GLOBAL_CO
 
 public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
-    private static final Logger log = Logger.getLogger(UploadResultCallable.class);
+    private static final Logger log = LoggerFactory.getLogger(UploadResultCallable.class);
     private String projectKey;
     private String releaseKey;
     private String cycleKey;
@@ -108,9 +110,21 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
     }
 
     public boolean perform(int buildNumber, final TaskListener listener) throws IOException, InterruptedException {
-        PrintStream logger = listener.getLogger();
+        PrintStream logger = createMirroredLogger(listener.getLogger());
         this.logger = logger;
         logger.printf("%s Examining test results...%n", pInfo);
+        logger.println("perform: buildNumber=" + buildNumber
+                + ", serverAddress=" + serverAddress
+                + ", projectKey=" + projectKey
+                + ", releaseKey=" + releaseKey
+                + ", cycleKey=" + cycleKey
+                + ", cyclePrefix=" + cyclePrefix
+                + ", environment=" + environment
+                + ", cycleDuration=" + cycleDuration
+                + ", createPackage=" + createPackage
+                + ", resultXmlFilePath=" + resultXmlFilePath
+                + ", parserTemplateKey=" + parserTemplateKey
+                + ", customFields=" + customFields);
 
         if (!validateBuildConfig()) {
             logger.println("Cannot Proceed. Please verify the job configuration");
@@ -124,9 +138,11 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             if(upCredentials instanceof UsernamePasswordCredentialsImpl){
                 String user = ((UsernamePasswordCredentialsImpl) upCredentials).getUsername();
                 String pass = ((UsernamePasswordCredentialsImpl) upCredentials).getPassword().getPlainText();
+                logger.println("perform: authenticating with UsernamePasswordCredentialsImpl for user=" + user);
                 loggedIn = userService.login(getServerAddress(),user,pass);
             }else if(upCredentials instanceof StringCredentialsImpl){
                 String secretText = ((StringCredentialsImpl) upCredentials).getSecret().getPlainText();
+                logger.println("perform: authenticating with StringCredentialsImpl");
                 loggedIn = userService.login(getServerAddress(), secretText);
             }
             if(!loggedIn) {
@@ -194,6 +210,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             Set<String> xmlFiles = new HashSet<>();
 
             List<String> resultFilePathList = getAllIncludedFilePathList(workspaceFile.getAbsolutePath(), resultXmlFilePath);
+            logger.println("perform: resultFilePathList=" + resultFilePathList);
 
             for(String resultFilePath : resultFilePathList) {
                 if(Objects.equals(zephyrConfigModel.getParserTemplateId(), eggplantParserIndex)) {
@@ -219,10 +236,12 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
             //zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
             zephyrConfigModel.setPackageNames(getPackageNamesFromXML(dataMapList));
+            logger.println("perform: packageNames=" + zephyrConfigModel.getPackageNames());
             Map<String, TCRCatalogTreeDTO> packagePhaseMap = createPackagePhaseMap(zephyrConfigModel);
+            logger.println("perform: packagePhaseMap keys=" + packagePhaseMap.keySet());
             Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrStatusMap = createTestcasesFromMap(packagePhaseMap, dataMapList, zephyrConfigModel, logger);
 
-            logger.println("Total Test Cases : " + tcrStatusMap.keySet().size());
+            logger.println("tcrStatusMap: " + formatTcrStatusMap(tcrStatusMap));
 
             com.thed.model.Project project = projectService.getProjectById(zephyrConfigModel.getZephyrProjectId());
 
@@ -277,10 +296,10 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             cyclePhase = cycleService.createCyclePhase(cyclePhase);
 
             //adding testcases to free form cycle phase
-            cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
+            Set<Long> discoveredTreeIds = cycleService.addTestcasesToFreeFormCyclePhase(cyclePhase, new ArrayList<>(tcrStatusMap.keySet()), zephyrConfigModel.isCreatePackage());
 
             //assigning testcases in cycle phase to creator
-            List<ReleaseTestSchedule> releaseTestSchedules = cycleService.assignCyclePhaseToUser(cyclePhase, userService.getCurrentUser().getId());
+            List<ReleaseTestSchedule> releaseTestSchedules = cycleService.assignCyclePhaseToUser(cyclePhase, userService.getCurrentUser().getId(), discoveredTreeIds);
 
             Set<String> activeStatusIdSet = preferenceService.getTestcaseExecutionStatusIds(true);
             List<ExecutionRequest> executionRequestList = new ArrayList<>();
@@ -396,9 +415,57 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         return true;
     }
 
+    private PrintStream createMirroredLogger(final PrintStream jenkinsLogger) {
+        return new PrintStream(new OutputStream() {
+            private final StringBuilder buffer = new StringBuilder();
+
+            @Override
+            public void write(int b) throws IOException {
+                jenkinsLogger.write(b);
+                if (b == '\r') {
+                    return;
+                }
+                if (b == '\n') {
+                    flushBuffer();
+                    return;
+                }
+                buffer.append((char) b);
+            }
+
+            @Override
+            public void flush() throws IOException {
+                jenkinsLogger.flush();
+                flushBuffer();
+            }
+
+            private void flushBuffer() {
+                if (buffer.length() == 0) {
+                    return;
+                }
+                log.info("{}", buffer);
+                buffer.setLength(0);
+            }
+        }, true);
+    }
+
+    private String formatTcrStatusMap(Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrStatusMap) {
+        List<Map<String, Object>> entries = new ArrayList<>();
+        for (Map.Entry<TCRCatalogTreeTestcase, Map<String, Object>> entry : tcrStatusMap.entrySet()) {
+            Map<String, Object> formattedEntry = new LinkedHashMap<>();
+            formattedEntry.put("tcrCatalogTreeTestcase", entry.getKey());
+            formattedEntry.put("statusData", entry.getValue());
+            entries.add(formattedEntry);
+        }
+        return GsonUtil.CUSTOM_GSON.toJson(entries);
+    }
+
     private Map<String, TCRCatalogTreeDTO> createPackagePhaseMap(ZephyrConfigModel zephyrConfigModel) throws URISyntaxException, IOException {
 
         List<TCRCatalogTreeDTO> tcrCatalogTreeDTOList = tcrCatalogTreeService.getTCRCatalogTreeNodes(ZephyrConstants.TCR_CATALOG_TREE_TYPE_PHASE, zephyrConfigModel.getReleaseId());
+        logger.println("createPackagePhaseMap: zephyrConfigModel=" + zephyrConfigModel
+                + ", releaseId=" + zephyrConfigModel.getReleaseId()
+                + ", createPackage=" + zephyrConfigModel.isCreatePackage());
+        logger.println("createPackagePhaseMap: tcrCatalogTreeDTOList.size=" + (tcrCatalogTreeDTOList == null ? "null" : tcrCatalogTreeDTOList.size()));
 
         String phaseDescription = zephyrConfigModel.isCreatePackage() ? ZephyrConstants.PACKAGE_TRUE_DESCRIPTION : ZephyrConstants.PACKAGE_FALSE_DESCRIPTION;
         boolean createPhase = true;
@@ -412,6 +479,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 }
             }
         }
+        logger.println("createPackagePhaseMap: automationPhase=" + automationPhase + ", createPhase=" + createPhase);
 
         if(createPhase) {
             //top parent phase is not available which means we have to create this and all following phases
@@ -429,8 +497,10 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         }
 
         Set<String> packageNames = zephyrConfigModel.getPackageNames();
+        logger.println("createPackagePhaseMap: packageNames=" + packageNames);
 
         for(String packageName : packageNames) {
+            logger.println("createPackagePhaseMap: resolving packageName=" + packageName);
 
             String[] packageNameArr = packageName.split("\\.");
             //todo: make hierarchy locally instead of these extra rest calls
@@ -439,6 +509,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             createPhase = false;
             for (int i = 0; i < packageNameArr.length; i++) {
                 String pName = packageNameArr[i];
+                logger.println("createPackagePhaseMap: packageName=" + packageName + ", level=" + i + ", phaseName=" + pName + ", endingNode=" + endingNode);
 
                 if(createPhase) {
                     //last phase searched doesn't exist and was created new, any following phases need to be created
@@ -465,6 +536,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                     endingNode = searchedPhase;
                 }
             }
+            logger.println("createPackagePhaseMap: packageName=" + packageName + ", resolvedEndingNode=" + endingNode);
             packagePhaseMap.put(packageName, endingNode);
         }
         return packagePhaseMap;
@@ -572,9 +644,9 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         }
         if (customFieldsUpdated) {
             tcrCatalogTreeTestcase.getTestcase().setCustomProperties(
-                  (existingCustomFields)
+                    (existingCustomFields)
             );
-           customField.add(tcrCatalogTreeTestcase);
+            customField.add(tcrCatalogTreeTestcase);
         }
     }
 
@@ -617,7 +689,12 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         List<String> testcaseNameList=new ArrayList<>();
         long statusAttachmentCount = 0;
         Map<String,Object> customFields=GsonUtil.validateAndParseJson(getCustomFields());
+        logger.println("createTestcasesFromMap: packagePhaseMap=" + packagePhaseMap);
+        logger.println("createTestcasesFromMap: dataMapList.size=" + dataMapList.size()
+                + ", createPackage=" + zephyrConfigModel.isCreatePackage()
+                + ", customFields=" + customFields);
         dataMapLoop: for (Map dataMap : dataMapList) {
+            logger.println("createTestcasesFromMap: rawDataMap=" + dataMap);
 
             Map testcaseMap = (Map) dataMap.get("testcase");
 
@@ -628,7 +705,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 testcase.setScriptName("Created By Jenkins");
             }
             if(MapUtils.isNotEmpty(customFields)) {
-                    testcase.setCustomProperties(new HashMap<>(customFields));
+                testcase.setCustomProperties(new HashMap<>(customFields));
             } else if (testcase.getCustomProperties() == null) {
                 // Bulk create API expects customProperties to be present as an object, not null.
                 testcase.setCustomProperties(new HashMap<>());
@@ -684,8 +761,12 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                     }
                 }
             }
+            logger.println("createTestcasesFromMap: testcaseName=" + testcase.getName()
+                    + ", packageName=" + packageName
+                    + ", statusCondition=" + statusCondition);
 
             TCRCatalogTreeDTO treeDTO = packagePhaseMap.get(packageName);
+            logger.println("createTestcasesFromMap: resolved treeDTO for packageName=" + packageName + " -> " + treeDTO);
 
             if(treeIdTestcaseMap.containsKey(treeDTO.getId())) {
                 treeIdTestcaseMap.get(treeDTO.getId()).add(testcase);
@@ -786,7 +867,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                         default:
                             actualTimeSrc = actualTimeSrc.multiply(new BigDecimal("1000"));
                             executionRequest.setActualTime(actualTimeSrc.longValue());
-                        break;
+                            break;
 
                     }
                 }
@@ -805,6 +886,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
             Map<String, Map<String, Object>> testcaseNameValueMap = new HashMap<>();
             testcaseNameValueMap.put(testcase.getName(), valueMap);
             testcaseNameValueMapList.add(testcaseNameValueMap);
+            logger.println("createTestcasesFromMap: valueMap for testcaseName=" + testcase.getName() + " -> " + valueMap);
         }
 
         if(!testcaseNameList.isEmpty()){
@@ -812,7 +894,9 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         }
 
         printWarningMessages(processingWarningMessages);
+        logger.println("createTestcasesFromMap: treeIdTestcaseMap=" + treeIdTestcaseMap);
         List<TCRCatalogTreeTestcase> tcrList =  createTestcasesWithoutDuplicate(treeIdTestcaseMap,zephyrConfigModel);
+        logger.println("createTestcasesFromMap: createdOrExistingTcrList.size=" + tcrList.size());
         Map<TCRCatalogTreeTestcase, Map<String, Object>> tcrTestcaseStatusMap = new HashMap<>();
         List<MapTestcaseToRequirement> mapTestcaseToRequirements = new ArrayList<>();
         loop1 : for (Map<String, Map<String, Object>> map : testcaseNameValueMapList) {
@@ -850,6 +934,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
         }
         List<String> msgs = requirementService.mapTestcaseToRequirements(mapTestcaseToRequirements);
         logger.println(msgs);
+        logger.println("createTestcasesFromMap: final tcrTestcaseStatusMap.size=" + tcrTestcaseStatusMap.size());
         return tcrTestcaseStatusMap;
     }
 

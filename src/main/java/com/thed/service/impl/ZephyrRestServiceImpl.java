@@ -16,6 +16,8 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -26,6 +28,8 @@ import java.util.*;
  * Created by prashant on 20/6/19.
  */
 public class ZephyrRestServiceImpl implements ZephyrRestService {
+
+    private static final Logger log = LoggerFactory.getLogger(ZephyrRestServiceImpl.class);
 
     public static final String GET_CURRENT_USER_URL = "/flex/services/rest/{restVersion}/user/current";
 
@@ -370,13 +374,25 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         }
 
         String url = buildUrl(prepareUrl(GET_TESTCASES_FOR_TREE_ID_FROM_PLANNING_URL), pathParams, queryParams);
+        log.info("getTestcasesForTreeIdFromPlanning: tcrCatalogTreeId=" + tcrCatalogTreeId
+                + ", offset=" + offset
+                + ", pageSize=" + pageSize
+                + ", pathParams=" + pathParams
+                + ", queryParams=" + queryParams
+                + ", finalUrl=" + url);
         String res = httpClientService.getRequest(url);
+        log.info("getTestcasesForTreeIdFromPlanning: rawResponse=" + res);
         JSONObject resObject = new JSONObject(res);
         JSONArray jsonArray = resObject.getJSONArray("results");
         String resultStr = jsonArray.toString();
+        log.info("getTestcasesForTreeIdFromPlanning: resultsArray=" + jsonArray);
+        log.info("getTestcasesForTreeIdFromPlanning: resultStr=" + resultStr);
 
         Type planningTestcaseListType = new TypeToken<List<PlanningTestcase>>(){}.getType();
-        return GsonUtil.CUSTOM_GSON.fromJson(resultStr, planningTestcaseListType);
+        List<PlanningTestcase> planningTestcaseList = GsonUtil.CUSTOM_GSON.fromJson(resultStr, planningTestcaseListType);
+        log.info("getTestcasesForTreeIdFromPlanning: planningTestcaseList="
+                + (planningTestcaseList == null ? "null" : GsonUtil.CUSTOM_GSON.toJson(planningTestcaseList)));
+        return planningTestcaseList;
     }
 
     @Override
@@ -437,7 +453,10 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
         }
 
         String url = buildUrl(prepareUrl(ADD_TESTCASES_TO_FREE_FORM_CYCLE_PHASE_URL), pathParams, queryParams);
-        return httpClientService.postRequest(url, contentJsonArray.toString());
+        String requestBody = contentJsonArray.toString();
+        log.info("addTestcasesToFreeFormCyclePhase: cyclePhaseId={}, tcrCatalogTreeId={}, includeHierarchy={}, treeTestcaseMap={}, url={}, requestBody={}",
+                cyclePhase.getId(), cyclePhase.getTcrCatalogTreeId(), includeHierarchy, treeTestcaseMap, url, requestBody);
+        return httpClientService.postRequest(url, requestBody);
     }
 
     @Override

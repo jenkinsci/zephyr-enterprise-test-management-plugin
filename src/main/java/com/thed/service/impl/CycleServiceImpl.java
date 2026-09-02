@@ -8,7 +8,8 @@ import com.thed.service.TestcaseService;
 import com.thed.utils.GsonUtil;
 import com.thed.utils.ZephyrConstants;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
  */
 public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
 
-    private static final Logger log = Logger.getLogger(CycleServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(CycleServiceImpl.class);
 
     private ExecutionService executionService = new ExecutionServiceImpl();
     private TCRCatalogTreeService tcrCatalogTreeService = new TCRCatalogTreeServiceImpl();
@@ -79,25 +80,18 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
             }
             treeIds.addAll(tcrCatalogTreeService.getTCRCatalogTreeIdHierarchy(cyclePhase.getTcrCatalogTreeId()));
 
-            log.info("assignCyclePhaseToUser:"
-                    + ", cyclePhase.id=" + cyclePhase.getId()
-                    + ", cyclePhase.tcrCatalogTreeId=" + cyclePhase.getTcrCatalogTreeId()
-                    + ", cyclePhase.cycleId=" + cyclePhase.getCycleId()
-                    + ", additionalTreeIds=" + additionalTreeIds
-                    + ", treeIds=" + treeIds
-                    + ", userId=" + userId);
+            log.info("assignCyclePhaseToUser: cyclePhase.id={}, cyclePhase.tcrCatalogTreeId={}, cyclePhase.cycleId={}, additionalTreeIds={}, treeIds={}, userId={}",
+                    cyclePhase.getId(), cyclePhase.getTcrCatalogTreeId(), cyclePhase.getCycleId(), additionalTreeIds, treeIds, userId);
 
             for (Long treeId : treeIds) {
                 for (int pageNo = 0; true; pageNo++) {
                     int offset = pageNo * batchSize;
-                    log.info("assignCyclePhaseToUser: treeId=" + treeId + ", pageNo=" + pageNo + ", offset=" + offset + ", batchSize=" + batchSize);
+                    log.info("assignCyclePhaseToUser: treeId={}, pageNo={}, offset={}, batchSize={}", treeId, pageNo, offset, batchSize);
                     List<PlanningTestcase> planningTestcaseList = testcaseService.getTestcasesForTreeIdFromPlanning(treeId, offset, batchSize);
-                    log.info("assignCyclePhaseToUser: planningTestcaseList="
-                            + (planningTestcaseList == null ? "null" : GsonUtil.CUSTOM_GSON.toJson(planningTestcaseList)));
+                    log.info("assignCyclePhaseToUser: planningTestcaseList={}",
+                            planningTestcaseList == null ? "null" : GsonUtil.CUSTOM_GSON.toJson(planningTestcaseList));
                     if (planningTestcaseList == null) {
-                        log.warn("assignCyclePhaseToUser: planningTestcaseList is null for treeId=" + treeId
-                                + ", offset=" + offset
-                                + ", batchSize=" + batchSize);
+                        log.warn("assignCyclePhaseToUser: planningTestcaseList is null for treeId={}, offset={}, batchSize={}", treeId, offset, batchSize);
                         break;
                     }
                     if (planningTestcaseList.isEmpty()) {
@@ -105,7 +99,7 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
                         break;
                     }
                     List<Long> tctIdList = planningTestcaseList.stream().map(planningTestcase -> planningTestcase.getTct().getId()).collect(Collectors.toList());
-                    log.info("assignCyclePhaseToUser: tctIdList=" + tctIdList);
+                    log.info("assignCyclePhaseToUser: tctIdList={}", tctIdList);
                     rtsList.addAll(zephyrRestService.assignTCRCatalogTreeTestcasesToUser(cyclePhase.getId(), treeId, tctIdList, userId));
 
                     if (planningTestcaseList.size() < batchSize) {
@@ -116,9 +110,8 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
             }
 
 
-            log.warn("assignCyclePhaseToUser: no testcases found for cyclePhase.tcrCatalogTreeId="
-                    + cyclePhase.getTcrCatalogTreeId()
-                    + ", retrying in " + "ms (search index may still be catching up)");
+            log.warn("assignCyclePhaseToUser: no testcases found for cyclePhase.tcrCatalogTreeId={}, retrying in {}ms (search index may still be catching up)",
+                    cyclePhase.getTcrCatalogTreeId(), "");
         return rtsList;
     }
 
@@ -144,10 +137,8 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
                 //batch limit reached, process these testcases
                 String response = zephyrRestService.addTestcasesToFreeFormCyclePhase(cyclePhase, treeTestcaseMap, includeHierarchy);
 
-                log.info("addTestcasesToFreeFormCyclePhase: cyclePhaseId=" + cyclePhase.getId()
-                        + ", treeTestcaseMap=" + treeTestcaseMap
-                        + ", includeHierarchy=" + includeHierarchy
-                        + ", response=" + response);
+                log.info("addTestcasesToFreeFormCyclePhase: cyclePhaseId={}, treeTestcaseMap={}, includeHierarchy={}, response={}",
+                        cyclePhase.getId(), treeTestcaseMap, includeHierarchy, response);
 
                 discoveredTreeIds.addAll(parseFrozenTreeIds(response));
 
@@ -159,14 +150,12 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
 
         if(!treeTestcaseMap.isEmpty()) {
             String response = zephyrRestService.addTestcasesToFreeFormCyclePhase(cyclePhase, treeTestcaseMap, includeHierarchy);
-            log.info("addTestcasesToFreeFormCyclePhase: cyclePhaseId=" + cyclePhase.getId()
-                    + ", treeTestcaseMap=" + treeTestcaseMap
-                    + ", includeHierarchy=" + includeHierarchy
-                    + ", response=" + response);
+            log.info("addTestcasesToFreeFormCyclePhase: cyclePhaseId={}, treeTestcaseMap={}, includeHierarchy={}, response={}",
+                    cyclePhase.getId(), treeTestcaseMap, includeHierarchy, response);
             discoveredTreeIds.addAll(parseFrozenTreeIds(response));
         }
 
-        log.info("addTestcasesToFreeFormCyclePhase: discoveredTreeIds=" + discoveredTreeIds);
+        log.info("addTestcasesToFreeFormCyclePhase: discoveredTreeIds={}", discoveredTreeIds);
         return discoveredTreeIds;
     }
 
@@ -210,14 +199,14 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
                     if (StringUtils.isNotBlank(frozenId)) {
                         try {
                             ids.add(Long.parseLong(frozenId));
-                        } catch (NumberFormatException ignored) {
-                            // skip non-numeric ids
+                        } catch (NumberFormatException e) {
+                            log.warn("parseFrozenTreeIds: skipping non-numeric frozenId={}", frozenId);
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            log.warn("parseFrozenTreeIds: failed to parse addTestcasesToFreeFormCyclePhase response as XML: " + e.getMessage());
+            log.warn("parseFrozenTreeIds: failed to parse addTestcasesToFreeFormCyclePhase response as XML: {}", e.getMessage());
         }
         return ids;
     }

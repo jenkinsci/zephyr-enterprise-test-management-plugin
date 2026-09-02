@@ -18,7 +18,8 @@ import hudson.remoting.VirtualChannel;
 import jenkins.MasterToSlaveFileCallable;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.tools.ant.types.FileSet;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.xml.sax.SAXException;
@@ -41,7 +42,7 @@ import static com.thed.zephyr.jenkins.reporter.ZeeConstants.ADD_ZEPHYR_GLOBAL_CO
 
 public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
 
-    private static final Logger log = Logger.getLogger(UploadResultCallable.class);
+    private static final Logger log = LoggerFactory.getLogger(UploadResultCallable.class);
     private String projectKey;
     private String releaseKey;
     private String cycleKey;
@@ -441,7 +442,7 @@ public class UploadResultCallable extends MasterToSlaveFileCallable<Boolean> {
                 if (buffer.length() == 0) {
                     return;
                 }
-                log.info(buffer.toString());
+                log.info("{}", buffer);
                 buffer.setLength(0);
             }
         }, true);

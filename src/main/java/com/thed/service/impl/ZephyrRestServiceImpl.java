@@ -16,7 +16,8 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -28,7 +29,7 @@ import java.util.*;
  */
 public class ZephyrRestServiceImpl implements ZephyrRestService {
 
-    private static final Logger log = Logger.getLogger(ZephyrRestServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(ZephyrRestServiceImpl.class);
 
     public static final String GET_CURRENT_USER_URL = "/flex/services/rest/{restVersion}/user/current";
 
@@ -453,12 +454,8 @@ public class ZephyrRestServiceImpl implements ZephyrRestService {
 
         String url = buildUrl(prepareUrl(ADD_TESTCASES_TO_FREE_FORM_CYCLE_PHASE_URL), pathParams, queryParams);
         String requestBody = contentJsonArray.toString();
-        log.info("addTestcasesToFreeFormCyclePhase: cyclePhaseId=" + cyclePhase.getId()
-                + ", tcrCatalogTreeId=" + cyclePhase.getTcrCatalogTreeId()
-                + ", includeHierarchy=" + includeHierarchy
-                + ", treeTestcaseMap=" + treeTestcaseMap
-                + ", url=" + url
-                + ", requestBody=" + requestBody);
+        log.info("addTestcasesToFreeFormCyclePhase: cyclePhaseId={}, tcrCatalogTreeId={}, includeHierarchy={}, treeTestcaseMap={}, url={}, requestBody={}",
+                cyclePhase.getId(), cyclePhase.getTcrCatalogTreeId(), includeHierarchy, treeTestcaseMap, url, requestBody);
         return httpClientService.postRequest(url, requestBody);
     }
 

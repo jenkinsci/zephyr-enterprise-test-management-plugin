@@ -7,6 +7,7 @@ import com.thed.service.TCRCatalogTreeService;
 import com.thed.service.TestcaseService;
 import com.thed.utils.GsonUtil;
 import com.thed.utils.ZephyrConstants;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -86,7 +87,6 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
                     + ", treeIds=" + treeIds
                     + ", userId=" + userId);
 
-            rtsList = new ArrayList<>();
             for (Long treeId : treeIds) {
                 for (int pageNo = 0; true; pageNo++) {
                     int offset = pageNo * batchSize;
@@ -207,7 +207,7 @@ public class CycleServiceImpl extends BaseServiceImpl implements CycleService {
                 Node node = nodeList.item(i);
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
                     String frozenId = ((Element) node).getAttribute("frozenId");
-                    if (frozenId != null && !frozenId.isEmpty()) {
+                    if (StringUtils.isNotBlank(frozenId)) {
                         try {
                             ids.add(Long.parseLong(frozenId));
                         } catch (NumberFormatException ignored) {

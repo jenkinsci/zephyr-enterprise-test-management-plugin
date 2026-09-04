@@ -25,6 +25,7 @@
         <jenkins.version>2.452.1</jenkins.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <java.level>17</java.level>
+        <spotbugs.skip>true</spotbugs.skip>
     </properties>
 
     <dependencyManagement>
@@ -292,7 +293,7 @@
         <developerConnection>scm:git:git@github.com:jenkinsci/zephyr-enterprise-test-management-plugin.git
         </developerConnection>
         <url>https://github.com/jenkinsci/zephyr-enterprise-test-management-plugin</url>
-        <tag>HEAD</tag>
+        <tag>zephyr-enterprise-test-management-2.11</tag>
     </scm>
 
     <!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->

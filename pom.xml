@@ -22,7 +22,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jenkins.version>2.452.1</jenkins.version>
+        <jenkins.version>2.541.3</jenkins.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <java.level>17</java.level>
     </properties>
@@ -32,57 +32,82 @@
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.16.1</version>
+                <version>1.20.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ant</groupId>
                 <artifactId>ant</artifactId>
-                <version>1.10.14</version>
+                <version>1.10.15</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
-                <version>4.13.1</version>
+                <version>4.13.2</version>
             </dependency>
             <dependency>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
-                <version>4.8.3</version>
+                <version>4.9.8</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
-                <version>2.0.12</version>
+                <version>2.0.17</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>log4j-over-slf4j</artifactId>
-                <version>2.0.12</version>
+                <version>2.0.17</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-jdk14</artifactId>
-                <version>2.0.12</version>
+                <version>2.0.17</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>2.0.12</version>
+                <version>2.0.17</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
-                <version>9.7</version>
+                <version>9.8</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.woodstox</groupId>
+                <artifactId>stax2-api</artifactId>
+                <version>4.3.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jenkins.plugins</groupId>
+                <artifactId>caffeine-api</artifactId>
+                <version>3.2.2-178.v353b_8428ed56</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>2.22</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jenkins.plugins</groupId>
+                <artifactId>commons-lang3-api</artifactId>
+                <version>3.20.0-109.ve43756e2d2b_4</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jenkins.plugins</groupId>
+                <artifactId>font-awesome-api</artifactId>
+                <version>7.1.0-882.v1dfb_771e3278</version>
             </dependency>
             <dependency>
                 <groupId>org.jenkins-ci.plugins.workflow</groupId>
                 <artifactId>workflow-support</artifactId>
-                <version>865.v43e78cc44e0d</version>
+                <version>989.va_20a_1a_57710a_</version>
             </dependency>
             <dependency>
                 <groupId>org.jenkins-ci.plugins</groupId>
                 <artifactId>structs</artifactId>
-                <version>325.vcb_307d2a_2782</version>
+                <version>362.va_b_695ef4fdf9</version>
             </dependency>
             <dependency>
                 <groupId>com.google.errorprone</groupId>
@@ -97,7 +122,7 @@
             <plugin>
                 <groupId>org.jenkins-ci.tools</groupId>
                 <artifactId>maven-hpi-plugin</artifactId>
-                <version>3.53</version>
+                <version>3.1838.va_13472137a_6a_</version>
                 <configuration>
                     <disabledTestInjection>true</disabledTestInjection>
                 </configuration>
@@ -176,18 +201,24 @@
         <dependency>
             <groupId>org.kohsuke</groupId>
             <artifactId>access-modifier-annotation</artifactId>
-            <version>1.33</version>
+            <version>1.35</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.main</groupId>
             <artifactId>jenkins-core</artifactId>
-            <version>2.452.1</version>
+            <version>2.541.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.jenkins-ci</groupId>
                     <artifactId>annotation-indexer</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>5.0.0</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.main</groupId>
@@ -203,7 +234,7 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.16.1</version>
+            <version>1.20.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -224,13 +255,13 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>junit</artifactId>
-            <version>1312.v1a_235a_b_94a_31</version>
+            <version>1425.v9c7318dca_96d</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.jenkins.plugins</groupId>
             <artifactId>commons-text-api</artifactId>
-            <version>1.10.0-78.v3e7b_ea_d5a_fe1</version>
+            <version>1.15.0-218.va_61573470393</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -256,17 +287,17 @@
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
-            <version>1.10.14</version>
+            <version>1.10.15</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
-            <version>2.1.16</version>
+            <version>1511.v2e3cb_0008ef0</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>plain-credentials</artifactId>
-            <version>1.3</version>
+            <version>199.v9f8e1f741799</version>
         </dependency>
         <dependency>
             <groupId>com.thed</groupId>
@@ -276,7 +307,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
-            <version>2.0.12</version>
+            <version>2.0.17</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -287,7 +318,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>log4j-over-slf4j</artifactId>
-            <version>2.0.12</version>
+            <version>2.0.17</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -298,7 +329,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <version>2.0.12</version>
+            <version>2.0.17</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>

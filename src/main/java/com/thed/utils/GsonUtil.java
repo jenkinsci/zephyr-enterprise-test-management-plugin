@@ -3,13 +3,13 @@ package com.thed.utils;
 import com.google.gson.*;
 import io.jenkins.cli.shaded.org.slf4j.Logger;
 import io.jenkins.cli.shaded.org.slf4j.LoggerFactory;
-import org.apache.commons.lang.StringUtils;
 import org.json.JSONObject;
 
 
 import java.lang.reflect.Type;
 import java.util.Date;
 import java.util.Map;
+import hudson.Util;
 
 public class GsonUtil {
 
@@ -41,7 +41,7 @@ public class GsonUtil {
 
     public static Map<String, Object> validateAndParseJson(String jsonString) throws IllegalArgumentException {
         Map<String, Object> customProperties = new java.util.HashMap<>();
-        if (StringUtils.isNotBlank(jsonString)) {
+        if (Util.fixEmptyAndTrim(jsonString) != null) {
             try {
                 JSONObject jsonObject = new JSONObject(jsonString);
                 for (Object key : jsonObject.keySet()) {

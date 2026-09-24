@@ -35,7 +35,6 @@ import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.kohsuke.stapler.AncestorInPath;
@@ -45,6 +44,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import com.thed.zephyr.jenkins.model.ZephyrInstance;
 import com.thed.zephyr.jenkins.utils.URLValidator;
 import org.kohsuke.stapler.verb.POST;
+import hudson.Util;
 
 @Symbol("zeeReporter")
 @Extension
@@ -170,7 +170,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			for (ZephyrInstance s : this.zephyrInstances) {
 				m.add(s.getServerAddress());
 			}
-		} else if (StringUtils.isBlank(serverAddress)
+		} else if (Util.fixEmptyAndTrim(serverAddress) == null
 				|| serverAddress.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)) {
 			m.add(ADD_ZEPHYR_GLOBAL_CONFIG);
 		} else {
@@ -187,7 +187,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	private ListBoxModel fetchProjectList(String serverAddress) {
 		ListBoxModel m = new ListBoxModel();
 
-		if (StringUtils.isBlank(serverAddress)) {
+		if (Util.fixEmptyAndTrim(serverAddress) == null) {
 	        ListBoxModel mi = fetchServerList(serverAddress);
 			serverAddress = mi.get(0).value;
 		}
@@ -245,15 +245,15 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 	private ListBoxModel fetchReleaseList(String projectKey, String serverAddress) {
 		ListBoxModel listBoxModel = new ListBoxModel();
 
-		if (StringUtils.isBlank(serverAddress)) {
+		if (Util.fixEmptyAndTrim(serverAddress) == null) {
 	        ListBoxModel mi = fetchServerList(serverAddress);
 			serverAddress = mi.get(0).value;
 		}
-		if (StringUtils.isBlank(projectKey)) {
+		if (Util.fixEmptyAndTrim(projectKey) == null) {
 	        ListBoxModel mi = fetchProjectList(serverAddress);
 	        projectKey = mi.size() != 0?mi.get(0).value:"";
 		}
-        if(StringUtils.isNotBlank(projectKey)) {
+        if(Util.fixEmptyAndTrim(projectKey) != null) {
 			if (projectKey.trim().equals(ADD_ZEPHYR_GLOBAL_CONFIG)
 					|| (this.zephyrInstances.size() == 0)) {
 				listBoxModel.add(ADD_ZEPHYR_GLOBAL_CONFIG);
@@ -280,7 +280,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 		ListBoxModel listBoxModel = new ListBoxModel();
 		
-		if (StringUtils.isBlank(serverAddress)) {
+		if (Util.fixEmptyAndTrim(serverAddress) == null) {
 	        ListBoxModel mi = fetchServerList(serverAddress);
             if(mi.size() == 0) {
                 listBoxModel.add(ADD_ZEPHYR_GLOBAL_CONFIG);
@@ -289,7 +289,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 			serverAddress = mi.get(0).value;
 		}
 
-        if(StringUtils.isBlank(projectKey)) {
+        if(Util.fixEmptyAndTrim(projectKey) == null) {
             ListBoxModel mi = fetchProjectList(serverAddress);
             if(mi.size() == 0) {
                 return listBoxModel;
@@ -297,7 +297,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
             projectKey = mi.get(0).value;
         }
 
-		if (StringUtils.isBlank(releaseKey)) {
+		if (Util.fixEmptyAndTrim(releaseKey) == null) {
 	        ListBoxModel mi = fetchReleaseList(projectKey, serverAddress);
             if(mi.size() == 0) {
                 return listBoxModel;
@@ -334,14 +334,14 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
 
 		ListBoxModel listBoxModel = new ListBoxModel();
 
-        if (StringUtils.isBlank(serverAddress)) {
+        if (Util.fixEmptyAndTrim(serverAddress) == null) {
             ListBoxModel mi = fetchServerList(serverAddress);
             if(mi.size() > 0) {
                 serverAddress = mi.get(0).value;
             }
         }
 
-        if(StringUtils.isBlank(projectKey)) {
+        if(Util.fixEmptyAndTrim(projectKey) == null) {
             ListBoxModel mi = fetchProjectList(serverAddress);
             if(mi.size() > 0) {
                 projectKey = mi.get(0).value;
@@ -349,7 +349,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
         }
 
         try {
-            if(!StringUtils.isBlank(projectKey)) {
+            if(Util.fixEmptyAndTrim(projectKey) != null) {
                 Long projectId = Long.parseLong(projectKey);
                 Long projectDuration = projectService.getProjectDurationInDays(projectId);
 
@@ -381,7 +381,7 @@ public class ZeeDescriptor extends BuildStepDescriptor<Publisher> {
     public ListBoxModel doFillParserTemplateKeyItems(@QueryParameter String serverAddress) throws URISyntaxException {
         ListBoxModel listBoxModel = new ListBoxModel();
 
-        if (StringUtils.isBlank(serverAddress)) {
+        if (Util.fixEmptyAndTrim(serverAddress) == null) {
             ListBoxModel mi = fetchServerList(serverAddress);
             serverAddress = mi.get(0).value;
         }

@@ -243,6 +243,7 @@ Compatibility between this plugin and Zephyr Enterprise is:
 
 | Plugin | Zephyr Enterprise |
 |--------|-------------------|
+| v2.11  | v8.7 or later    |
 | v2.9   | v8.1 or later    |
 | v2.8   | v7.16 to v8.0.1    |
 | v2.7   | v7.0 to v7.15.1    |
